@@ -6,7 +6,7 @@ from databases import Database
 import os
 from pathlib import Path
 
-os.chdir(Path(__file__).parent)
+os.chdir(Path(__file__).parent.parent)
 
 
 registry = orm.ModelRegistry(Database("sqlite:///main.db"))
