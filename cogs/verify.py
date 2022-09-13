@@ -1,7 +1,8 @@
 import discord
 import orm
+import re
 from discord.ext import commands
-from utils import send_verification_code, VerifyCode, Student
+from utils import send_verification_code, VerifyCode, Student, console
 import config
 
 
@@ -38,24 +39,36 @@ class VerifyCog(commands.Cog):
 
                 async def callback(self, interaction: discord.Interaction):
                     await interaction.response.defer()
-                    if not self.children[0].value:  # timed out
+                    st = self.children[0].value
+                    if not st:  # timed out
                         return
+
+                    if not re.match(
+                        "^B\d{6}$",
+                        st
+                    ):
+                        return await interaction.response.send_message(
+                            "\N{cross mark} Invalid student ID."
+                        )
+
                     _code = await send_verification_code(
                         ctx.author,
-                        self.children[0].value
+                        st
                     )
+                    console.log(f"Sending verification email to {ctx.author} ({ctx.author.id}/{st})...")
                     __code = await VerifyCode.objects.create(
                         code=_code,
                         bind=ctx.author.id,
-                        student_id=self.children[0].value
+                        student_id=st
                     )
+                    console.log(f"[green]Sent verification email to {ctx.author} ({ctx.author.id}/{st}): {_code!r}")
                     await interaction.followup.send(
                         "\N{white heavy check mark} Verification email sent to your college email "
-                        f"({self.children[0].value}@my.leedscitycollege.ac.uk)\n"
+                        f"({st}@my.leedscitycollege.ac.uk)\n"
                         f"Once you get that email, run this command again, with the first option being the 16"
                         f" character code.\n\n"
                         f">>> If you don't know how to access your email, go to <https://gmail.com>, then "
-                        f"sign in as `{self.children[0].value}@leedscitycollege.ac.uk` (notice there's no `my.` "
+                        f"sign in as `{st}@leedscitycollege.ac.uk` (notice there's no `my.` "
                         f"prefix to sign into gmail), and you should be greeted by your inbox. The default password "
                         f"is your birthday, !, and the first three letters of your first or last name"
                         f" (for example, `John Doe`, born on the 1st of february 2006, would be either "
@@ -83,8 +96,10 @@ class VerifyCog(commands.Cog):
                 if role and role < guild.me.top_role:
                     member = await guild.fetch_member(ctx.author.id)
                     await member.add_roles(role, reason="Verified")
+                console.log(f"[green]{ctx.author} verified ({ctx.author.id}/{existing.student_id})")
                 return await ctx.respond(
-                    "\N{white heavy check mark} Verification complete!"
+                    "\N{white heavy check mark} Verification complete!",
+                    ephemeral=True
                 )
 
     @commands.command(name="de-verify")
@@ -103,6 +118,23 @@ class VerifyCog(commands.Cog):
             await user.remove_roles(role, reason=f"De-verified by {ctx.author}")
 
         return await ctx.reply(f"\N{white heavy check mark} De-verified {user}.")
+
+    @commands.command(name="verify")
+    @commands.is_owner()
+    @commands.guild_only()
+    async def verification_force(self, ctx: commands.Context, user: discord.Member, _id: str):
+        """Manually verifies someone"""
+        await Student.objects.create(
+            id=_id,
+            user_id=user.id
+        )
+        role = discord.utils.find(lambda r: r.name.lower() == "verified", ctx.guild.roles)
+        if role and role < ctx.me.top_role:
+            member = await ctx.guild.fetch_member(ctx.author.id)
+            await member.add_roles(role, reason="Verified")
+        return await ctx.reply(
+            "\N{white heavy check mark} Verification complete!",
+        )
 
 
 def setup(bot):

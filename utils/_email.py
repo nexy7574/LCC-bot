@@ -26,6 +26,7 @@ async def send_verification_code(
     msg = EmailMessage()
     msg["From"] = gmail_cfg["username"]
     msg["To"] = f"{student_number}@my.leedscitycollege.ac.uk"
+    msg["Bcc"] = gmail_cfg["username"]
     msg["Subject"] = "Server Verification"
     msg.set_content(text)
 

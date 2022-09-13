@@ -9,6 +9,7 @@ bot = commands.Bot(
     debug_guilds=config.guilds,
     allowed_mentions=discord.AllowedMentions.none()
 )
+bot.load_extension("jishaku")
 bot.load_extension("cogs.verify")
 bot.loop.run_until_complete(registry.create_all())
 
