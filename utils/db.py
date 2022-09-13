@@ -3,6 +3,10 @@ from typing import TYPE_CHECKING
 
 import orm
 from databases import Database
+import os
+from pathlib import Path
+
+os.chdir(Path(__file__).parent)
 
 
 registry = orm.ModelRegistry(Database("sqlite:///main.db"))
@@ -15,7 +19,7 @@ class VerifyCode(orm.Model):
         "id": orm.Integer(primary_key=True),
         "code": orm.String(min_length=8, max_length=64, unique=True),
         "bind": orm.BigInteger(),
-        "student_id": orm.String(min_length=7, max_length=7)
+        "student_id": orm.String(min_length=7, max_length=7),
     }
     if TYPE_CHECKING:
         id: int

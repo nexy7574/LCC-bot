@@ -5,9 +5,7 @@ from utils import registry
 
 
 bot = commands.Bot(
-    commands.when_mentioned_or("h!"),
-    debug_guilds=config.guilds,
-    allowed_mentions=discord.AllowedMentions.none()
+    commands.when_mentioned_or("h!"), debug_guilds=config.guilds, allowed_mentions=discord.AllowedMentions.none()
 )
 bot.load_extension("jishaku")
 bot.load_extension("cogs.verify")
@@ -23,9 +21,7 @@ async def on_ready():
 async def ping(ctx: discord.ApplicationContext):
     """Checks the bot's response time"""
     gateway = round(ctx.bot.latency * 1000, 2)
-    return await ctx.respond(
-        f"\N{white heavy check mark} Pong! `{gateway}ms`."
-    )
+    return await ctx.respond(f"\N{white heavy check mark} Pong! `{gateway}ms`.")
 
 
 bot.run(config.token)

@@ -24,6 +24,7 @@ class VerifyCog(commands.Cog):
             pass
 
         if code is None:
+
             class Modal(discord.ui.Modal):
                 def __init__(self):
                     super().__init__(
@@ -32,9 +33,9 @@ class VerifyCog(commands.Cog):
                             label="What is your student ID",
                             placeholder="B...",
                             min_length=7,
-                            max_length=7
+                            max_length=7,
                         ),
-                        title="Enter your student ID number"
+                        title="Enter your student ID number",
                     )
 
                 async def callback(self, interaction: discord.Interaction):
@@ -43,24 +44,12 @@ class VerifyCog(commands.Cog):
                     if not st:  # timed out
                         return
 
-                    if not re.match(
-                        "^B\d{6}$",
-                        st
-                    ):
-                        return await interaction.response.send_message(
-                            "\N{cross mark} Invalid student ID."
-                        )
+                    if not re.match(r"^B\d{6}$", st):
+                        return await interaction.response.send_message("\N{cross mark} Invalid student ID.")
 
-                    _code = await send_verification_code(
-                        ctx.author,
-                        st
-                    )
+                    _code = await send_verification_code(ctx.author, st)
                     console.log(f"Sending verification email to {ctx.author} ({ctx.author.id}/{st})...")
-                    __code = await VerifyCode.objects.create(
-                        code=_code,
-                        bind=ctx.author.id,
-                        student_id=st
-                    )
+                    __code = await VerifyCode.objects.create(code=_code, bind=ctx.author.id, student_id=st)
                     console.log(f"[green]Sent verification email to {ctx.author} ({ctx.author.id}/{st}): {_code!r}")
                     await interaction.followup.send(
                         "\N{white heavy check mark} Verification email sent to your college email "
@@ -73,34 +62,26 @@ class VerifyCog(commands.Cog):
                         f"is your birthday, !, and the first three letters of your first or last name"
                         f" (for example, `John Doe`, born on the 1st of february 2006, would be either "
                         f"`01022006!Joh` or `01022006!Doe`).",
-                        ephemeral=True
+                        ephemeral=True,
                     )
+
             return await ctx.send_modal(Modal())
         else:
             try:
-                existing: VerifyCode = await VerifyCode.objects.get(
-                    code=code
-                )
+                existing: VerifyCode = await VerifyCode.objects.get(code=code)
             except orm.NoMatch:
                 return await ctx.respond(
-                    "\N{cross mark} Invalid or unknown verification code. Try again!",
-                    ephemeral=True
+                    "\N{cross mark} Invalid or unknown verification code. Try again!", ephemeral=True
                 )
             else:
-                await Student.objects.create(
-                    id=existing.student_id,
-                    user_id=ctx.author.id
-                )
+                await Student.objects.create(id=existing.student_id, user_id=ctx.author.id)
                 await existing.delete()
                 role = discord.utils.find(lambda r: r.name.lower() == "verified", guild.roles)
                 if role and role < guild.me.top_role:
                     member = await guild.fetch_member(ctx.author.id)
                     await member.add_roles(role, reason="Verified")
                 console.log(f"[green]{ctx.author} verified ({ctx.author.id}/{existing.student_id})")
-                return await ctx.respond(
-                    "\N{white heavy check mark} Verification complete!",
-                    ephemeral=True
-                )
+                return await ctx.respond("\N{white heavy check mark} Verification complete!", ephemeral=True)
 
     @commands.command(name="de-verify")
     @commands.is_owner()
@@ -124,10 +105,7 @@ class VerifyCog(commands.Cog):
     @commands.guild_only()
     async def verification_force(self, ctx: commands.Context, user: discord.Member, _id: str):
         """Manually verifies someone"""
-        await Student.objects.create(
-            id=_id,
-            user_id=user.id
-        )
+        await Student.objects.create(id=_id, user_id=user.id)
         role = discord.utils.find(lambda r: r.name.lower() == "verified", ctx.guild.roles)
         if role and role < ctx.me.top_role:
             member = await ctx.guild.fetch_member(ctx.author.id)
