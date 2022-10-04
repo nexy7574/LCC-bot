@@ -7,14 +7,18 @@ import aiosmtplib as smtp
 from email.message import EmailMessage
 
 gmail_cfg = {"addr": "smtp.gmail.com", "username": config.email, "password": config.email_password, "port": 465}
+TOKEN_LENGTH = 16
 
 
 async def send_verification_code(user: discord.User, student_number: str, **kwargs) -> str:
     """Sends a verification code, returning said verification code, to the student."""
-    code = secrets.token_hex(16)
+    code = secrets.token_hex(TOKEN_LENGTH)
     text = (
-        f"Hey {user} ({student_number})! The code to join the Unscrupulous Nonsense is '{code}' - use "
-        f"'/verify {code}' in the bot's DMs to continue \N{dancer}\n\n~nex"
+        f"Hey {user} ({student_number})! The code to join the Unscrupulous Nonsense is '{code}'.\n\n"
+        f"Go back to the #verify channel, and click 'I have a verification code!', and put {code} in the modal"
+        f" that pops up\n\n"
+        f"If you have any issues getting in, feel free to reply to this email, or DM eek#7574.\n"
+        f"~Nex"
     )
     msg = EmailMessage()
     msg["From"] = "B593764@my.leedscitycollege.ac.uk"
