@@ -17,7 +17,7 @@ async def send_verification_code(user: discord.User, student_number: str, **kwar
         f"'/verify {code}' in the bot's DMs to continue \N{dancer}\n\n~nex"
     )
     msg = EmailMessage()
-    msg["From"] = gmail_cfg["username"]
+    msg["From"] = "B593764@my.leedscitycollege.ac.uk"
     msg["To"] = f"{student_number}@my.leedscitycollege.ac.uk"
     msg["Bcc"] = gmail_cfg["username"]
     msg["Subject"] = "Server Verification"
