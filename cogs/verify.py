@@ -114,6 +114,22 @@ class VerifyCog(commands.Cog):
             "\N{white heavy check mark} Verification complete!",
         )
 
+    @commands.user_command(name="B Number")
+    @discord.guild_only()
+    async def get_b_number(self, ctx: discord.ApplicationContext, member: discord.Member):
+        try:
+            student: Student = await Student.objects.get(user_id=ctx.author.id)
+            return await ctx.respond(
+                f"{member.mention}'s B number is saved as {student.id!r}.",
+                allowed_mentions=discord.AllowedMentions.none()
+            )
+        except orm.NoMatch:
+            pass
+        return await ctx.respond(
+            f"{member.mention} has no saved B number.",
+            allowed_mentions=discord.AllowedMentions.none()
+        )
+
 
 def setup(bot):
     bot.add_cog(VerifyCog(bot))

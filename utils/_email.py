@@ -13,7 +13,7 @@ async def send_verification_code(user: discord.User, student_number: str, **kwar
     """Sends a verification code, returning said verification code, to the student."""
     code = secrets.token_hex(16)
     text = (
-        f"Hey {user} ({student_number})! The code to join the hi^5 code is '{code}' - use "
+        f"Hey {user} ({student_number})! The code to join the Unscrupulous Nonsense is '{code}' - use "
         f"'/verify {code}' in the bot's DMs to continue \N{dancer}\n\n~nex"
     )
     msg = EmailMessage()
