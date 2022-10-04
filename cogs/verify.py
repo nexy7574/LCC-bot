@@ -2,7 +2,7 @@ import discord
 import orm
 import re
 from discord.ext import commands
-from utils import send_verification_code, VerifyCode, Student, console
+from utils import send_verification_code, VerifyCode, Student, console, get_or_none, BannedStudentID
 import config
 
 
@@ -45,7 +45,17 @@ class VerifyCog(commands.Cog):
                         return
 
                     if not re.match(r"^B\d{6}$", st):
-                        return await interaction.response.send_message("\N{cross mark} Invalid student ID.")
+                        return await interaction.response.send_message(
+                            "\N{cross mark} Invalid student ID.",
+                            delete_after=60
+                        )
+
+                    ex = await get_or_none(Student, id=st)
+                    if ex:
+                        return await interaction.response.send_message(
+                            "\N{cross mark} Student ID is already associated.",
+                            delete_after=60
+                        )
 
                     _code = await send_verification_code(ctx.author, st)
                     console.log(f"Sending verification email to {ctx.author} ({ctx.author.id}/{st})...")
@@ -74,6 +84,12 @@ class VerifyCog(commands.Cog):
                     "\N{cross mark} Invalid or unknown verification code. Try again!", ephemeral=True
                 )
             else:
+                ban = await get_or_none(BannedStudentID, student_id=existing.student_id)
+                if ban is not None:
+                    return await ctx.author.ban(
+                        reason=f"Attempted to verify with banned student ID {ban.student_id}"
+                               f" (originally associated with account {ban.associated_account})"
+                    )
                 await Student.objects.create(id=existing.student_id, user_id=ctx.author.id)
                 await existing.delete()
                 role = discord.utils.find(lambda r: r.name.lower() == "verified", guild.roles)
