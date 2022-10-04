@@ -42,7 +42,7 @@ class Mod(commands.Cog):
         user_id = ban.associated_account
         await ban.delete()
         if not user_id:
-            return await ctx.respond(f"\N{white heavy checkmark} Unbanned {student_id}. No user to unban.")
+            return await ctx.respond(f"\N{white heavy check mark} Unbanned {student_id}. No user to unban.")
         else:
             try:
                 await ctx.guild.unban(
