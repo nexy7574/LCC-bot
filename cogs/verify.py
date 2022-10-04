@@ -118,17 +118,18 @@ class VerifyCog(commands.Cog):
     @discord.guild_only()
     async def get_b_number(self, ctx: discord.ApplicationContext, member: discord.Member):
         try:
-            student: Student = await Student.objects.get(user_id=ctx.author.id)
+            student: Student = await Student.objects.get(user_id=member.id)
             return await ctx.respond(
                 f"{member.mention}'s B number is saved as {student.id!r}.",
+                ephemeral=True,
                 allowed_mentions=discord.AllowedMentions.none()
             )
         except orm.NoMatch:
-            pass
-        return await ctx.respond(
-            f"{member.mention} has no saved B number.",
-            allowed_mentions=discord.AllowedMentions.none()
-        )
+            return await ctx.respond(
+                f"{member.mention} has no saved B number.",
+                ephemeral=True,
+                allowed_mentions=discord.AllowedMentions.none()
+            )
 
 
 def setup(bot):
