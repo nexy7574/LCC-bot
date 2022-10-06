@@ -14,8 +14,9 @@ class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.Cog.listener()
+    @commands.Cog.listener("on_raw_reaction_add")
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        print("[raw_add]", payload)
         channel: Optional[discord.TextChannel] = self.bot.get_channel(payload.channel_id)
         print("[raw_add]", channel)
         if channel is not None:
