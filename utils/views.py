@@ -87,6 +87,7 @@ class VerifyView(discord.ui.View):
                         max_length=7,
                     ),
                     title="Enter your student ID number",
+                    timeout=120
                 )
 
             async def callback(self, interaction: discord.Interaction):
@@ -96,19 +97,24 @@ class VerifyView(discord.ui.View):
                     return
 
                 if not re.match(r"^B\d{6}$", st):
-                    return await interaction.response.send_message(
+                    btn.disabled = False
+                    return await interaction.followup.send(
                         "\N{cross mark} Invalid student ID.",
                         delete_after=60
                     )
 
                 ex = await get_or_none(Student, id=st)
                 if ex:
-                    return await interaction.response.send_message(
+                    btn.disabled = False
+                    return await interaction.followup.send(
                         "\N{cross mark} Student ID is already associated.",
                         delete_after=60
                     )
 
-                _code = await send_verification_code(interaction.user, st)
+                try:
+                    _code = await send_verification_code(interaction.user, st)
+                except Exception as e:
+                    return await interaction.followup.send(f"\N{cross mark} Failed to send email - {e}. Try again?")
                 console.log(f"Sending verification email to {interaction.user} ({interaction.user.id}/{st})...")
                 __code = await VerifyCode.objects.create(code=_code, bind=interaction.id, student_id=st)
                 console.log(f"[green]Sent verification email to {interaction.user} ({interaction.user.id}/{st}): "
@@ -127,8 +133,11 @@ class VerifyView(discord.ui.View):
                     ephemeral=True,
                 )
 
-        await interaction1.response.send_modal(Modal())
+        modal = Modal()
+        await interaction1.response.send_modal()
         btn.disabled = True
+        await interaction1.edit_original_response(view=self)
+        await modal.wait()
         await interaction1.edit_original_response(view=self)
 
     @discord.ui.button(
