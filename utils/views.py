@@ -134,7 +134,7 @@ class VerifyView(discord.ui.View):
                 )
 
         modal = Modal()
-        await interaction1.response.send_modal()
+        await interaction1.response.send_modal(modal)
         btn.disabled = True
         await interaction1.edit_original_response(view=self)
         await modal.wait()
