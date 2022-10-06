@@ -10,6 +10,7 @@ bot = commands.Bot(
 bot.load_extension("jishaku")
 bot.load_extension("cogs.verify")
 bot.load_extension("cogs.mod")
+bot.load_extension("cogs.events")
 bot.loop.run_until_complete(registry.create_all())
 
 
