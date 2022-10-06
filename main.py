@@ -5,7 +5,10 @@ from utils import registry
 
 
 bot = commands.Bot(
-    commands.when_mentioned_or("h!"), debug_guilds=config.guilds, allowed_mentions=discord.AllowedMentions.none()
+    commands.when_mentioned_or("h!"),
+    debug_guilds=config.guilds,
+    allowed_mentions=discord.AllowedMentions.none(),
+    intents=discord.Intents.default() + discord.Intents.members
 )
 bot.load_extension("jishaku")
 bot.load_extension("cogs.verify")
