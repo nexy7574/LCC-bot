@@ -17,19 +17,14 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         channel: Optional[discord.TextChannel] = self.bot.get_channel(payload.channel_id)
-        if channel:
+        if channel is not None:
             try:
                 message: discord.Message = await channel.fetch_message(payload.message_id)
             except discord.HTTPException:
                 return
             if message.author == self.bot.user:
-                if str(payload.emoji) == "\N{WASTEBASKET}":
-                    try:
-                        await message.edit(content=f"[deleted by <@{payload.user_id}>]", embed=None, view=None)
-                    except discord.HTTPException:
-                        pass
-                    finally:
-                        await message.delete(delay=1)
+                if payload.emoji == discord.PartialEmoji.from_str("\N{wastebasket}"):
+                    await message.delete(delay=1)
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
