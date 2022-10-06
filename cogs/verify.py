@@ -2,7 +2,7 @@ import discord
 import orm
 import re
 from discord.ext import commands
-from utils import VerifyCode, Student, VerifyView
+from utils import VerifyCode, Student, VerifyView, get_or_none
 import config
 
 
@@ -71,6 +71,17 @@ class VerifyCog(commands.Cog):
                 ephemeral=True,
                 allowed_mentions=discord.AllowedMentions.none()
             )
+
+    @commands.command(name="rebind")
+    @commands.is_owner()
+    async def rebind_code(self, ctx: commands.Context, b_number: str, *, user: discord.Member):
+        # noinspection GrazieInspection
+        """Changes which account a B number is bound to"""
+        student = await get_or_none(Student, id=b_number.upper())
+        if student:
+            await student.update(user_id=user.id)
+            return await ctx.message.add_reaction("\N{white heavy check mark}")
+        await ctx.message.add_reaction("\N{cross mark}")
 
 
 def setup(bot):
