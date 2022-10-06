@@ -17,14 +17,19 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         channel: Optional[discord.TextChannel] = self.bot.get_channel(payload.channel_id)
+        print("[raw_add]", channel)
         if channel is not None:
             try:
                 message: discord.Message = await channel.fetch_message(payload.message_id)
+                print("[raw_add]", message)
             except discord.HTTPException:
                 return
-            if message.author == self.bot.user:
+            if message.author.id == self.bot.user.id:
+                print("[raw_add]", message.author)
                 if payload.emoji == discord.PartialEmoji.from_str("\N{wastebasket}"):
+                    print("[raw_add]", payload.emoji)
                     await message.delete(delay=1)
+                    print("[raw_add] removed")
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
