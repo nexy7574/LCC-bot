@@ -19,6 +19,11 @@ bot.loop.run_until_complete(registry.create_all())
 
 
 @bot.event
+async def on_connect():
+    print("Connected to discord!")
+
+
+@bot.event
 async def on_ready():
     print("Logged in as", bot.user)
 
@@ -31,4 +36,5 @@ async def ping(ctx: discord.ApplicationContext):
 
 
 if __name__ == "__main__":
+    print("Starting...")
     bot.run(config.token)
