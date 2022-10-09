@@ -1,25 +1,35 @@
 import datetime
 import uuid
 from typing import TYPE_CHECKING, Optional, TypeVar
+from enum import IntEnum, auto
 
 import orm
 from databases import Database
 import os
 from pathlib import Path
 
+
+class Tutors(IntEnum):
+    JAY = auto()
+    ZACH = auto()
+    IAN = auto()
+    REBECCA = auto()
+    LUPUPA = auto()
+    OTHER = -1  # not auto() because if we add more it could mess things up.
+
+
 os.chdir(Path(__file__).parent.parent)
 
 
 __all__ = [
     "registry",
-    "get_or_none"
-]
-_models = [
+    "get_or_none",
     "VerifyCode",
     "Student",
-    "BannedStudentID"
+    "BannedStudentID",
+    "Assignments",
+    "Tutors"
 ]
-__all__ += _models
 
 T = TypeVar('T')
 T_co = TypeVar("T_co", covariant=True)
@@ -80,3 +90,32 @@ class BannedStudentID(orm.Model):
         student_id: str
         associated_account: Optional[int]
         banned_at_timestamp: float
+
+
+class Assignments(orm.Model):
+    registry = registry
+    fields = {
+        "entry_id": orm.Integer(primary_key=True, default=None),
+        "created_by": orm.ForeignKey(Student, allow_null=True),
+        "title": orm.String(min_length=2, max_length=2000),
+        "classroom": orm.URL(allow_null=True, default=None, max_length=4096),
+        "shared_doc": orm.URL(allow_null=True, default=None, max_length=4096),
+        "created_at": orm.Float(default=lambda: datetime.datetime.now().timestamp()),
+        "due_by": orm.Float(),
+        "tutor": orm.Enum(Tutors),
+        "reminders": orm.JSON(default=[]),
+        "finished": orm.Boolean(default=False),
+        "submitted": orm.Boolean(default=False)
+    }
+    if TYPE_CHECKING:
+        entry_id: int
+        created_by: Student
+        title: str
+        classroom: Optional[str]
+        shared_doc: Optional[str]
+        created_at: float
+        due_by: float
+        tutor: Tutors
+        reminders: list[str]
+        finished: bool
+        submitted: bool

@@ -14,6 +14,7 @@ bot.load_extension("jishaku")
 bot.load_extension("cogs.verify")
 bot.load_extension("cogs.mod")
 bot.load_extension("cogs.events")
+bot.load_extension("cogs.assignments")
 bot.loop.run_until_complete(registry.create_all())
 
 
@@ -29,4 +30,5 @@ async def ping(ctx: discord.ApplicationContext):
     return await ctx.respond(f"\N{white heavy check mark} Pong! `{gateway}ms`.")
 
 
-bot.run(config.token)
+if __name__ == "__main__":
+    bot.run(config.token)

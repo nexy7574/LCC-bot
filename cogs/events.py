@@ -16,21 +16,15 @@ class Events(commands.Cog):
 
     @commands.Cog.listener("on_raw_reaction_add")
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        print("[raw_add]", payload)
         channel: Optional[discord.TextChannel] = self.bot.get_channel(payload.channel_id)
-        print("[raw_add]", channel)
         if channel is not None:
             try:
                 message: discord.Message = await channel.fetch_message(payload.message_id)
-                print("[raw_add]", message)
             except discord.HTTPException:
                 return
             if message.author.id == self.bot.user.id:
-                print("[raw_add]", message.author)
-                if payload.emoji == discord.PartialEmoji.from_str("\N{wastebasket}"):
-                    print("[raw_add]", payload.emoji)
+                if payload.emoji.name == "\N{wastebasket}\U0000fe0f":
                     await message.delete(delay=1)
-                    print("[raw_add] removed")
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
@@ -60,6 +54,16 @@ class Events(commands.Cog):
             await channel.send(
                 f"{RTL} {member.mention} {f'({student.id})' if student else '(pending verification)'}"
             )
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.channel.name == "pinboard":
+            try:
+                await message.pin(reason="Automatic pinboard pinning")
+            except discord.HTTPException as e:
+                return await message.reply(f"Failed to auto-pin: {e}", delete_after=10)
+        elif message.type == discord.MessageType.pins_add:
+            await message.delete(delay=0.01)
 
 
 def setup(bot):
