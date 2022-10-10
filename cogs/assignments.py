@@ -8,6 +8,10 @@ from discord.ext import commands, tasks
 import config
 from utils import Assignments, Tutors, simple_embed_paginator, get_or_none, Student, hyperlink
 
+BOOL_EMOJI = {
+    True: "\N{white heavy check mark}",
+    False: "\N{cross mark}"
+}
 
 TUTOR_OPTION = discord.Option(
     str,
@@ -15,10 +19,18 @@ TUTOR_OPTION = discord.Option(
     default=None,
     choices=[x.title() for x in dir(Tutors) if not x.startswith("__") and x not in ("name", "value")]
 )
-BOOL_EMOJI = {
-    True: "\N{white heavy check mark}",
-    False: "\N{cross mark}"
-}
+__MARK_AS_OPTION_OPTIONS = ("unfinished", "finished", "unsubmitted", "submitted")
+MARK_AS_OPTION = discord.Option(
+    int,
+    name="status",
+    choices=[
+        discord.OptionChoice(
+            name="{}{}".format(BOOL_EMOJI[not x.startswith("un")], x),
+            value=__MARK_AS_OPTION_OPTIONS.index(x),
+        )
+        for x in __MARK_AS_OPTION_OPTIONS
+    ]
+)
 
 
 class TutorSelector(discord.ui.View):
@@ -103,7 +115,7 @@ class AssignmentsCog(commands.Cog):
                     await assignment.update(reminders=assignment.reminders + [reminder_name])
                 else:
                     if isinstance(reminder_time, datetime.time):
-                        if now.date() == due.date:
+                        if now.date() == due.date():
                             if now.time().hour == reminder_time.hour:
                                 try:
                                     await general.send(
