@@ -58,13 +58,13 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.channel.name == "pinboard":
-            try:
-                await message.pin(reason="Automatic pinboard pinning")
-            except discord.HTTPException as e:
-                return await message.reply(f"Failed to auto-pin: {e}", delete_after=10)
-
-        if message.type == discord.MessageType.pins_add:
-            await message.delete(delay=0.01)
+            if message.type == discord.MessageType.pins_add:
+                await message.delete(delay=0.01)
+            else:
+                try:
+                    await message.pin(reason="Automatic pinboard pinning")
+                except discord.HTTPException as e:
+                    return await message.reply(f"Failed to auto-pin: {e}", delete_after=10)
 
 
 def setup(bot):
