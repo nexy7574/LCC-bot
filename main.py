@@ -18,12 +18,12 @@ bot.load_extension("cogs.assignments")
 bot.loop.run_until_complete(registry.create_all())
 
 
-@bot.event
+@bot.listen()
 async def on_connect():
     print("Connected to discord!")
 
 
-@bot.listen()
+@bot.event
 async def on_ready():
     print("Logged in as", bot.user)
 
