@@ -405,6 +405,13 @@ class AssignmentsCog(commands.Cog):
             async def on_timeout(self) -> None:
                 await self.message.delete(delay=0.1)
 
+            async def update_display(self, interaction: discord.Interaction):
+                complete_d = "incomplete" if assignment.finished else "complete"
+                submitted_d = "unsubmitted" if assignment.submitted else "submitted"
+                self.get_item("complete").label = "Mark as " + complete_d
+                self.get_item("submitted").label = "Mark as " + submitted_d
+                await interaction.edit_original_response(view=self)
+
             @discord.ui.button(label="Update title")
             async def update_title(self, _, interaction: discord.Interaction):
                 class UpdateTitleModal(discord.ui.Modal):
@@ -431,7 +438,7 @@ class AssignmentsCog(commands.Cog):
 
                 modal = UpdateTitleModal()
                 await interaction.response.send_modal(modal)
-                await modal.wait()
+                await self.update_display(interaction)
 
             @discord.ui.button(label="Update classroom URL")
             async def update_classroom_url(self, _, interaction: discord.Interaction):
@@ -465,7 +472,7 @@ class AssignmentsCog(commands.Cog):
 
                 modal = UpdateClassroomURL()
                 await interaction.response.send_modal(modal)
-                await modal.wait()
+                await self.update_display(interaction)
 
             @discord.ui.button(label="Update shared document url")
             async def update_shared_document_url(self, _, interaction: discord.Interaction):
@@ -499,7 +506,7 @@ class AssignmentsCog(commands.Cog):
 
                 modal = UpdateSharedDocumentModal()
                 await interaction.response.send_modal(modal)
-                await modal.wait()
+                await self.update_display(interaction)
 
             @discord.ui.button(label="Update tutor")
             async def update_tutor(self, _, interaction: discord.Interaction):
@@ -516,12 +523,54 @@ class AssignmentsCog(commands.Cog):
                     view=None
                 )
                 await msg.delete(delay=5)
+                await self.update_display(interaction)
 
-            @discord.ui.button(label="Update due date", disabled=True)
+            @discord.ui.button(label="Update due date")
             async def update_due(self, _, interaction: discord.Interaction):
-                pass
+                class UpdateDateModal(discord.ui.Modal):
+                    def __init__(self):
+                        self.date = datetime.datetime.fromtimestamp(assignment.due_by)
+                        super().__init__(
+                            discord.ui.InputText(
+                                label="New due by date",
+                                placeholder=self.date.strftime("%d/%m/%y %H:%M"),
+                                value=self.date.strftime("%d/%m/%y %H:%M"),
+                                min_length=14,
+                                max_length=16
+                            ),
+                            title="Change due by date"
+                        )
 
-            @discord.ui.button(label="Mark as [in]complete")
+                    async def callback(self, _interaction: discord.Interaction):
+                        await _interaction.response.defer()
+                        try:
+                            new = datetime.datetime.strptime(
+                                self.children[1].value,
+                                "%d/%m/%y %H:%M" if len(self.children[1].value) == 14 else "%d/%m/%Y %H:%M"
+                            )
+                        except ValueError:
+                            await _interaction.followup.send(
+                                "\N{cross mark} Failed to parse URL. Make sure you passed in dd/mm/yy hh:mm"
+                                " (e.g. {})".format(datetime.datetime.now().strftime("%d/%m/%y %H:%M"))
+                            )
+                            self.stop()
+                        else:
+                            try:
+                                await assignment.update(due_by=new.timestamp(), reminders=[])
+                                await _interaction.followup.send(
+                                    "\N{white heavy check mark} Changed due by date & reset reminders.",
+                                    delete_after=5
+                                )
+                            except sqlite3.Error:
+                                await _interaction.followup.send(
+                                    "\N{cross mark} Failed to apply changes."
+                                )
+                            finally:
+                                self.stop()
+                await interaction.response.send_modal(UpdateDateModal())
+                await self.update_display(interaction)
+
+            @discord.ui.button(label="Mark as [in]complete", custom_id="complete")
             async def mark_as_complete(self, _, interaction: discord.Interaction):
                 await interaction.response.defer()
                 if assignment.submitted is True and assignment.submitted is True:
@@ -529,13 +578,14 @@ class AssignmentsCog(commands.Cog):
                         "\N{cross mark} You cannot mark an assignment as incomplete if it is marked as submitted!"
                     )
                 await assignment.update(finished=not assignment.finished)
+                await self.update_display(interaction)
                 return await interaction.followup.send(
                     "\N{white heavy check mark} Assignment is now marked as {}complete.".format(
                         "in" if assignment.finished is False else ""
                     )
                 )
 
-            @discord.ui.button(label="Mark as [un]submitted")
+            @discord.ui.button(label="Mark as [un]submitted", custom_id="submitted")
             async def mark_as_submitted(self, _, interaction: discord.Interaction):
                 await interaction.response.defer()
                 if assignment.finished is False and assignment.submitted is False:
@@ -544,6 +594,7 @@ class AssignmentsCog(commands.Cog):
                         delete_after=10
                     )
                 await assignment.update(submitted=not assignment.submitted)
+                await self.update_display(interaction)
                 return await interaction.followup.send(
                     "\N{white heavy check mark} Assignment is now marked as {}submitted.".format(
                         "in" if assignment.submitted is False else ""
@@ -565,6 +616,7 @@ class AssignmentsCog(commands.Cog):
                     embed=AssignmentsCog.generate_assignment_embed(assignment),
                     ephemeral=True
                 )
+                await self.update_display(interaction)
 
         await ctx.respond(view=EditAssignmentView())
 
