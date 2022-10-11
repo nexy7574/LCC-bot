@@ -23,7 +23,7 @@ async def on_connect():
     print("Connected to discord!")
 
 
-@bot.event
+@bot.listen()
 async def on_ready():
     print("Logged in as", bot.user)
 
