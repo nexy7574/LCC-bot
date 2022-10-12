@@ -194,7 +194,7 @@ class AssignmentsCog(commands.Cog):
             self,
             ctx: discord.ApplicationContext,
             limit: int = 20,
-            upcoming_only: bool = False,
+            upcoming_only: bool = True,
             tutor_name: TUTOR_OPTION = None,
             unfinished_only: bool = False,
             unsubmitted_only: bool = False
