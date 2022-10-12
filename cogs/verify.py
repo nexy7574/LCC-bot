@@ -1,9 +1,7 @@
 import discord
 import orm
-import re
 from discord.ext import commands
 from utils import VerifyCode, Student, VerifyView, get_or_none
-import config
 
 
 class VerifyCog(commands.Cog):
@@ -39,6 +37,7 @@ class VerifyCog(commands.Cog):
         if role and role < ctx.me.top_role:
             await user.remove_roles(role, reason=f"De-verified by {ctx.author}")
 
+        await ctx.message.delete(delay=10)
         return await ctx.reply(f"\N{white heavy check mark} De-verified {user}.")
 
     @commands.command(name="verify")
@@ -51,6 +50,7 @@ class VerifyCog(commands.Cog):
         if role and role < ctx.me.top_role:
             member = await ctx.guild.fetch_member(ctx.author.id)
             await member.add_roles(role, reason="Verified")
+        await ctx.message.delete(delay=10)
         return await ctx.reply(
             "\N{white heavy check mark} Verification complete!",
         )
@@ -82,6 +82,7 @@ class VerifyCog(commands.Cog):
             await student.update(user_id=user.id)
             return await ctx.message.add_reaction("\N{white heavy check mark}")
         await ctx.message.add_reaction("\N{cross mark}")
+        await ctx.message.delete(delay=10)
 
 
 def setup(bot):
