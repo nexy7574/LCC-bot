@@ -19,15 +19,17 @@ class Events(commands.Cog):
     def cog_unload(self):
         self.lupupa_warning_task.stop()
 
-    @tasks.loop(time=[time(10, 0, 0), time(13, 30, 0)])
+    @tasks.loop(minutes=2)
     async def lupupa_warning_task(self):
         if lupupa_warning and datetime.now().strftime("%A") == "Thursday":
-            channel = discord.utils.get(self.bot.get_guild(guilds[0]).text_channels, name="general")
-            if channel and channel.can_send():
-                await channel.send(
-                    "Uh oh, Lupupa warning! Make sure you've got your essays written in academic style in Microsoft "
-                    "Word on your pen drive! You aren't in primary school anymore!"
-                )
+            now = datetime.now().time()
+            if (now.hour == 10 and now.minute in range(0, 2)) or (now.hour == 11 and now.minute in range(29, 32)):
+                channel = discord.utils.get(self.bot.get_guild(guilds[0]).text_channels, name="general")
+                if channel and channel.can_send():
+                    await channel.send(
+                        "Uh oh, Lupupa warning! Make sure you've got your essays written in academic style in Microsoft"
+                        " Word on your pen drive! You aren't in primary school anymore!"
+                    )
 
     @commands.Cog.listener("on_raw_reaction_add")
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
