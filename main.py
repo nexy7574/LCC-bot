@@ -11,7 +11,15 @@ bot = commands.Bot(
     intents=discord.Intents.default() + discord.Intents.members
 )
 
-for ext in ["jishaku", "cogs.verify", "cogs.mod", "cogs.events", "cogs.assignments"]:
+extensions = [
+    "jishaku",
+    "cogs.verify",
+    "cogs.mod",
+    "cogs.events",
+    "cogs.assignments",
+    "cogs.timetable"
+]
+for ext in extensions:
     bot.load_extension(ext)
     console.log(f"Loaded extension [green]{ext}")
 bot.loop.run_until_complete(registry.create_all())

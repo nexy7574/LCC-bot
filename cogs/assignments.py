@@ -78,18 +78,22 @@ class AssignmentsCog(commands.Cog):
     async def reminder_loop(self):
         if not self.bot.is_ready():
             await self.bot.wait_until_ready()
-        view_command = "</{0.name} view:{0.id}>".format(
-                self.bot.get_application_command(
-                    "assignments",
-                    type=discord.SlashCommandGroup
-                )
-        )
-        edit_command = "</{0.name} edit:{0.id}>".format(
-                self.bot.get_application_command(
-                    "assignments",
-                    type=discord.SlashCommandGroup
-                )
-        )
+        try:
+            view_command = "</{0.name} view:{0.id}>".format(
+                    self.bot.get_application_command(
+                        "assignments",
+                        type=discord.SlashCommandGroup
+                    )
+            )
+            edit_command = "</{0.name} edit:{0.id}>".format(
+                    self.bot.get_application_command(
+                        "assignments",
+                        type=discord.SlashCommandGroup
+                    )
+            )
+        except AttributeError:
+            view_command = "`/assignments view`"
+            edit_command = "`/assignments edit`"
         allowed_mentions = discord.AllowedMentions(everyone=True) if not config.dev else discord.AllowedMentions.none()
         guild = self.bot.get_guild(config.guilds[0])
         general = discord.utils.get(guild.text_channels, name="general")

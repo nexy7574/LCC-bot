@@ -1,0 +1,123 @@
+{
+  "monday": [
+    {
+      "name": "Unit 1, 2 & 3 (PCE)",
+      "start": [9, 0],
+      "end": [10, 15],
+      "tutor": "Jay",
+      "room": "A113"
+    },
+    {
+      "name": "Unit 10 & 11",
+      "start": [10, 30],
+      "end": [11, 45],
+      "tutor": "Zach",
+      "room": "A145"
+    }
+  ],
+  "tuesday": [
+    {
+      "name": "Unit 5",
+      "start": [9, 0],
+      "end": [10, 15],
+      "tutor": "Zach",
+      "room": "A229"
+    },
+    {
+      "name": "1:1",
+      "start": [10, 30],
+      "end": [11, 45],
+      "tutor": "Other",
+      "room": "A113"
+    },
+    {
+      "name": "Unit 7, 9 & 12",
+      "start": [11, 45],
+      "end": [13, 0],
+      "tutor": "Ian",
+      "room": "A145"
+    },
+    {
+      "name": "Unit 1, 2, 6 & 8",
+      "start": [15, 30],
+      "end": [16, 45],
+      "tutor": "Rebecca",
+      "room": "A047"
+    }
+  ],
+  "wednesday": [],
+  "thursday": [
+    {
+      "name": "Employer Set Project",
+      "start": [9, 0],
+      "end": [10, 15],
+      "tutor": "Zach",
+      "room": "A145"
+    },
+    {
+      "name": "Unit 3 & 4",
+      "start": [10, 30],
+      "end": [11, 45],
+      "tutor": "Lupupa",
+      "room": "A145"
+    },
+    {
+      "name": "Unit 1, 2, 6 & 8",
+      "start": [11, 45],
+      "end": [13, 0],
+      "tutor": "Rebecca",
+      "room": "A145"
+    },
+    {
+      "name": "Unit 3 & 4",
+      "start": [14, 0],
+      "end": [15, 15],
+      "tutor": "Lupupa",
+      "room": "A145"
+    },
+    {
+      "name": "Employer Readiness",
+      "start": [15, 30],
+      "end": [16, 45],
+      "tutor": "Other",
+      "room": "A227"
+    }
+  ],
+  "friday": [
+    {
+      "name": "Unit 5",
+      "start": [9, 0],
+      "end": [10, 15],
+      "tutor": "Zach",
+      "room": "A145"
+    },
+    {
+      "name": "IBM Badges",
+      "start": [10, 30],
+      "end": [11, 45],
+      "tutor": "Other",
+      "room": "A145"
+    },
+    {
+      "name": "1, 2, 6 & 8",
+      "start": [11, 45],
+      "end": [13, 0],
+      "tutor": "Rebecca",
+      "room": "A145"
+    },
+    {
+      "name": "Group Tutorial",
+      "start": [14, 0],
+      "end": [15, 15],
+      "tutor": "Other",
+      "room": "Oracle"
+    },
+    {
+      "name": "Unit 1, 2 & 3 (PCE)",
+      "start": [15, 30],
+      "end": [16, 45],
+      "tutor": "Jay",
+      "room": "A126"
+    }
+  ]
+}
