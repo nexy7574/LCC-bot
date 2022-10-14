@@ -84,7 +84,7 @@ class TimeTableCog(commands.Cog):
 
     async def update_timetable_message(
             self,
-            message: Union[discord.Message, discord.Interaction],
+            message: Union[discord.Message, discord.ApplicationContext],
             date: datetime = None,
             *,
             no_prefix: bool = False,
@@ -144,7 +144,7 @@ class TimeTableCog(commands.Cog):
         else:
             date = datetime.now()
         await ctx.defer()
-        await self.update_timetable_message(ctx.interaction, date, no_prefix=True)
+        await self.update_timetable_message(ctx, date, no_prefix=True)
 
     @commands.slash_command(name="timetable")
     async def _timetable(self, ctx: discord.ApplicationContext, date: str = None):
