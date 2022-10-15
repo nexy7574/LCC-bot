@@ -166,7 +166,7 @@ class TimeTableCog(commands.Cog):
             start_datetime = date.replace(hour=lesson["start"][0], minute=lesson["start"][1])
             end_datetime = date.replace(hour=lesson["end"][0], minute=lesson["end"][1])
             text = f"{discord.utils.format_dt(start_datetime, 't')} to {discord.utils.format_dt(end_datetime, 't')}" \
-                   f":\n> Lesson Name: {lesson['name']!r}" \
+                   f":\n> Lesson Name: {lesson['name']!r}\n" \
                    f"> Tutor: **{lesson['tutor']}**\n> Room: `{lesson['room']}`"
             blocks.append(text)
         await ctx.respond("\n\n".join(blocks))
