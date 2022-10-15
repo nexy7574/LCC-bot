@@ -30,6 +30,11 @@ async def on_connect():
     console.log("[green]Connected to discord!")
 
 
+@bot.listen("on_application_command_error")
+async def on_application_command_error(ctx: discord.ApplicationContext, error: Exception):
+    await ctx.respond("Application Command Error: `%r`" % error)
+
+
 @bot.event
 async def on_ready():
     console.log("Logged in as", bot.user)

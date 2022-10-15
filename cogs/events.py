@@ -13,23 +13,26 @@ RTL = "\N{leftwards black arrow}\U0000fe0f"
 
 class Events(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: commands.Bot = bot
         self.lupupa_warning_task.start()
 
     def cog_unload(self):
         self.lupupa_warning_task.stop()
 
-    @tasks.loop(minutes=2)
+    @tasks.loop(minutes=30)
     async def lupupa_warning_task(self):
+        lupupa_warning_text = "\N{warning sign} Lupupa warning!!!"
         if lupupa_warning and datetime.now().strftime("%A") == "Thursday":
-            now = datetime.now().time()
-            if (now.hour == 10 and now.minute in range(0, 2)) or (now.hour == 11 and now.minute in range(29, 32)):
-                channel = discord.utils.get(self.bot.get_guild(guilds[0]).text_channels, name="general")
-                if channel and channel.can_send():
-                    await channel.send(
-                        "Uh oh, Lupupa warning! Make sure you've got your essays written in academic style in Microsoft"
-                        " Word on your pen drive! You aren't in primary school anymore!"
-                    )
+            if self.bot.activity.name != lupupa_warning_text:
+                await self.bot.change_presence(
+                    activity=discord.Activity(
+                        name=lupupa_warning_text,
+                        type=discord.ActivityType.watching
+                    ),
+                    status=discord.Status.dnd
+                )
+        else:
+            await self.bot.change_presence()
 
     @commands.Cog.listener("on_raw_reaction_add")
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
