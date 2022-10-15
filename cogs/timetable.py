@@ -157,7 +157,7 @@ class TimeTableCog(commands.Cog):
         else:
             date = datetime.now()
 
-        lessons = self.timetable[date.strftime("%A").lower()]
+        lessons = self.timetable.get(date.strftime("%A").lower(), [])
         if not lessons:
             return await ctx.respond(f"No lessons on {discord.utils.format_dt(date, 'D')}.")
 
