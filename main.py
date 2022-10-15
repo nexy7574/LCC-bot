@@ -35,6 +35,11 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
     await ctx.respond("Application Command Error: `%r`" % error)
 
 
+@bot.listen("on_command_error")
+async def on_command_error(ctx: discord.ApplicationContext, error: Exception):
+    await ctx.respond("Command Error: `%r`" % error)
+
+
 @bot.event
 async def on_ready():
     console.log("Logged in as", bot.user)
