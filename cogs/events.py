@@ -25,14 +25,16 @@ class Events(commands.Cog):
             await self.bot.wait_until_ready()
         lupupa_warning_text = "\N{warning sign} Lupupa warning!!!"
         if lupupa_warning and datetime.now().strftime("%A") == "Thursday":
-            if self.bot.activity.name != lupupa_warning_text:
-                await self.bot.change_presence(
-                    activity=discord.Activity(
-                        name=lupupa_warning_text,
-                        type=discord.ActivityType.watching
-                    ),
-                    status=discord.Status.dnd
-                )
+            if self.bot.activity:
+                if self.bot.activity.name == lupupa_warning_text:
+                    return
+            await self.bot.change_presence(
+                activity=discord.Activity(
+                    name=lupupa_warning_text,
+                    type=discord.ActivityType.watching
+                ),
+                status=discord.Status.dnd
+            )
         else:
             await self.bot.change_presence()
 
