@@ -29,8 +29,10 @@ class Events(commands.Cog):
         if lupupa_warning and now.strftime("%A") == "Thursday":
             if now.time() > time(15, 15):
                 text = lupupa_recovery_text
+                status = discord.Status.idle
             else:
                 text = lupupa_warning_text
+                status = discord.status.dnd
             if self.bot.activity:
                 if self.bot.activity.name == text:
                     return
@@ -39,7 +41,7 @@ class Events(commands.Cog):
                     name=text,
                     type=discord.ActivityType.playing
                 ),
-                status=discord.Status.dnd
+                status=status
             )
         else:
             await self.bot.change_presence()
