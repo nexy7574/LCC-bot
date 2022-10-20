@@ -110,7 +110,7 @@ class TimeTableCog(commands.Cog):
                    f"ends {discord.utils.format_dt(lesson['end_datetime'], 'R')}"
             next_lesson = self.next_lesson(date)
             if next_lesson:
-                text += "\n[tt]Next lesson: {0[name]!r} with {0[tutor]} in {0[room]} - starts {1}".format(
+                text += "\n[tt] Next lesson: {0[name]!r} with {0[tutor]} in {0[room]} - starts {1}".format(
                     next_lesson,
                     next_lesson["start_datetime"]
                 )
