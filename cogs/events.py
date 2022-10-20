@@ -23,15 +23,21 @@ class Events(commands.Cog):
     async def lupupa_warning_task(self):
         if not self.bot.is_ready():
             await self.bot.wait_until_ready()
+        now = datetime.now()
         lupupa_warning_text = "\N{warning sign} Lupupa warning!!!"
-        if lupupa_warning and datetime.now().strftime("%A") == "Thursday":
+        lupupa_recovery_text = "\N{loudly crying face} Lupupa recovery..."
+        if lupupa_warning and now.strftime("%A") == "Thursday":
+            if now.time() > time(15, 15):
+                text = lupupa_recovery_text
+            else:
+                text = lupupa_warning_text
             if self.bot.activity:
-                if self.bot.activity.name == lupupa_warning_text:
+                if self.bot.activity.name == text:
                     return
             await self.bot.change_presence(
                 activity=discord.Activity(
-                    name=lupupa_warning_text,
-                    type=discord.ActivityType.watching
+                    name=text,
+                    type=discord.ActivityType.playing
                 ),
                 status=discord.Status.dnd
             )
