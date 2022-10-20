@@ -29,7 +29,7 @@ class TimeTableCog(commands.Cog):
 
     def current_lesson(self, date: datetime = None) -> Optional[dict]:
         date = date or datetime.now()
-        lessons = self.timetable[date.strftime("%A").lower()]
+        lessons = self.timetable.get(date.strftime("%A").lower(), [])
         if not lessons:
             return
         for lesson in lessons:

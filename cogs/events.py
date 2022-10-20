@@ -21,6 +21,8 @@ class Events(commands.Cog):
 
     @tasks.loop(minutes=30)
     async def lupupa_warning_task(self):
+        if not self.bot.is_ready():
+            await self.bot.wait_until_ready()
         lupupa_warning_text = "\N{warning sign} Lupupa warning!!!"
         if lupupa_warning and datetime.now().strftime("%A") == "Thursday":
             if self.bot.activity.name != lupupa_warning_text:
