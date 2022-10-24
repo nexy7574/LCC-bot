@@ -6,7 +6,7 @@ from typing import Optional
 import discord
 from discord.ext import commands, tasks
 import config
-from utils import Assignments, Tutors, simple_embed_paginator, get_or_none, Student, hyperlink
+from utils import Assignments, Tutors, simple_embed_paginator, get_or_none, Student, hyperlink, console
 
 BOOL_EMOJI = {
     True: "\N{white heavy check mark}",
@@ -172,9 +172,10 @@ class AssignmentsCog(commands.Cog):
         embed.add_field(name="Classroom URL:", value=classroom, inline=False),
         embed.add_field(name="Shared Document URL:", value=shared_doc)
         embed.add_field(name="Tutor:", value=assignment.tutor.name.title(), inline=False)
+        user_id = getattr(assignment.created_by, 'user_id', assignment.entry_id)
         embed.add_field(
             name="Created:",
-            value=f"<t:{assignment.created_at:.0f}:R> by <@{assignment.created_by.user_id}>",
+            value=f"<t:{assignment.created_at:.0f}:R> by <@{user_id}>",
             inline=False
         )
         embed.add_field(
@@ -380,7 +381,10 @@ class AssignmentsCog(commands.Cog):
         assignment: Assignments = await get_or_none(Assignments, entry_id=int(entry_id))
         if not assignment:
             return await ctx.respond("\N{cross mark} Unknown assignment.")
-        await assignment.created_by.load()
+        try:
+            await assignment.created_by.load()
+        except AttributeError:
+            console.log(f"[red]Failed to load created_by row for assignment {assignment.entry_id}")
         return await ctx.respond(embed=self.generate_assignment_embed(assignment))
 
     @assignments_command.command(name="edit")
