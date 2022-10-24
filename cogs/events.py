@@ -32,7 +32,7 @@ class Events(commands.Cog):
                 status = discord.Status.idle
             else:
                 text = lupupa_warning_text
-                status = discord.status.dnd
+                status = discord.Status.dnd
             if self.bot.activity:
                 if self.bot.activity.name == text:
                     return
