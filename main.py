@@ -33,13 +33,13 @@ async def on_connect():
 @bot.listen("on_application_command_error")
 async def on_application_command_error(ctx: discord.ApplicationContext, error: Exception):
     await ctx.respond("Application Command Error: `%r`" % error)
-    raise error from None
+    raise error
 
 
 @bot.listen("on_command_error")
 async def on_command_error(ctx: discord.ApplicationContext, error: Exception):
     await ctx.respond("Command Error: `%r`" % error)
-    raise error from None
+    raise error
 
 
 @bot.event
