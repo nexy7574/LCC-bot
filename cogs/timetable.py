@@ -116,7 +116,7 @@ class TimeTableCog(commands.Cog):
                 "room": "Unknown"
             }
             text = "[tt] On break {!r} from {} until {}. Break ends {}, and the first lesson back is " \
-                   "{lesson[name!r]} with {lesson[tutor]} in {lesson[room]}.".format(
+                   "{lesson[name]!r} with {lesson[tutor]} in {lesson[room]}.".format(
                 _break["name"],
                 discord.utils.format_dt(_break["start"], "d"),
                 discord.utils.format_dt(_break["end"], "d"),
