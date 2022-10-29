@@ -97,6 +97,9 @@ class Events(commands.Cog):
                     await message.pin(reason="Automatic pinboard pinning")
                 except discord.HTTPException as e:
                     return await message.reply(f"Failed to auto-pin: {e}", delete_after=10)
+        elif message.channel.name in ("verify", "timetable") and message.author != self.bot.user:
+            if message.channel.permissions_for(message.guild.me).manage_messages:
+                await message.delete(delay=1)
 
 
 def setup(bot):
