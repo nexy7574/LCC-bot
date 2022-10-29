@@ -375,7 +375,7 @@ class AssignmentsCog(commands.Cog):
     ):
         """Views an assignment's details"""
         try:
-            entry_id, *_ = title.split(":")
+            entry_id = int(title.split(":", 1)[0])
         except ValueError:
             return await ctx.respond("\N{cross mark} Invalid Input.")
         assignment: Assignments = await get_or_none(Assignments, entry_id=int(entry_id))
@@ -395,7 +395,7 @@ class AssignmentsCog(commands.Cog):
     ):
         """Edits an assignment"""
         try:
-            entry_id, *_ = title.split(":")
+            entry_id = int(title.split(":", 1)[0])
         except ValueError:
             return await ctx.respond("\N{cross mark} Invalid Input.")
         assignment: Assignments = await get_or_none(Assignments, entry_id=int(entry_id))
@@ -636,7 +636,7 @@ class AssignmentsCog(commands.Cog):
     ):
         """Edits an assignment"""
         try:
-            entry_id, *_ = title.split(":")
+            entry_id = int(title.split(":", 1)[0])
         except ValueError:
             return await ctx.respond("\N{cross mark} Invalid Input.")
         assignment: Assignments = await get_or_none(Assignments, entry_id=int(entry_id))
