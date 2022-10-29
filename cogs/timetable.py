@@ -1,5 +1,5 @@
 import asyncio
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 
 import discord
 from discord.ext import commands, tasks
@@ -23,6 +23,20 @@ class TimeTableCog(commands.Cog):
         with (Path.cwd() / "utils" / "timetable.json").open() as file:
             self.timetable = json.load(file)
         self.update_status.start()
+
+    def are_on_break(self, date: datetime = None) -> Optional[Dict[str, Union[str, datetime]]]:
+        """Checks if the date is one as a term break"""
+        date = date or datetime.now()
+        # That description made no sense what
+        for name, dates in self.timetable["breaks"].items():
+            start_date = datetime.strptime(dates["start"], "%d/%m/%Y")
+            end_date = datetime.strptime(dates["end"], "%d/%m/%Y")
+            if date.timestamp() in range(int(start_date.timestamp()), int(end_date.timestamp())):
+                return {
+                    "name": name,
+                    "start": start_date,
+                    "end": end_date
+                }
 
     def cog_unload(self):
         self.update_status.stop()
@@ -90,30 +104,50 @@ class TimeTableCog(commands.Cog):
             no_prefix: bool = False,
     ):
         date = date or datetime.now()
-        lesson = self.current_lesson(date)
-        if not lesson:
-            next_lesson = self.next_lesson(date)
-            if not next_lesson:
-                next_lesson = await asyncio.to_thread(
-                    self.absolute_next_lesson
-                )
-                text = "[tt] No more lessons today!\n" \
-                       f"[tt] Next Lesson: {next_lesson['name']!r} with {next_lesson['tutor']} in " \
-                       f"{next_lesson['room']} - " \
-                       f"Starts {discord.utils.format_dt(next_lesson['start_datetime'], 'R')}"
-
-            else:
-                text = f"[tt] Next Lesson: {next_lesson['name']!r} with {next_lesson['tutor']} in " \
-                       f"{next_lesson['room']} - Starts {discord.utils.format_dt(next_lesson['start_datetime'], 'R')}"
+        _break = self.are_on_break(date)
+        if _break:
+            next_lesson = await asyncio.to_thread(
+                self.absolute_next_lesson,
+                _break["end"] + timedelta(days=1, hours=7)
+            )
+            next_lesson = next_lesson or {
+                "name": "Unknown",
+                "tutor": "Unknown",
+                "room": "Unknown"
+            }
+            text = "[tt] On break {!r} from {} until {}. Break ends {}, and the first lesson back is " \
+                   "{lesson[name!r]} with {lesson[tutor]} in {lesson[room]}.".format(
+                _break["name"],
+                discord.utils.format_dt(_break["start"], "d"),
+                discord.utils.format_dt(_break["end"], "d"),
+                discord.utils.format_dt(_break["end"], "R"),
+                lesson=next_lesson
+            )
         else:
-            text = f"[tt] Current Lesson: {lesson['name']!r} with {lesson['tutor']} in {lesson['room']} - " \
-                   f"ends {discord.utils.format_dt(lesson['end_datetime'], 'R')}"
-            next_lesson = self.next_lesson(date)
-            if next_lesson:
-                text += "\n[tt] Next lesson: {0[name]!r} with {0[tutor]} in {0[room]} - starts {1}".format(
-                    next_lesson,
-                    discord.utils.format_dt(next_lesson["start_datetime"], 'R')
-                )
+            lesson = self.current_lesson(date)
+            if not lesson:
+                next_lesson = self.next_lesson(date)
+                if not next_lesson:
+                    next_lesson = await asyncio.to_thread(
+                        self.absolute_next_lesson
+                    )
+                    text = "[tt] No more lessons today!\n" \
+                           f"[tt] Next Lesson: {next_lesson['name']!r} with {next_lesson['tutor']} in " \
+                           f"{next_lesson['room']} - " \
+                           f"Starts {discord.utils.format_dt(next_lesson['start_datetime'], 'R')}"
+
+                else:
+                    text = f"[tt] Next Lesson: {next_lesson['name']!r} with {next_lesson['tutor']} in " \
+                           f"{next_lesson['room']} - Starts {discord.utils.format_dt(next_lesson['start_datetime'], 'R')}"
+            else:
+                text = f"[tt] Current Lesson: {lesson['name']!r} with {lesson['tutor']} in {lesson['room']} - " \
+                       f"ends {discord.utils.format_dt(lesson['end_datetime'], 'R')}"
+                next_lesson = self.next_lesson(date)
+                if next_lesson:
+                    text += "\n[tt] Next lesson: {0[name]!r} with {0[tutor]} in {0[room]} - starts {1}".format(
+                        next_lesson,
+                        discord.utils.format_dt(next_lesson["start_datetime"], 'R')
+                    )
 
         if no_prefix:
             text = text.replace("[tt] ", "")
