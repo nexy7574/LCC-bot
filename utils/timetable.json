@@ -119,5 +119,35 @@
       "tutor": "Jay",
       "room": "A126"
     }
-  ]
+  ],
+  "breaks": {
+    "autumn half term": {
+      "start": "24/10/2022",
+      "end": "30/10/2022"
+    },
+    "christmas": {
+      "start": "19/12/2022",
+      "end": "02/01/2023"
+    },
+    "spring half term": {
+      "start": "13/02/2023",
+      "end": "19/02/2023"
+    },
+    "easter holiday": {
+      "start": "03/04/2023",
+      "end": "16/04/2023"
+    },
+    "may bank holiday": {
+      "start": "01/05/2023",
+      "end": "01/05/2023"
+    },
+    "summer half term": {
+      "start": "29/05/2023",
+      "end": "04/06/2023"
+    },
+    "end of year": {
+      "start": "13/07/2023",
+      "end": "30/12/9998"
+    }
+  }
 }
