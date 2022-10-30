@@ -98,12 +98,12 @@ class TimeTableCog(commands.Cog):
                 # Loop until we find the next day when it isn't the weekend, and we aren't on break.
                 next_available_date = date.replace(hour=0, minute=0, second=0)
                 print("[absolute next lesson] next available date: ", next_available_date)
-                while self.are_on_break(next_available_date) or not self.timetable.get(date.strftime("%A").lower()):
+                while self.are_on_break(next_available_date) or not self.timetable.get(next_available_date.strftime("%A").lower()):
                     print("[absolute next lesson] Next available date is on break? ",
                           bool(self.are_on_break(next_available_date)))
-                    print("[absolute next lesson] Next available date:", date.strftime("%A").lower(),
+                    print("[absolute next lesson] Next available date:", next_available_date.strftime("%A").lower(),
                           "(available:", ", ".join(self.timetable.keys()) + ")")
-                    print("[absolute next lesson] Is timetabled date?", self.timetable.get(date.strftime("%A").lower()))
+                    print("[absolute next lesson] Is timetabled date?", self.timetable.get(next_available_date.strftime("%A").lower()))
                     next_available_date += timedelta(days=1)
                     if next_available_date.year >= 2024:
                         raise RuntimeError("Failed to fetch absolute next lesson")
