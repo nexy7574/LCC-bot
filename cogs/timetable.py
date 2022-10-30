@@ -82,48 +82,24 @@ class TimeTableCog(commands.Cog):
                 lesson["start_datetime"] = end_datetime
                 return lesson
 
-    def absolute_next_lesson(self, date: datetime = None, *, new_method: bool = False) -> dict:
+    def absolute_next_lesson(self, date: datetime = None) -> dict:
         lesson = None
         date = date or datetime.now()
-        print("[absolute next lesson] Date:", date)
-        if new_method is True:
-            print("[absolute next lesson] Using new method.")
-            # Check if there's another lesson today
-            lesson = self.next_lesson(date)
-            print("[absolute next lesson] Next lesson today:", lesson)
-            # If there's another lesson, great, return that
-            # Otherwise, we need to start looking ahead.
-            if lesson is None:
-                print("[absolute next lesson] Next lesson was None")
-                # Loop until we find the next day when it isn't the weekend, and we aren't on break.
-                next_available_date = date.replace(hour=0, minute=0, second=0)
-                print("[absolute next lesson] next available date: ", next_available_date)
-                while self.are_on_break(next_available_date) or not self.timetable.get(next_available_date.strftime("%A").lower()):
-                    print("[absolute next lesson] Next available date is on break? ",
-                          bool(self.are_on_break(next_available_date)))
-                    print("[absolute next lesson] Next available date:", next_available_date.strftime("%A").lower(),
-                          "(available:", ", ".join(self.timetable.keys()) + ")")
-                    print("[absolute next lesson] Is timetabled date?", self.timetable.get(next_available_date.strftime("%A").lower()))
-                    next_available_date += timedelta(days=1)
-                    if next_available_date.year >= 2024:
-                        raise RuntimeError("Failed to fetch absolute next lesson")
-                    print("[absolute next lesson] next available date: ", next_available_date)
-                    # NOTE: This could be *even* more efficient but honestly as long as it works it's fine
-                print("[absolute next lesson] fetching next lesson on", next_available_date)
-                lesson = self.next_lesson(next_available_date)  # This *must* be a date given the second part of the
-                # while loop's `or` statement.
-                print("[absolute next lesson] next lesson on %s: %s" % (next_available_date, lesson))
-                assert lesson, "Unable to figure out the next lesson."
-        else:
-            # this function wastes so many CPU cycles.
-            # Its also so computationally expensive that its async and cast to a thread to avoid blocking.
-            # Why do I not just do this the smart way? I'm lazy and have a headache.
-            while lesson is None:
-                lesson = self.next_lesson(date)
-                if lesson is None:
-                    date += timedelta(minutes=5)
-                else:
-                    break
+        # Check if there's another lesson today
+        lesson = self.next_lesson(date)
+        # If there's another lesson, great, return that
+        # Otherwise, we need to start looking ahead.
+        if lesson is None:
+            # Loop until we find the next day when it isn't the weekend, and we aren't on break.
+            next_available_date = date.replace(hour=0, minute=0, second=0)
+            while self.are_on_break(next_available_date) or not self.timetable.get(next_available_date.strftime("%A").lower()):
+                next_available_date += timedelta(days=1)
+                if next_available_date.year >= 2024:
+                    raise RuntimeError("Failed to fetch absolute next lesson")
+                # NOTE: This could be *even* more efficient but honestly as long as it works it's fine
+            lesson = self.next_lesson(next_available_date)  # This *must* be a date given the second part of the
+            # while loop's `or` statement.
+            assert lesson, "Unable to figure out the next lesson."
         return lesson
 
     async def update_timetable_message(
