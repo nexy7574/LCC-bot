@@ -37,8 +37,10 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
 
 
 @bot.listen("on_command_error")
-async def on_command_error(ctx: discord.ApplicationContext, error: Exception):
-    await ctx.respond("Command Error: `%r`" % error)
+async def on_command_error(ctx: commands.Context, error: Exception):
+    if isinstance(error, commands.CommandNotFound):
+        return
+    await ctx.reply("Command Error: `%r`" % error)
     raise error
 
 

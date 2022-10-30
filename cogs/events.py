@@ -89,6 +89,8 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
+        if not message.guild:
+            return
         if message.channel.name == "pinboard":
             if message.type == discord.MessageType.pins_add:
                 await message.delete(delay=0.01)
