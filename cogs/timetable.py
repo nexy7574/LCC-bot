@@ -101,6 +101,8 @@ class TimeTableCog(commands.Cog):
                 while self.are_on_break(next_available_date) or not self.timetable.get(date.strftime("%A").lower()):
                     print("[absolute next lesson] Next available date is on break? ",
                           bool(self.are_on_break(next_available_date)))
+                    print("[absolute next lesson] Next available date:", date.strftime("%A").lower(),
+                          "(available:", ", ".join(self.timetable.keys()) + ")")
                     print("[absolute next lesson] Is timetabled date?", self.timetable.get(date.strftime("%A").lower()))
                     next_available_date += timedelta(days=1)
                     if next_available_date.year >= 2024:
