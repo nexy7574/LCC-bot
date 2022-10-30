@@ -16,11 +16,10 @@ def is_sane_time(time: list[int, int]) -> Union[bool, AssertionError]:
         assert minute in range(0, 60), "Invalid minute range - must be between (inclusive) 0 & 59"
         if minute % 15 != 0:
             warnings.warn(
-                UserWarning(
-                    "Time '%s:%s' is probably not a valid timetable time, as lessons are every 15 minutes."
-                )
+                UserWarning("Time '%s:%s' is probably not a valid timetable time, as lessons are every 15 minutes.")
             )
         return True
+
     try:
         return inner()
     except AssertionError as e:

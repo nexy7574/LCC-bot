@@ -8,17 +8,10 @@ bot = commands.Bot(
     commands.when_mentioned_or("h!"),
     debug_guilds=config.guilds,
     allowed_mentions=discord.AllowedMentions.none(),
-    intents=discord.Intents.default() + discord.Intents.members
+    intents=discord.Intents.default() + discord.Intents.members,
 )
 
-extensions = [
-    "jishaku",
-    "cogs.verify",
-    "cogs.mod",
-    "cogs.events",
-    "cogs.assignments",
-    "cogs.timetable"
-]
+extensions = ["jishaku", "cogs.verify", "cogs.mod", "cogs.events", "cogs.assignments", "cogs.timetable"]
 for ext in extensions:
     bot.load_extension(ext)
     console.log(f"Loaded extension [green]{ext}")

@@ -8,11 +8,7 @@ from .views import *
 
 
 def simple_embed_paginator(
-        lines: list[str],
-        *,
-        assert_ten: bool = False,
-        empty_is_none: bool = True,
-        **kwargs
+    lines: list[str], *, assert_ten: bool = False, empty_is_none: bool = True, **kwargs
 ) -> Optional[list[discord.Embed]]:
     """Paginates x lines into x embeds."""
     if not lines and empty_is_none is True:

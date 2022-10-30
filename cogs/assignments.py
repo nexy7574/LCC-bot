@@ -8,16 +8,13 @@ from discord.ext import commands, tasks
 import config
 from utils import Assignments, Tutors, simple_embed_paginator, get_or_none, Student, hyperlink, console
 
-BOOL_EMOJI = {
-    True: "\N{white heavy check mark}",
-    False: "\N{cross mark}"
-}
+BOOL_EMOJI = {True: "\N{white heavy check mark}", False: "\N{cross mark}"}
 
 TUTOR_OPTION = discord.Option(
     str,
     "The tutor who assigned the project",
     default=None,
-    choices=[x.title() for x in dir(Tutors) if not x.startswith("__") and x not in ("name", "value")]
+    choices=[x.title() for x in dir(Tutors) if not x.startswith("__") and x not in ("name", "value")],
 )
 __MARK_AS_OPTION_OPTIONS = ("unfinished", "finished", "unsubmitted", "submitted")
 MARK_AS_OPTION = discord.Option(
@@ -29,7 +26,7 @@ MARK_AS_OPTION = discord.Option(
             value=__MARK_AS_OPTION_OPTIONS.index(x),
         )
         for x in __MARK_AS_OPTION_OPTIONS
-    ]
+    ],
 )
 
 
@@ -39,12 +36,8 @@ class TutorSelector(discord.ui.View):
     @discord.ui.select(
         placeholder="Select a tutor name",
         options=[
-            discord.SelectOption(
-                label=x.title(),
-                value=x.upper()
-            )
-            for x in [y.name for y in TUTOR_OPTION.choices]
-        ]
+            discord.SelectOption(label=x.title(), value=x.upper()) for x in [y.name for y in TUTOR_OPTION.choices]
+        ],
     )
     async def select_tutor(self, select: discord.ui.Select, interaction2: discord.Interaction):
         await interaction2.response.defer(invisible=True)
@@ -56,13 +49,10 @@ async def assignment_autocomplete(ctx: discord.AutocompleteContext) -> list[str]
     if not ctx.value:
         results: list[Assignments] = await Assignments.objects.order_by("-due_by").limit(7).all()
     else:
-        results: list[Assignments] = await Assignments.objects.filter(
-            title__icontains=ctx.value
-        ).limit(30).order_by("-entry_id").all()
-    return [
-        textwrap.shorten(f"{x.entry_id}: {x.title}", 100, placeholder="...")
-        for x in results
-    ]
+        results: list[Assignments] = (
+            await Assignments.objects.filter(title__icontains=ctx.value).limit(30).order_by("-entry_id").all()
+        )
+    return [textwrap.shorten(f"{x.entry_id}: {x.title}", 100, placeholder="...") for x in results]
 
 
 # noinspection DuplicatedCode
@@ -80,16 +70,10 @@ class AssignmentsCog(commands.Cog):
             await self.bot.wait_until_ready()
         try:
             view_command = "</{0.name} view:{0.id}>".format(
-                    self.bot.get_application_command(
-                        "assignments",
-                        type=discord.SlashCommandGroup
-                    )
+                self.bot.get_application_command("assignments", type=discord.SlashCommandGroup)
             )
             edit_command = "</{0.name} edit:{0.id}>".format(
-                    self.bot.get_application_command(
-                        "assignments",
-                        type=discord.SlashCommandGroup
-                    )
+                self.bot.get_application_command("assignments", type=discord.SlashCommandGroup)
             )
         except AttributeError:
             view_command = "`/assignments view`"
@@ -100,10 +84,12 @@ class AssignmentsCog(commands.Cog):
         if not general.can_send():
             return
 
-        msg_format = "@everyone {reminder_name} reminder for project {project_title} for **{project_tutor}**!\n" \
-                     "Run '%s {project_title}' to view information on the assignment.\n" \
-                     "*You can mark this assignment as complete with '%s {project_title}', which will prevent" \
-                     " further reminders.*" % (view_command, edit_command)
+        msg_format = (
+            "@everyone {reminder_name} reminder for project {project_title} for **{project_tutor}**!\n"
+            "Run '%s {project_title}' to view information on the assignment.\n"
+            "*You can mark this assignment as complete with '%s {project_title}', which will prevent"
+            " further reminders.*" % (view_command, edit_command)
+        )
 
         now = datetime.datetime.now()
         assignments: list[Assignments] = await Assignments.objects.filter(submitted=False).all()
@@ -126,9 +112,9 @@ class AssignmentsCog(commands.Cog):
                                         msg_format.format(
                                             reminder_name=reminder_name,
                                             project_title=textwrap.shorten(assignment.title, 100, placeholder="..."),
-                                            project_tutor=assignment.tutor.name.title()
+                                            project_tutor=assignment.tutor.name.title(),
                                         ),
-                                        allowed_mentions=allowed_mentions
+                                        allowed_mentions=allowed_mentions,
                                     )
                                 except discord.HTTPException:
                                     pass
@@ -142,9 +128,9 @@ class AssignmentsCog(commands.Cog):
                                     msg_format.format(
                                         reminder_name=reminder_name,
                                         project_title=textwrap.shorten(assignment.title, 100, placeholder="..."),
-                                        project_tutor=assignment.tutor.name.title()
+                                        project_tutor=assignment.tutor.name.title(),
                                     ),
-                                    allowed_mentions=allowed_mentions
+                                    allowed_mentions=allowed_mentions,
                                 )
                             except discord.HTTPException:
                                 pass
@@ -156,7 +142,7 @@ class AssignmentsCog(commands.Cog):
         embed = discord.Embed(
             title=f"Assignment #{assignment.entry_id}",
             description=f"**Title:**\n>>> {assignment.title}",
-            colour=discord.Colour.random()
+            colour=discord.Colour.random(),
         )
 
         if assignment.classroom:
@@ -172,37 +158,29 @@ class AssignmentsCog(commands.Cog):
         embed.add_field(name="Classroom URL:", value=classroom, inline=False),
         embed.add_field(name="Shared Document URL:", value=shared_doc)
         embed.add_field(name="Tutor:", value=assignment.tutor.name.title(), inline=False)
-        user_id = getattr(assignment.created_by, 'user_id', assignment.entry_id)
-        embed.add_field(
-            name="Created:",
-            value=f"<t:{assignment.created_at:.0f}:R> by <@{user_id}>",
-            inline=False
-        )
+        user_id = getattr(assignment.created_by, "user_id", assignment.entry_id)
+        embed.add_field(name="Created:", value=f"<t:{assignment.created_at:.0f}:R> by <@{user_id}>", inline=False)
         embed.add_field(
             name="Due:",
             value=f"<t:{assignment.due_by:.0f}:R> "
-                  f"(finished: {BOOL_EMOJI[assignment.finished]} | Submitted: {BOOL_EMOJI[assignment.submitted]})",
-            inline=False
+            f"(finished: {BOOL_EMOJI[assignment.finished]} | Submitted: {BOOL_EMOJI[assignment.submitted]})",
+            inline=False,
         )
         if assignment.reminders:
             embed.set_footer(text="Reminders sent: " + ", ".join(assignment.reminders))
         return embed
 
-    assignments_command = discord.SlashCommandGroup(
-        "assignments",
-        "Assignment/project management",
-        guild_only=True
-    )
+    assignments_command = discord.SlashCommandGroup("assignments", "Assignment/project management", guild_only=True)
 
     @assignments_command.command(name="list")
     async def list_assignments(
-            self,
-            ctx: discord.ApplicationContext,
-            limit: int = 20,
-            upcoming_only: bool = True,
-            tutor_name: TUTOR_OPTION = None,
-            unfinished_only: bool = False,
-            unsubmitted_only: bool = False
+        self,
+        ctx: discord.ApplicationContext,
+        limit: int = 20,
+        upcoming_only: bool = True,
+        tutor_name: TUTOR_OPTION = None,
+        unfinished_only: bool = False,
+        unsubmitted_only: bool = False,
     ):
         """Lists assignments."""
         tutor_name: Optional[str]
@@ -231,13 +209,9 @@ class AssignmentsCog(commands.Cog):
             )
 
         embeds = simple_embed_paginator(lines, assert_ten=True, colour=ctx.author.colour)
-        embeds = embeds or [
-            discord.Embed(description="No projects match the provided criteria.")
-        ]
+        embeds = embeds or [discord.Embed(description="No projects match the provided criteria.")]
 
-        return await ctx.respond(
-            embeds=embeds
-        )
+        return await ctx.respond(embeds=embeds)
 
     @assignments_command.command(name="add")
     async def create_assignment(self, ctx: discord.ApplicationContext):
@@ -255,7 +229,7 @@ class AssignmentsCog(commands.Cog):
                     "classroom": None,
                     "shared_doc": None,
                     "due_by": None,
-                    "tutor": None
+                    "tutor": None,
                 }
                 super().__init__(
                     discord.ui.InputText(
@@ -263,7 +237,7 @@ class AssignmentsCog(commands.Cog):
                         label="Assignment Title",
                         min_length=2,
                         max_length=2000,
-                        value=self.create_kwargs["title"]
+                        value=self.create_kwargs["title"],
                     ),
                     discord.ui.InputText(
                         custom_id="classroom",
@@ -271,7 +245,7 @@ class AssignmentsCog(commands.Cog):
                         max_length=4000,
                         required=False,
                         placeholder="Optional, can be added later.",
-                        value=self.create_kwargs["classroom"]
+                        value=self.create_kwargs["classroom"],
                     ),
                     discord.ui.InputText(
                         custom_id="shared_doc",
@@ -279,7 +253,7 @@ class AssignmentsCog(commands.Cog):
                         max_length=4000,
                         required=False,
                         placeholder="Google docs, slides, powerpoint, etc. Optional.",
-                        value=self.create_kwargs["shared_doc"]
+                        value=self.create_kwargs["shared_doc"],
                     ),
                     discord.ui.InputText(
                         custom_id="due_by",
@@ -289,11 +263,12 @@ class AssignmentsCog(commands.Cog):
                         placeholder="dd/mm/yy hh:mm".upper(),
                         value=(
                             self.create_kwargs["due_by"].strftime("%d/%m/%y %H:%M")
-                            if self.create_kwargs["due_by"] else None
-                        )
+                            if self.create_kwargs["due_by"]
+                            else None
+                        ),
                     ),
                     title="Add an assignment",
-                    timeout=300
+                    timeout=300,
                 )
 
             async def callback(self, interaction: discord.Interaction):
@@ -304,9 +279,10 @@ class AssignmentsCog(commands.Cog):
                 try:
                     self.create_kwargs["due_by"] = datetime.datetime.strptime(
                         self.children[3].value,
-                        "%d/%m/%y %H:%M" if len(self.children[3].value) == 14 else "%d/%m/%Y %H:%M"
+                        "%d/%m/%y %H:%M" if len(self.children[3].value) == 14 else "%d/%m/%Y %H:%M",
                     )
                 except ValueError:
+
                     class TryAgainView(discord.ui.View):
                         def __init__(self, kw):
                             self._mod = None
@@ -327,10 +303,7 @@ class AssignmentsCog(commands.Cog):
                             self.stop()
 
                     v = TryAgainView(self.create_kwargs)
-                    msg = await interaction.followup.send(
-                        "\N{cross mark} Failed to parse date - try again?",
-                        view=v
-                    )
+                    msg = await interaction.followup.send("\N{cross mark} Failed to parse date - try again?", view=v)
                     await v.wait()
                     if v.modal:
                         self.create_kwargs = v.modal.create_kwargs
@@ -338,10 +311,7 @@ class AssignmentsCog(commands.Cog):
                         return
                 else:
                     view = TutorSelector()
-                    msg = await interaction.followup.send(
-                        "Which tutor assigned this project?",
-                        view=view
-                    )
+                    msg = await interaction.followup.send("Which tutor assigned this project?", view=view)
                     await view.wait()
                     self.create_kwargs["tutor"] = view.value
 
@@ -353,25 +323,18 @@ class AssignmentsCog(commands.Cog):
         await modal.wait()
         if not modal.msg:
             return
-        await modal.msg.edit(
-            content="Creating assignment...",
-            view=None
-        )
+        await modal.msg.edit(content="Creating assignment...", view=None)
         try:
             modal.create_kwargs["due_by"] = modal.create_kwargs["due_by"].timestamp()
             await Assignments.objects.create(**modal.create_kwargs)
         except sqlite3.Error as e:
             return await modal.msg.edit(content="SQL Error: %s.\nAssignment not saved." % e)
         else:
-            return await modal.msg.edit(
-                content=f"\N{white heavy check mark} Created assignment!"
-            )
+            return await modal.msg.edit(content=f"\N{white heavy check mark} Created assignment!")
 
     @assignments_command.command(name="view")
     async def get_assignment(
-            self,
-            ctx: discord.ApplicationContext,
-            title: discord.Option(str, autocomplete=assignment_autocomplete)
+        self, ctx: discord.ApplicationContext, title: discord.Option(str, autocomplete=assignment_autocomplete)
     ):
         """Views an assignment's details"""
         try:
@@ -389,9 +352,7 @@ class AssignmentsCog(commands.Cog):
 
     @assignments_command.command(name="edit")
     async def edit_assignment(
-            self,
-            ctx: discord.ApplicationContext,
-            title: discord.Option(str, autocomplete=assignment_autocomplete)
+        self, ctx: discord.ApplicationContext, title: discord.Option(str, autocomplete=assignment_autocomplete)
     ):
         """Edits an assignment"""
         try:
@@ -432,15 +393,14 @@ class AssignmentsCog(commands.Cog):
                                 min_length=2,
                                 max_length=4000,
                             ),
-                            title="Update assignment title"
+                            title="Update assignment title",
                         )
 
                     async def callback(self, _interaction: discord.Interaction):
                         await _interaction.response.defer()
                         await assignment.update(title=self.children[0].value)
                         await _interaction.followup.send(
-                            "\N{white heavy check mark} Changed assignment title!",
-                            delete_after=5
+                            "\N{white heavy check mark} Changed assignment title!", delete_after=5
                         )
                         self.stop()
 
@@ -460,7 +420,7 @@ class AssignmentsCog(commands.Cog):
                                 required=False,
                                 max_length=4000,
                             ),
-                            title="Update Classroom url"
+                            title="Update Classroom url",
                         )
 
                     async def callback(self, _interaction: discord.Interaction):
@@ -468,8 +428,7 @@ class AssignmentsCog(commands.Cog):
                         try:
                             await assignment.update(classroom=self.children[0].value)
                             await _interaction.followup.send(
-                                "\N{white heavy check mark} Changed classroom URL!",
-                                delete_after=5
+                                "\N{white heavy check mark} Changed classroom URL!", delete_after=5
                             )
                         except sqlite3.Error:
                             await _interaction.followup.send(
@@ -494,7 +453,7 @@ class AssignmentsCog(commands.Cog):
                                 required=False,
                                 max_length=4000,
                             ),
-                            title="Update shared document url"
+                            title="Update shared document url",
                         )
 
                     async def callback(self, _interaction: discord.Interaction):
@@ -502,8 +461,7 @@ class AssignmentsCog(commands.Cog):
                         try:
                             await assignment.update(shared_doc=self.children[0].value)
                             await _interaction.followup.send(
-                                "\N{white heavy check mark} Changed shared doc URL!",
-                                delete_after=5
+                                "\N{white heavy check mark} Changed shared doc URL!", delete_after=5
                             )
                         except sqlite3.Error:
                             await _interaction.followup.send(
@@ -521,14 +479,12 @@ class AssignmentsCog(commands.Cog):
                 await interaction.response.defer()
                 view = TutorSelector()
                 msg: discord.WebhookMessage = await interaction.followup.send(
-                    "Which tutor assigned this project?",
-                    view=view
+                    "Which tutor assigned this project?", view=view
                 )
                 await view.wait()
                 await assignment.update(tutor=view.value)
                 await msg.edit(
-                    content=f"\N{white heavy check mark} Changed tutor to {view.value.name.title()}",
-                    view=None
+                    content=f"\N{white heavy check mark} Changed tutor to {view.value.name.title()}", view=None
                 )
                 await msg.delete(delay=5)
                 await self.update_display(interaction)
@@ -544,9 +500,9 @@ class AssignmentsCog(commands.Cog):
                                 placeholder=self.date.strftime("%d/%m/%y %H:%M"),
                                 value=self.date.strftime("%d/%m/%y %H:%M"),
                                 min_length=14,
-                                max_length=16
+                                max_length=16,
                             ),
-                            title="Change due by date"
+                            title="Change due by date",
                         )
 
                     async def callback(self, _interaction: discord.Interaction):
@@ -554,7 +510,7 @@ class AssignmentsCog(commands.Cog):
                         try:
                             new = datetime.datetime.strptime(
                                 self.children[1].value,
-                                "%d/%m/%y %H:%M" if len(self.children[1].value) == 14 else "%d/%m/%Y %H:%M"
+                                "%d/%m/%y %H:%M" if len(self.children[1].value) == 14 else "%d/%m/%Y %H:%M",
                             )
                         except ValueError:
                             await _interaction.followup.send(
@@ -566,15 +522,13 @@ class AssignmentsCog(commands.Cog):
                             try:
                                 await assignment.update(due_by=new.timestamp(), reminders=[])
                                 await _interaction.followup.send(
-                                    "\N{white heavy check mark} Changed due by date & reset reminders.",
-                                    delete_after=5
+                                    "\N{white heavy check mark} Changed due by date & reset reminders.", delete_after=5
                                 )
                             except sqlite3.Error:
-                                await _interaction.followup.send(
-                                    "\N{cross mark} Failed to apply changes."
-                                )
+                                await _interaction.followup.send("\N{cross mark} Failed to apply changes.")
                             finally:
                                 self.stop()
+
                 await interaction.response.send_modal(UpdateDateModal())
                 await self.update_display(interaction)
 
@@ -599,7 +553,7 @@ class AssignmentsCog(commands.Cog):
                 if assignment.finished is False and assignment.submitted is False:
                     return await interaction.followup.send(
                         "\N{cross mark} You cannot mark an assignment as submitted if it is not marked as complete!",
-                        delete_after=10
+                        delete_after=10,
                     )
                 await assignment.update(submitted=not assignment.submitted)
                 await self.update_display(interaction)
@@ -607,7 +561,7 @@ class AssignmentsCog(commands.Cog):
                     "\N{white heavy check mark} Assignment is now marked as {}submitted.".format(
                         "in" if assignment.submitted is False else ""
                     ),
-                    delete_after=5
+                    delete_after=5,
                 )
 
             @discord.ui.button(label="Save & Exit")
@@ -621,8 +575,7 @@ class AssignmentsCog(commands.Cog):
                 await interaction.response.defer(ephemeral=True)
                 await assignment.created_by.load()
                 await interaction.followup.send(
-                    embed=AssignmentsCog.generate_assignment_embed(assignment),
-                    ephemeral=True
+                    embed=AssignmentsCog.generate_assignment_embed(assignment), ephemeral=True
                 )
                 await self.update_display(interaction)
 
@@ -630,9 +583,7 @@ class AssignmentsCog(commands.Cog):
 
     @assignments_command.command(name="remove")
     async def remove_assignment(
-            self,
-            ctx: discord.ApplicationContext,
-            title: discord.Option(str, autocomplete=assignment_autocomplete)
+        self, ctx: discord.ApplicationContext, title: discord.Option(str, autocomplete=assignment_autocomplete)
     ):
         """Edits an assignment"""
         try:

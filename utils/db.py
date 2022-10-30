@@ -21,17 +21,9 @@ class Tutors(IntEnum):
 os.chdir(Path(__file__).parent.parent)
 
 
-__all__ = [
-    "registry",
-    "get_or_none",
-    "VerifyCode",
-    "Student",
-    "BannedStudentID",
-    "Assignments",
-    "Tutors"
-]
+__all__ = ["registry", "get_or_none", "VerifyCode", "Student", "BannedStudentID", "Assignments", "Tutors"]
 
-T = TypeVar('T')
+T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
 
 
@@ -83,7 +75,7 @@ class BannedStudentID(orm.Model):
         "entry_id": orm.UUID(primary_key=True, default=uuid.uuid4),
         "student_id": orm.String(min_length=7, max_length=7, unique=True),
         "associated_account": orm.BigInteger(default=None),
-        "banned_at_timestamp": orm.Float(default=lambda: datetime.datetime.utcnow().timestamp())
+        "banned_at_timestamp": orm.Float(default=lambda: datetime.datetime.utcnow().timestamp()),
     }
     if TYPE_CHECKING:
         entry_id: uuid.UUID
@@ -105,7 +97,7 @@ class Assignments(orm.Model):
         "tutor": orm.Enum(Tutors),
         "reminders": orm.JSON(default=[]),
         "finished": orm.Boolean(default=False),
-        "submitted": orm.Boolean(default=False)
+        "submitted": orm.Boolean(default=False),
     }
     if TYPE_CHECKING:
         entry_id: int

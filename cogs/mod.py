@@ -26,8 +26,7 @@ class Mod(commands.Cog):
 
         await member.ban(reason=f"Banned ID {ban.student_id} by {ctx.author}")
         return await ctx.respond(
-            f"\N{white heavy check mark} Banned {ban.student_id} (and {member.mention})",
-            ephemeral=True
+            f"\N{white heavy check mark} Banned {ban.student_id} (and {member.mention})", ephemeral=True
         )
 
     @commands.slash_command(name="unban-student-number")
@@ -45,18 +44,13 @@ class Mod(commands.Cog):
             return await ctx.respond(f"\N{white heavy check mark} Unbanned {student_id}. No user to unban.")
         else:
             try:
-                await ctx.guild.unban(
-                    discord.Object(user_id),
-                    reason=f"Unbanned by {ctx.author}"
-                )
+                await ctx.guild.unban(discord.Object(user_id), reason=f"Unbanned by {ctx.author}")
             except discord.HTTPException as e:
                 return await ctx.respond(
                     f"\N{white heavy check mark} Unbanned {student_id}. Failed to unban {user_id} - HTTP {e.status}."
                 )
             else:
-                return await ctx.respond(
-                    f"\N{white heavy check mark} Unbanned {student_id}. Unbanned {user_id}."
-                )
+                return await ctx.respond(f"\N{white heavy check mark} Unbanned {student_id}. Unbanned {user_id}.")
 
 
 def setup(bot):

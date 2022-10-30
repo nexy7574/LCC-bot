@@ -19,6 +19,7 @@ class _FakeUser:
 
     def __str__(self):
         import random
+
         return f"{random.choice(self.names)}#{str(random.randint(1, 9999)).zfill(4)}"
 
 

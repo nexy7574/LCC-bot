@@ -63,13 +63,13 @@ class VerifyCog(commands.Cog):
             return await ctx.respond(
                 f"{member.mention}'s B number is saved as {student.id!r}.",
                 ephemeral=True,
-                allowed_mentions=discord.AllowedMentions.none()
+                allowed_mentions=discord.AllowedMentions.none(),
             )
         except orm.NoMatch:
             return await ctx.respond(
                 f"{member.mention} has no saved B number.",
                 ephemeral=True,
-                allowed_mentions=discord.AllowedMentions.none()
+                allowed_mentions=discord.AllowedMentions.none(),
             )
 
     @commands.command(name="rebind")
