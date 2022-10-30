@@ -103,6 +103,8 @@ class TimeTableCog(commands.Cog):
                           bool(self.are_on_break(next_available_date)))
                     print("[absolute next lesson] Is timetabled date?", self.timetable.get(date.strftime("%A").lower()))
                     next_available_date += timedelta(days=1)
+                    if next_available_date.year >= 2024:
+                        raise RuntimeError("Failed to fetch absolute next lesson")
                     print("[absolute next lesson] next available date: ", next_available_date)
                     # NOTE: This could be *even* more efficient but honestly as long as it works it's fine
                 print("[absolute next lesson] fetching next lesson on", next_available_date)
