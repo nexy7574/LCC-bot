@@ -31,6 +31,7 @@ class TimeTableCog(commands.Cog):
         for name, dates in self.timetable["breaks"].items():
             start_date = datetime.strptime(dates["start"], "%d/%m/%Y")
             end_date = datetime.strptime(dates["end"], "%d/%m/%Y")
+            # noinspection PyChainedComparisons
             if date.timestamp() <= end_date.timestamp() and date.timestamp() >= start_date.timestamp():
                 return {"name": name, "start": start_date, "end": end_date}
 
@@ -109,9 +110,8 @@ class TimeTableCog(commands.Cog):
     ):
         date = date or datetime.now()
         _break = self.are_on_break(date)
-        if _break:
-            next_lesson = self.next_lesson(_break["end"] + timedelta(days=1, hours=7))
-            next_lesson = next_lesson or {"name": "Unknown", "tutor": "Unknown", "room": "Unknown"}
+        if _break is not None:
+            next_lesson = self.absolute_next_lesson(date)
             text = (
                 "[tt] On break {!r} from {} until {}. Break ends {}, and the first lesson back is "
                 "{lesson[name]!r} with {lesson[tutor]} in {lesson[room]}.".format(
@@ -127,13 +127,7 @@ class TimeTableCog(commands.Cog):
             if not lesson:
                 next_lesson = self.next_lesson(date)
                 if not next_lesson:
-                    next_lesson = await asyncio.to_thread(self.absolute_next_lesson, new_method=True)
-                    next_lesson = next_lesson or {
-                        "name": "unknown",
-                        "tutor": "unknown",
-                        "room": "unknown",
-                        "start_datetime": datetime.max,
-                    }
+                    next_lesson = self.absolute_next_lesson()
                     text = (
                         "[tt] No more lessons today!\n"
                         f"[tt] Next Lesson: {next_lesson['name']!r} with {next_lesson['tutor']} in "
