@@ -121,8 +121,7 @@ class TimeTableCog(commands.Cog):
         date = date or datetime.now()
         _break = self.are_on_break(date)
         if _break:
-            # next_lesson = self.next_lesson(_break["end"] + timedelta(days=1, hours=7))
-            next_lesson = None
+            next_lesson = self.next_lesson(_break["end"] + timedelta(days=1, hours=7))
             next_lesson = next_lesson or {
                 "name": "Unknown",
                 "tutor": "Unknown",
@@ -141,11 +140,11 @@ class TimeTableCog(commands.Cog):
             if not lesson:
                 next_lesson = self.next_lesson(date)
                 if not next_lesson:
-                    # next_lesson = await asyncio.to_thread(
-                    #     self.absolute_next_lesson,
-                    #     new_method=True
-                    # )
-                    next_lesson = {
+                    next_lesson = await asyncio.to_thread(
+                        self.absolute_next_lesson,
+                        new_method=True
+                    )
+                    next_lesson = next_lesson or {
                         "name": "unknown",
                         "tutor": "unknown",
                         "room": "unknown",
