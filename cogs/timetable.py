@@ -106,10 +106,7 @@ class TimeTableCog(commands.Cog):
         date = date or datetime.now()
         _break = self.are_on_break(date)
         if _break:
-            next_lesson = await asyncio.to_thread(
-                self.absolute_next_lesson,
-                _break["end"] + timedelta(days=1, hours=7)
-            )
+            next_lesson = self.next_lesson(_break["end"] + timedelta(days=1, hours=7))
             next_lesson = next_lesson or {
                 "name": "Unknown",
                 "tutor": "Unknown",
