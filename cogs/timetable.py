@@ -31,7 +31,7 @@ class TimeTableCog(commands.Cog):
         for name, dates in self.timetable["breaks"].items():
             start_date = datetime.strptime(dates["start"], "%d/%m/%Y")
             end_date = datetime.strptime(dates["end"], "%d/%m/%Y")
-            if date.timestamp() in range(int(start_date.timestamp()), int(end_date.timestamp())):
+            if date.timestamp() <= end_date.timestamp() and date.timestamp() >= start_date.timestamp():
                 return {
                     "name": name,
                     "start": start_date,
