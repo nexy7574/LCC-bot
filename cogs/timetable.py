@@ -82,18 +82,33 @@ class TimeTableCog(commands.Cog):
                 lesson["start_datetime"] = end_datetime
                 return lesson
 
-    def absolute_next_lesson(self, date: datetime = None) -> dict:
-        # this function wastes so many CPU cycles.
-        # Its also so computationally expensive that its async and cast to a thread to avoid blocking.
-        # Why do I not just do this the smart way? I'm lazy and have a headache.
+    def absolute_next_lesson(self, date: datetime = None, *, new_method: bool = False) -> dict:
         lesson = None
         date = date or datetime.now()
-        while lesson is None:
+        if new_method is True:
+            # Check if there's another lesson today
             lesson = self.next_lesson(date)
+            # If there's another lesson, great, return that
+            # Otherwise, we need to start looking ahead.
             if lesson is None:
-                date += timedelta(minutes=5)
-            else:
-                break
+                # Loop until we find the next day when it isn't the weekend, and we aren't on break.
+                next_available_date = date.replace(hour=0, minute=0, second=0) + timedelta(days=1)
+                while self.are_on_break(next_available_date) or not self.timetable.get(date.strftime("%A").lower()):
+                    next_available_date += timedelta(days=1)
+                    # NOTE: This could be *even* more efficient but honestly as long as it works it's fine
+                lesson = self.next_lesson(next_available_date)  # This *must* be a date given the second part of the
+                # while loop's `or` statement.
+                assert lesson, "Unable to figure out the next lesson."
+        else:
+            # this function wastes so many CPU cycles.
+            # Its also so computationally expensive that its async and cast to a thread to avoid blocking.
+            # Why do I not just do this the smart way? I'm lazy and have a headache.
+            while lesson is None:
+                lesson = self.next_lesson(date)
+                if lesson is None:
+                    date += timedelta(minutes=5)
+                else:
+                    break
         return lesson
 
     async def update_timetable_message(
@@ -126,7 +141,8 @@ class TimeTableCog(commands.Cog):
                 next_lesson = self.next_lesson(date)
                 if not next_lesson:
                     next_lesson = await asyncio.to_thread(
-                        self.absolute_next_lesson
+                        self.absolute_next_lesson,
+                        new_method=True
                     )
                     text = "[tt] No more lessons today!\n" \
                            f"[tt] Next Lesson: {next_lesson['name']!r} with {next_lesson['tutor']} in " \
