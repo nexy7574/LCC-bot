@@ -140,10 +140,16 @@ class TimeTableCog(commands.Cog):
             if not lesson:
                 next_lesson = self.next_lesson(date)
                 if not next_lesson:
-                    next_lesson = await asyncio.to_thread(
-                        self.absolute_next_lesson,
-                        new_method=True
-                    )
+                    # next_lesson = await asyncio.to_thread(
+                    #     self.absolute_next_lesson,
+                    #     new_method=True
+                    # )
+                    next_lesson = {
+                        "name": "unknown",
+                        "tutor": "unknown",
+                        "room": "unknown",
+                        "start_datetime": datetime.max
+                    }
                     text = "[tt] No more lessons today!\n" \
                            f"[tt] Next Lesson: {next_lesson['name']!r} with {next_lesson['tutor']} in " \
                            f"{next_lesson['room']} - " \
