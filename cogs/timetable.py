@@ -85,19 +85,30 @@ class TimeTableCog(commands.Cog):
     def absolute_next_lesson(self, date: datetime = None, *, new_method: bool = False) -> dict:
         lesson = None
         date = date or datetime.now()
+        print("[absolute next lesson] Date:", date)
         if new_method is True:
+            print("[absolute next lesson] Using new method.")
             # Check if there's another lesson today
             lesson = self.next_lesson(date)
+            print("[absolute next lesson] Next lesson today:", lesson)
             # If there's another lesson, great, return that
             # Otherwise, we need to start looking ahead.
             if lesson is None:
+                print("[absolute next lesson] Next lesson was None")
                 # Loop until we find the next day when it isn't the weekend, and we aren't on break.
-                next_available_date = date.replace(hour=0, minute=0, second=0) + timedelta(days=1)
+                next_available_date = date.replace(hour=0, minute=0, second=0)
+                print("[absolute next lesson] next available date: ", next_available_date)
                 while self.are_on_break(next_available_date) or not self.timetable.get(date.strftime("%A").lower()):
+                    print("[absolute next lesson] Next available date is on break? ",
+                          bool(self.are_on_break(next_available_date)))
+                    print("[absolute next lesson] Is timetabled date?", self.timetable.get(date.strftime("%A").lower()))
                     next_available_date += timedelta(days=1)
+                    print("[absolute next lesson] next available date: ", next_available_date)
                     # NOTE: This could be *even* more efficient but honestly as long as it works it's fine
+                print("[absolute next lesson] fetching next lesson on", next_available_date)
                 lesson = self.next_lesson(next_available_date)  # This *must* be a date given the second part of the
                 # while loop's `or` statement.
+                print("[absolute next lesson] next lesson on %s: %s" % (next_available_date, lesson))
                 assert lesson, "Unable to figure out the next lesson."
         else:
             # this function wastes so many CPU cycles.
