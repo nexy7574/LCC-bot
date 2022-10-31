@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from typing import Optional, Union, Dict
 
 import discord
@@ -80,7 +81,6 @@ class TimeTableCog(commands.Cog):
                 return lesson
 
     def absolute_next_lesson(self, date: datetime = None) -> dict:
-        lesson = None
         date = date or datetime.now()
         # Check if there's another lesson today
         lesson = self.next_lesson(date)
@@ -158,22 +158,32 @@ class TimeTableCog(commands.Cog):
     # noinspection DuplicatedCode
     @tasks.loop(time=schedule_times())
     async def update_status(self):
+        print("[TimeTable Updater Task] Running!")
         if not self.bot.is_ready():
+            print("[TimeTable Updater Task] Bot is not ready, waiting until ready.")
             await self.bot.wait_until_ready()
         guild: discord.Guild = self.bot.get_guild(994710566612500550)
+        print("[TimeTable Updater Task] Fetched source server.")
         channel = discord.utils.get(guild.text_channels, name="timetable")
         channel = channel or discord.utils.get(guild.text_channels, name="general")
+        if not channel:
+            print("[TimeTable Updater Task] No channel to update in!!", file=sys.stderr)
+            return
         channel: discord.TextChannel
+        print("[TimeTable Updater Task] Updating in channel %r." % channel.name)
 
         async for _message in channel.history(limit=20, oldest_first=False):
             if _message.author == self.bot.user and _message.content.startswith("[tt]"):
                 message = _message
                 break
         else:
+            print(f"[TimeTable Updater Task] Sending new message in {channel.name!r}.", file=sys.stderr)
             message = await channel.send("[tt] (loading)")
 
         message: discord.Message
-        await self.update_timetable_message(message)
+        print(f"[TimeTable Updater Task] Updating message: {channel.id}/{message.id}")
+        r = await self.update_timetable_message(message)
+        print("[TimeTable Updater Task] Done! (exit result %r)" % r)
 
     @commands.slash_command()
     async def lesson(self, ctx: discord.ApplicationContext, *, date: str = None):
