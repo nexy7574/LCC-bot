@@ -15,9 +15,9 @@ def schedule_times():
     for h in range(24):
         for m in range(0, 60, 15):
             times.append(time(h, m, 0))
-    print("[TimeTable Updater Task] Update times:")
+    console.print("[TimeTable Updater Task] Update times:")
     for _time in times:
-        print("[TimeTable Updater Task] {0.hour}:{0.minute}".format(_time))
+        console.print("[TimeTable Updater Task] {0.hour}:{0.minute}".format(_time))
     return times
 
 
@@ -162,32 +162,32 @@ class TimeTableCog(commands.Cog):
     # @tasks.loop(time=schedule_times())
     @tasks.loop(minutes=5)
     async def update_status(self):
-        print("[TimeTable Updater Task] Running!")
+        console.log("[TimeTable Updater Task] Running!")
         if not self.bot.is_ready():
-            print("[TimeTable Updater Task] Bot is not ready, waiting until ready.")
+            console.log("[TimeTable Updater Task] Bot is not ready, waiting until ready.")
             await self.bot.wait_until_ready()
         guild: discord.Guild = self.bot.get_guild(994710566612500550)
-        print("[TimeTable Updater Task] Fetched source server.")
+        console.log("[TimeTable Updater Task] Fetched source server.")
         channel = discord.utils.get(guild.text_channels, name="timetable")
         channel = channel or discord.utils.get(guild.text_channels, name="general")
         if not channel:
-            print("[TimeTable Updater Task] No channel to update in!!", file=sys.stderr)
+            console.log("[TimeTable Updater Task] No channel to update in!!", file=sys.stderr)
             return
         channel: discord.TextChannel
-        print("[TimeTable Updater Task] Updating in channel %r." % channel.name)
+        console.log("[TimeTable Updater Task] Updating in channel %r." % channel.name)
 
         async for _message in channel.history(limit=20, oldest_first=False):
             if _message.author == self.bot.user and _message.content.startswith("[tt]"):
                 message = _message
                 break
         else:
-            print(f"[TimeTable Updater Task] Sending new message in {channel.name!r}.", file=sys.stderr)
+            console.log(f"[TimeTable Updater Task] Sending new message in {channel.name!r}.", file=sys.stderr)
             message = await channel.send("[tt] (loading)")
 
         message: discord.Message
-        print(f"[TimeTable Updater Task] Updating message: {channel.id}/{message.id}")
+        console.log(f"[TimeTable Updater Task] Updating message: {channel.id}/{message.id}")
         r = await self.update_timetable_message(message)
-        print("[TimeTable Updater Task] Done! (exit result %r)" % r)
+        console.log("[TimeTable Updater Task] Done! (exit result %r)" % r)
 
     @commands.slash_command()
     async def lesson(self, ctx: discord.ApplicationContext, *, date: str = None):
