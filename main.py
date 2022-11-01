@@ -37,6 +37,14 @@ async def on_command_error(ctx: commands.Context, error: Exception):
     raise error
 
 
+@bot.listen("on_application_command")
+async def on_application_command(ctx: discord.ApplicationContext):
+    console.log(
+        "{0.author} ({0.author.id}) used application command /{0.command.qualified_name} in "
+        "#{0.channel}, {0.guild}".format(ctx)
+    )
+
+
 @bot.event
 async def on_ready():
     console.log("Logged in as", bot.user)
