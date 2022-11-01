@@ -15,6 +15,9 @@ def schedule_times():
     for h in range(24):
         for m in range(0, 60, 15):
             times.append(time(h, m, 0))
+    print("[TimeTable Updater Task] Update times:")
+    for _time in times:
+        print("[TimeTable Updater Task] {0.hour}:{0.minute}".format(_time))
     return times
 
 
@@ -24,6 +27,9 @@ class TimeTableCog(commands.Cog):
         with (Path.cwd() / "utils" / "timetable.json").open() as file:
             self.timetable = json.load(file)
         self.update_status.start()
+
+    def cog_unload(self):
+        self.update_status.stop()
 
     def are_on_break(self, date: datetime = None) -> Optional[Dict[str, Union[str, datetime]]]:
         """Checks if the date is one as a term break"""
@@ -35,9 +41,6 @@ class TimeTableCog(commands.Cog):
             # noinspection PyChainedComparisons
             if date.timestamp() <= end_date.timestamp() and date.timestamp() >= start_date.timestamp():
                 return {"name": name, "start": start_date, "end": end_date}
-
-    def cog_unload(self):
-        self.update_status.stop()
 
     def current_lesson(self, date: datetime = None) -> Optional[dict]:
         date = date or datetime.now()
