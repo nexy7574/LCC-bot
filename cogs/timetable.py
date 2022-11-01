@@ -159,7 +159,8 @@ class TimeTableCog(commands.Cog):
         await message.edit(content=text, allowed_mentions=discord.AllowedMentions.none())
 
     # noinspection DuplicatedCode
-    @tasks.loop(time=schedule_times())
+    # @tasks.loop(time=schedule_times())
+    @tasks.loop(minutes=5)
     async def update_status(self):
         print("[TimeTable Updater Task] Running!")
         if not self.bot.is_ready():
