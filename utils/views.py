@@ -160,9 +160,14 @@ class TimeTableDaySwitcherView(View):
 
         day_before = self.current_date + timedelta(days=-1)
         day_after = self.current_date + timedelta(days=1)
-        self.get_item("day_before").label = _format(day_before)
-        self.get_item("day_after").label = _format(day_after)
-        self.get_item("custom_day").label = _format(self.current_date)
+        for child in self.children:
+            # noinspection PyUnresolvedReferences
+            if child.custom_id == "day_before":
+                child.label = _format(day_before)
+            elif child.custom_id == "day_after":
+                child.label = _format(day_after)
+            else:
+                child.label = _format(self.current_date)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return interaction.user == self.user
