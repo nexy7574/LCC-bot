@@ -1,13 +1,18 @@
 import secrets
+from datetime import datetime, timedelta
 
 import discord
+import typing
 import re
 import orm
+from discord.ui import View
 
 from utils import send_verification_code, get_or_none, Student, VerifyCode, console, TOKEN_LENGTH, BannedStudentID
+if typing.TYPE_CHECKING:
+    from cogs.timetable import TimeTableCog
 
 
-class VerifyView(discord.ui.View):
+class VerifyView(View):
     def __init__(self, ctx: discord.ApplicationContext):
         self.ctx = ctx
         super().__init__(timeout=300, disable_on_timeout=True)
@@ -141,3 +146,55 @@ class VerifyView(discord.ui.View):
             ephemeral=True,
             delete_after=60,
         )
+
+
+class TimeTableDaySwitcherView(View):
+    def __init__(self, user: discord.User, instance: "TimeTableCog", date: datetime):
+        super().__init__(disable_on_timeout=True)
+        self.user = user
+        self.cog = instance
+        self.current_date = date
+        self.update_buttons()
+
+    def mod_date(self, by: int):
+        self.current_date += timedelta(days=by)
+        self.update_buttons()
+
+    def update_buttons(self):
+        def _format(d: datetime) -> str:
+            return d.strftime("(%A) %d/%m/%Y")
+
+        day_before = self.current_date + timedelta(days=-1)
+        day_after = self.current_date + timedelta(days=1)
+        self.get_item("day_before").label = _format(day_before)
+        self.get_item("day_after").label = _format(day_after)
+        self.get_item("custom_day").label = _format(self.current_date)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        return interaction.user == self.user
+
+    @discord.ui.button(
+        custom_id="day_before",
+        emoji="\N{leftwards black arrow}"
+    )
+    async def day_before(self, _, interaction: discord.Interaction):
+        self.mod_date(-1)
+        await interaction.response.edit_message(self.cog.format_timetable_message(self.current_date), view=self)
+
+    @discord.ui.button(
+        custom_id="custom_day",
+        emoji="\N{tear-off calendar}",
+        disabled=True,
+        style=discord.ButtonStyle.primary
+    )
+    async def current_day(self, _, __):
+        ...
+
+    @discord.ui.button(
+        custom_id="day_after",
+        emoji="\N{leftwards black arrow}"
+    )
+    async def day_before(self, _, interaction: discord.Interaction):
+        self.mod_date(-1)
+        await interaction.response.edit_message(self.cog.format_timetable_message(self.current_date), view=self)
+

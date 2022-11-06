@@ -1,12 +1,12 @@
 import asyncio
 import sys
-from typing import Optional, Union, Dict
+from typing import Optional, Union, Dict, Callable
 
 import discord
 from discord.ext import commands, tasks
 import json
 from pathlib import Path
-from utils import console
+from utils import console, TimeTableDaySwitcherView
 from datetime import time, datetime, timedelta
 
 
@@ -41,6 +41,27 @@ class TimeTableCog(commands.Cog):
             # noinspection PyChainedComparisons
             if date.timestamp() <= end_date.timestamp() and date.timestamp() >= start_date.timestamp():
                 return {"name": name, "start": start_date, "end": end_date}
+
+    def format_timetable_message(self, date: datetime) -> str:
+        """Pre-formats the timetable or error message."""
+        if _break := self.are_on_break(date):
+            return f"No lessons on {discord.utils.format_dt(date, 'D')} - On break {_break['name']!r}."
+
+        lessons = self.timetable.get(date.strftime("%A").lower(), [])
+        if not lessons:
+            return f"No lessons on {discord.utils.format_dt(date, 'D')}."
+
+        blocks = [f"```\nTimetable for {date.strftime('%A')} ({date.strftime('%d/%m/%Y')}):\n```"]
+        for lesson in lessons:
+            start_datetime = date.replace(hour=lesson["start"][0], minute=lesson["start"][1])
+            end_datetime = date.replace(hour=lesson["end"][0], minute=lesson["end"][1])
+            text = (
+                f"{discord.utils.format_dt(start_datetime, 't')} to {discord.utils.format_dt(end_datetime, 't')}"
+                f":\n> Lesson Name: {lesson['name']!r}\n"
+                f"> Tutor: **{lesson['tutor']}**\n> Room: `{lesson['room']}`"
+            )
+            blocks.append(text)
+        return "\n\n".join(blocks)
 
     def current_lesson(self, date: datetime = None) -> Optional[dict]:
         date = date or datetime.now()
@@ -106,7 +127,7 @@ class TimeTableCog(commands.Cog):
 
     async def update_timetable_message(
         self,
-        message: Union[discord.Message, discord.ApplicationContext],
+        message: Union[discord.Message, discord.ApplicationContext, discord.InteractionMessage],
         date: datetime = None,
         *,
         no_prefix: bool = False,
@@ -213,21 +234,9 @@ class TimeTableCog(commands.Cog):
         else:
             date = datetime.now()
 
-        lessons = self.timetable.get(date.strftime("%A").lower(), [])
-        if not lessons:
-            return await ctx.respond(f"No lessons on {discord.utils.format_dt(date, 'D')}.")
-
-        blocks = [f"```\nTimetable for {date.strftime('%A')}:\n```"]
-        for lesson in lessons:
-            start_datetime = date.replace(hour=lesson["start"][0], minute=lesson["start"][1])
-            end_datetime = date.replace(hour=lesson["end"][0], minute=lesson["end"][1])
-            text = (
-                f"{discord.utils.format_dt(start_datetime, 't')} to {discord.utils.format_dt(end_datetime, 't')}"
-                f":\n> Lesson Name: {lesson['name']!r}\n"
-                f"> Tutor: **{lesson['tutor']}**\n> Room: `{lesson['room']}`"
-            )
-            blocks.append(text)
-        await ctx.respond("\n\n".join(blocks))
+        text = self.format_timetable_message(date)
+        view = TimeTableDaySwitcherView(ctx.author, self, date)
+        await ctx.respond(text, view=view)
 
 
 def setup(bot):
