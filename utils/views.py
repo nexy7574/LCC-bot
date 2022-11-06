@@ -197,5 +197,3 @@ class TimeTableDaySwitcherView(View):
         self.user = user
         self.cog = instance
         self.current_date = date
-        self.update_buttons()
-

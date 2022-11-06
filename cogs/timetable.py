@@ -236,6 +236,7 @@ class TimeTableCog(commands.Cog):
 
         text = self.format_timetable_message(date)
         view = TimeTableDaySwitcherView(ctx.author, self, date)
+        view.update_buttons()
         await ctx.respond(text, view=view)
 
 
