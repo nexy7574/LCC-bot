@@ -191,7 +191,7 @@ class TimeTableDaySwitcherView(View):
 
     @discord.ui.button(
         custom_id="day_after",
-        emoji="\N{rightwards black arrow}"
+        emoji="\N{black rightwards arrow}"
     )
     async def day_after(self, _, interaction: discord.Interaction):
         self.mod_date(1)
