@@ -183,11 +183,37 @@ class TimeTableDaySwitcherView(View):
     @discord.ui.button(
         custom_id="custom_day",
         emoji="\N{tear-off calendar}",
-        disabled=True,
         style=discord.ButtonStyle.primary
     )
-    async def current_day(self, _, __):
-        ...
+    async def current_day(self, _, interaction1: discord.Interaction):
+        self1 = self
+
+        class InputModal(discord.ui.Modal):
+            def __init__(self):
+                super().__init__(
+                    discord.ui.InputText(
+                        label="Date",
+                        placeholder="DD/MM/YY",
+                        min_length=6,
+                        max_length=8,
+                        required=True,
+                    ),
+                    title="Date to view timetable of:"
+                )
+
+            async def callback(self, interaction2: discord.Interaction):
+                try:
+                    self1.current_date = datetime.strptime(self.children[0].value, "%d/%m/%y")
+                except ValueError:
+                    await interaction2.response.send_message("Invalid date", ephemeral=True)
+                else:
+                    self1.update_buttons()
+                    await interaction2.response.edit_message(
+                        content=self1.cog.format_timetable_message(self1.current_date),
+                        view=self1
+                    )
+
+        return await interaction1.response.send_modal(InputModal())
 
     @discord.ui.button(
         custom_id="day_after",
