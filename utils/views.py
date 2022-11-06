@@ -149,12 +149,6 @@ class VerifyView(View):
 
 
 class TimeTableDaySwitcherView(View):
-    def __init__(self, user: discord.User, instance: "TimeTableCog", date: datetime):
-        super().__init__(disable_on_timeout=True)
-        self.user = user
-        self.cog = instance
-        self.current_date = date
-        self.update_buttons()
 
     def mod_date(self, by: int):
         self.current_date += timedelta(days=by)
@@ -197,4 +191,11 @@ class TimeTableDaySwitcherView(View):
     async def day_before(self, _, interaction: discord.Interaction):
         self.mod_date(1)
         await interaction.response.edit_message(self.cog.format_timetable_message(self.current_date), view=self)
+
+    def __init__(self, user: discord.User, instance: "TimeTableCog", date: datetime):
+        super().__init__(disable_on_timeout=True)
+        self.user = user
+        self.cog = instance
+        self.current_date = date
+        self.update_buttons()
 
