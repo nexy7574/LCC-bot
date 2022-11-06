@@ -193,7 +193,7 @@ class TimeTableDaySwitcherView(View):
         custom_id="day_after",
         emoji="\N{leftwards black arrow}"
     )
-    async def day_before(self, _, interaction: discord.Interaction):
+    async def day_after(self, _, interaction: discord.Interaction):
         self.mod_date(1)
         await interaction.response.edit_message(self.cog.format_timetable_message(self.current_date), view=self)
 
