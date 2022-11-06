@@ -178,7 +178,7 @@ class TimeTableDaySwitcherView(View):
     )
     async def day_before(self, _, interaction: discord.Interaction):
         self.mod_date(-1)
-        await interaction.response.edit_message(self.cog.format_timetable_message(self.current_date), view=self)
+        await interaction.response.edit_message(content=self.cog.format_timetable_message(self.current_date), view=self)
 
     @discord.ui.button(
         custom_id="custom_day",
@@ -191,11 +191,11 @@ class TimeTableDaySwitcherView(View):
 
     @discord.ui.button(
         custom_id="day_after",
-        emoji="\N{leftwards black arrow}"
+        emoji="\N{rightwards black arrow}"
     )
     async def day_after(self, _, interaction: discord.Interaction):
         self.mod_date(1)
-        await interaction.response.edit_message(self.cog.format_timetable_message(self.current_date), view=self)
+        await interaction.response.edit_message(content=self.cog.format_timetable_message(self.current_date), view=self)
 
     def __init__(self, user: discord.User, instance: "TimeTableCog", date: datetime):
         super().__init__(disable_on_timeout=True)
