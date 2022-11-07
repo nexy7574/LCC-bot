@@ -98,6 +98,7 @@ class Assignments(orm.Model):
         "reminders": orm.JSON(default=[]),
         "finished": orm.Boolean(default=False),
         "submitted": orm.Boolean(default=False),
+        "assignees": orm.JSON(default=[]),
     }
     if TYPE_CHECKING:
         entry_id: int
@@ -111,3 +112,4 @@ class Assignments(orm.Model):
         reminders: list[str]
         finished: bool
         submitted: bool
+        assignees: list[int]

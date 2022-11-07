@@ -64,6 +64,13 @@ class AssignmentsCog(commands.Cog):
     def cog_unload(self):
         self.reminder_loop.stop()
 
+    def resolve_user(self, user__id: int) -> str:
+        usr = self.bot.get_user(user__id)
+        if usr:
+            return usr.mention
+        else:
+            return f"<@{user__id}>"
+
     @tasks.loop(minutes=10)
     async def reminder_loop(self):
         if not self.bot.is_ready():
@@ -79,13 +86,14 @@ class AssignmentsCog(commands.Cog):
             view_command = "`/assignments view`"
             edit_command = "`/assignments edit`"
         allowed_mentions = discord.AllowedMentions(everyone=True) if not config.dev else discord.AllowedMentions.none()
+        allowed_mentions.users = True
         guild = self.bot.get_guild(config.guilds[0])
         general = discord.utils.get(guild.text_channels, name="general")
         if not general.can_send():
             return
 
         msg_format = (
-            "@everyone {reminder_name} reminder for project {project_title} for **{project_tutor}**!\n"
+            "{mentions} - {reminder_name} reminder for project {project_title} for **{project_tutor}**!\n"
             "Run '%s {project_title}' to view information on the assignment.\n"
             "*You can mark this assignment as complete with '%s {project_title}', which will prevent"
             " further reminders.*" % (view_command, edit_command)
@@ -104,16 +112,18 @@ class AssignmentsCog(commands.Cog):
                 elif isinstance(reminder_time, int) and reminder_time >= (assignment.due_by - assignment.created_at):
                     await assignment.update(reminders=assignment.reminders + [reminder_name])
                 else:
+                    cur_text = msg_format.format(
+                        mentions=", ".join(map(self.resolve_user, assignment.assignees)) or '@everyone',
+                        reminder_name=reminder_name,
+                        project_title=textwrap.shorten(assignment.title, 100, placeholder="..."),
+                        project_tutor=assignment.tutor.name.title(),
+                    )
                     if isinstance(reminder_time, datetime.time):
                         if now.date() == due.date():
                             if now.time().hour == reminder_time.hour:
                                 try:
                                     await general.send(
-                                        msg_format.format(
-                                            reminder_name=reminder_name,
-                                            project_title=textwrap.shorten(assignment.title, 100, placeholder="..."),
-                                            project_tutor=assignment.tutor.name.title(),
-                                        ),
+                                        cur_text,
                                         allowed_mentions=allowed_mentions,
                                     )
                                 except discord.HTTPException:
@@ -125,11 +135,7 @@ class AssignmentsCog(commands.Cog):
                         if time <= now:
                             try:
                                 await general.send(
-                                    msg_format.format(
-                                        reminder_name=reminder_name,
-                                        project_title=textwrap.shorten(assignment.title, 100, placeholder="..."),
-                                        project_tutor=assignment.tutor.name.title(),
-                                    ),
+                                    cur_text,
                                     allowed_mentions=allowed_mentions,
                                 )
                             except discord.HTTPException:
@@ -137,8 +143,7 @@ class AssignmentsCog(commands.Cog):
                             else:
                                 await assignment.update(reminders=assignment.reminders + [reminder_name])
 
-    @staticmethod
-    def generate_assignment_embed(assignment: Assignments) -> discord.Embed:
+    def generate_assignment_embed(self, assignment: Assignments) -> discord.Embed:
         embed = discord.Embed(
             title=f"Assignment #{assignment.entry_id}",
             description=f"**Title:**\n>>> {assignment.title}",
@@ -165,6 +170,10 @@ class AssignmentsCog(commands.Cog):
             value=f"<t:{assignment.due_by:.0f}:R> "
             f"(finished: {BOOL_EMOJI[assignment.finished]} | Submitted: {BOOL_EMOJI[assignment.submitted]})",
             inline=False,
+        )
+        embed.add_field(
+            name="Assignees",
+            value=", ".join(map(self.resolve_user, assignment.assignees))
         )
         if assignment.reminders:
             embed.set_footer(text="Reminders sent: " + ", ".join(assignment.reminders))
@@ -230,6 +239,7 @@ class AssignmentsCog(commands.Cog):
                     "shared_doc": None,
                     "due_by": None,
                     "tutor": None,
+                    "assignees": []
                 }
                 super().__init__(
                     discord.ui.InputText(
@@ -315,6 +325,33 @@ class AssignmentsCog(commands.Cog):
                     await view.wait()
                     self.create_kwargs["tutor"] = view.value
 
+                    class SelectAssigneesView(discord.ui.View):
+                        def __init__(self):
+                            super().__init__()
+                            self.users = []
+
+                        @discord.ui.user_select(placeholder="Select some people...", min_values=0, max_values=20)
+                        async def select_users(self, select: discord.ui.Select, interaction2: discord.Interaction):
+                            self.disable_all_items()
+                            self.users = select.values
+                            await interaction2.edit_original_response(view=self)
+                            self.stop()
+
+                        @discord.ui.button(label="skip", style=discord.ButtonStyle.primary)
+                        async def skip(self, _, interaction2: discord.Interaction):
+                            self.disable_all_items()
+                            await interaction2.edit_original_response(view=self)
+                            self.stop()
+
+                    assigner = SelectAssigneesView()
+                    await msg.edit(
+                        content="Please select people who've been assigned to this task (leave blank or skip to assign"
+                                " everyone)",
+                        view=assigner
+                    )
+                    await assigner.wait()
+                    self.create_kwargs["assignees"] = [x.id for x in assigner.users]
+
                 self.msg = msg
                 self.stop()
 
@@ -363,6 +400,7 @@ class AssignmentsCog(commands.Cog):
         if not assignment:
             return await ctx.respond("\N{cross mark} Unknown assignment.")
         await assignment.created_by.load()
+        cog = self
 
         class EditAssignmentView(discord.ui.View):
             def __init__(self):
@@ -575,7 +613,7 @@ class AssignmentsCog(commands.Cog):
                 await interaction.response.defer(ephemeral=True)
                 await assignment.created_by.load()
                 await interaction.followup.send(
-                    embed=AssignmentsCog.generate_assignment_embed(assignment), ephemeral=True
+                    embed=cog.generate_assignment_embed(assignment), ephemeral=True
                 )
                 await self.update_display(interaction)
 
