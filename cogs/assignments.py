@@ -173,7 +173,7 @@ class AssignmentsCog(commands.Cog):
         )
         embed.add_field(
             name="Assignees",
-            value=", ".join(map(self.resolve_user, assignment.assignees))
+            value=", ".join(map(self.resolve_user, assignment.assignees)) or '*everyone*'
         )
         if assignment.reminders:
             embed.set_footer(text="Reminders sent: " + ", ".join(assignment.reminders))
