@@ -6,7 +6,8 @@ from typing import Optional
 import discord
 from discord.ext import commands, tasks
 import config
-from utils import Assignments, Tutors, simple_embed_paginator, get_or_none, Student, hyperlink, console
+from utils import Assignments, Tutors, simple_embed_paginator, get_or_none, Student, hyperlink, console, \
+    SelectAssigneesView
 
 BOOL_EMOJI = {True: "\N{white heavy check mark}", False: "\N{cross mark}"}
 
@@ -325,24 +326,6 @@ class AssignmentsCog(commands.Cog):
                     await view.wait()
                     self.create_kwargs["tutor"] = view.value
 
-                    class SelectAssigneesView(discord.ui.View):
-                        def __init__(self):
-                            super().__init__()
-                            self.users = []
-
-                        @discord.ui.user_select(placeholder="Select some people...", min_values=0, max_values=20)
-                        async def select_users(self, select: discord.ui.Select, interaction2: discord.Interaction):
-                            self.disable_all_items()
-                            self.users = select.values
-                            await interaction2.edit_original_response(view=self)
-                            self.stop()
-
-                        @discord.ui.button(label="skip", style=discord.ButtonStyle.primary)
-                        async def skip(self, _, interaction2: discord.Interaction):
-                            self.disable_all_items()
-                            await interaction2.edit_original_response(view=self)
-                            self.stop()
-
                     assigner = SelectAssigneesView()
                     await msg.edit(
                         content="Please select people who've been assigned to this task (leave blank or skip to assign"
@@ -568,6 +551,19 @@ class AssignmentsCog(commands.Cog):
                                 self.stop()
 
                 await interaction.response.send_modal(UpdateDateModal())
+                await self.update_display(interaction)
+
+            @discord.ui.button(label="Update assignees")
+            async def update_assignees(self, _, interaction: discord.Interaction):
+                await interaction.response.defer()
+
+                view = SelectAssigneesView()
+                msg: discord.WebhookMessage = await interaction.followup.send(
+                    "Which assignees assigned this project?", view=view
+                )
+                await view.wait()
+                await assignment.update(assignees=[x.id for x in view.users])
+                await msg.delete(delay=5)
                 await self.update_display(interaction)
 
             @discord.ui.button(label="Mark as [in]complete", custom_id="complete")

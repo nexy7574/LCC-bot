@@ -228,3 +228,22 @@ class TimeTableDaySwitcherView(View):
         self.user = user
         self.cog = instance
         self.current_date = date
+
+
+class SelectAssigneesView(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.users = []
+
+    @discord.ui.user_select(placeholder="Select some people...", min_values=0, max_values=20)
+    async def select_users(self, select: discord.ui.Select, interaction2: discord.Interaction):
+        self.disable_all_items()
+        self.users = select.values
+        await interaction2.edit_original_response(view=self)
+        self.stop()
+
+    @discord.ui.button(label="skip", style=discord.ButtonStyle.primary)
+    async def skip(self, _, interaction2: discord.Interaction):
+        self.disable_all_items()
+        await interaction2.edit_original_response(view=self)
+        self.stop()
