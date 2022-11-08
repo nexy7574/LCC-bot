@@ -382,7 +382,10 @@ class AssignmentsCog(commands.Cog):
         assignment: Assignments = await get_or_none(Assignments, entry_id=int(entry_id))
         if not assignment:
             return await ctx.respond("\N{cross mark} Unknown assignment.")
-        await assignment.created_by.load()
+        try:
+            await assignment.created_by.load()
+        except AttributeError as e:
+            console.log(f"[red]Failed to load created_by row for assignment {assignment}: {e}")
         cog = self
 
         class EditAssignmentView(discord.ui.View):
