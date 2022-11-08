@@ -534,7 +534,7 @@ class AssignmentsCog(commands.Cog):
                         try:
                             new = datetime.datetime.strptime(
                                 self.children[0].value,
-                                "%d/%m/%y %H:%M" if len(self.children[1].value) == 14 else "%d/%m/%Y %H:%M",
+                                "%d/%m/%y %H:%M" if len(self.children[0].value) == 14 else "%d/%m/%Y %H:%M",
                             )
                         except ValueError:
                             await _interaction.followup.send(
