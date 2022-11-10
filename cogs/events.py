@@ -95,6 +95,13 @@ class Events(commands.Cog):
             if message.channel.permissions_for(message.guild.me).manage_messages:
                 await message.delete(delay=1)
 
+        else:
+            if message.bot is True:
+                return
+            if message.reference and message.reference.resolved and message.reference.resolved.author == self.bot.user:
+                if message.content.lower() == "good bot":
+                    return await message.reply("Thank you! :D")
+
 
 def setup(bot):
     bot.add_cog(Events(bot))
