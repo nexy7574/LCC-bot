@@ -98,7 +98,7 @@ class Events(commands.Cog):
         else:
             if message.bot is True:
                 return
-            if message.reference and message.reference.resolved and message.reference.resolved.author == self.bot.user:
+            if self.bot.user in message.mentions:
                 if message.content.lower() == "good bot":
                     return await message.reply("Thank you! :D")
 
