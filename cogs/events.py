@@ -96,7 +96,7 @@ class Events(commands.Cog):
                 await message.delete(delay=1)
 
         else:
-            if message.bot is True:
+            if message.author.bot is True:
                 return
             if self.bot.user in message.mentions:
                 if message.content.lower() == "good bot":
