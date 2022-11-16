@@ -2,6 +2,7 @@ import discord
 import aiohttp
 import random
 from discord.ext import commands
+from utils import console
 
 
 class OtherCog(commands.Cog):
@@ -64,6 +65,10 @@ class OtherCog(commands.Cog):
         def __init__(self, n: int):
             super().__init__(timeout=300, disable_on_timeout=True)
             self.n = n
+
+        def __rich_repr__(self):
+            yield "n", self.n
+            yield "message", self.message
 
         @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
         async def previous_comic(self, _, interaction: discord.Interaction):

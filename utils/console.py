@@ -1,5 +1,5 @@
-from rich.console import Console
+from rich import get_console
 
 __all__ = ("console",)
 
-console = Console()
+console = get_console()

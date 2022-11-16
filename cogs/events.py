@@ -99,7 +99,7 @@ class Events(commands.Cog):
             if message.author.bot is True:
                 return
             if self.bot.user in message.mentions:
-                if message.content.lower() == "good bot":
+                if message.content.startswith(self.bot.user.mention) and message.content.lower().endswith("good bot"):
                     return await message.reply("Thank you! :D")
 
 

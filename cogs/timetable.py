@@ -6,6 +6,8 @@ import discord
 from discord.ext import commands, tasks
 import json
 from pathlib import Path
+
+import config
 from utils import console, TimeTableDaySwitcherView
 from datetime import time, datetime, timedelta
 
@@ -183,6 +185,8 @@ class TimeTableCog(commands.Cog):
     # @tasks.loop(time=schedule_times())
     @tasks.loop(minutes=5)
     async def update_status(self):
+        if config.dev:
+            return
         console.log("[TimeTable Updater Task] Running!")
         if not self.bot.is_ready():
             console.log("[TimeTable Updater Task] Bot is not ready, waiting until ready.")
@@ -202,7 +206,7 @@ class TimeTableCog(commands.Cog):
                 message = _message
                 break
         else:
-            console.log(f"[TimeTable Updater Task] Sending new message in {channel.name!r}.", file=sys.stderr)
+            console.log(f"[TimeTable Updater Task] Sending new message in {channel.name!r}.")
             message = await channel.send("[tt] (loading)")
 
         message: discord.Message
