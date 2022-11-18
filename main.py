@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from asyncio import Lock
 import config
 from utils import registry, console
 
@@ -10,6 +11,7 @@ bot = commands.Bot(
     allowed_mentions=discord.AllowedMentions.none(),
     intents=discord.Intents.default() + discord.Intents.members,
 )
+bot.training_lock = Lock()
 
 extensions = ["jishaku", "cogs.verify", "cogs.mod", "cogs.events", "cogs.assignments", "cogs.timetable", "cogs.other"]
 for ext in extensions:

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 from datetime import datetime, time
 
 import discord
@@ -13,8 +13,23 @@ RTL = "\N{leftwards black arrow}\U0000fe0f"
 
 class Events(commands.Cog):
     def __init__(self, bot):
-        self.bot: commands.Bot = bot
+        self.bot = bot
         self.lupupa_warning_task.start()
+
+    # noinspection DuplicatedCode
+    async def analyse_text(self, text: str) -> Optional[Tuple[float, float, float, float]]:
+        """Analyse text for positivity, negativity and neutrality."""
+
+        def inner():
+            try:
+                from utils.sentiment_analysis import intensity_analyser
+            except ImportError:
+                return None
+            scores = intensity_analyser.polarity_scores(text)
+            return scores["pos"], scores["neu"], scores["neg"], scores["compound"]
+
+        async with self.bot.training_lock:
+            return await self.bot.loop.run_in_executor(None, inner)
 
     def cog_unload(self):
         self.lupupa_warning_task.stop()
@@ -99,8 +114,25 @@ class Events(commands.Cog):
             if message.author.bot is True:
                 return
             if self.bot.user in message.mentions:
-                if message.content.startswith(self.bot.user.mention) and message.content.lower().endswith("good bot"):
-                    return await message.reply("Thank you! :D")
+                if message.content.startswith(self.bot.user.mention):
+                    if message.content.lower().endswith("bot"):
+                        pos, neut, neg, _ = await self.analyse_text(message.content)
+                        if pos > neg:
+                            embed = discord.Embed(description=":D", color=discord.Color.green())
+                            embed.set_footer(
+                                text=f"Pos: {pos*100:.2f}% | Neutral: {neut*100:.2f}% | Neg: {neg*100:.2f}%"
+                            )
+                        elif pos == neg:
+                            embed = discord.Embed(description=":|", color=discord.Color.greyple())
+                            embed.set_footer(
+                                text=f"Pos: {pos * 100:.2f}% | Neutral: {neut * 100:.2f}% | Neg: {neg * 100:.2f}%"
+                            )
+                        else:
+                            embed = discord.Embed(description=":(", color=discord.Color.red())
+                            embed.set_footer(
+                                text=f"Pos: {pos*100:.2f}% | Neutral: {neut*100:.2f}% | Neg: {neg*100:.2f}%"
+                            )
+                        return await message.reply(embed=embed)
 
 
 def setup(bot):

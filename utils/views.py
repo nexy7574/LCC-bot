@@ -8,6 +8,7 @@ import orm
 from discord.ui import View
 
 from utils import send_verification_code, get_or_none, Student, VerifyCode, console, TOKEN_LENGTH, BannedStudentID
+
 if typing.TYPE_CHECKING:
     from cogs.timetable import TimeTableCog
 
@@ -149,7 +150,6 @@ class VerifyView(View):
 
 
 class TimeTableDaySwitcherView(View):
-
     def mod_date(self, by: int):
         self.current_date += timedelta(days=by)
         self.update_buttons()
@@ -172,19 +172,12 @@ class TimeTableDaySwitcherView(View):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return interaction.user == self.user
 
-    @discord.ui.button(
-        custom_id="day_before",
-        emoji="\N{leftwards black arrow}"
-    )
+    @discord.ui.button(custom_id="day_before", emoji="\N{leftwards black arrow}")
     async def day_before(self, _, interaction: discord.Interaction):
         self.mod_date(-1)
         await interaction.response.edit_message(content=self.cog.format_timetable_message(self.current_date), view=self)
 
-    @discord.ui.button(
-        custom_id="custom_day",
-        emoji="\N{tear-off calendar}",
-        style=discord.ButtonStyle.primary
-    )
+    @discord.ui.button(custom_id="custom_day", emoji="\N{tear-off calendar}", style=discord.ButtonStyle.primary)
     async def current_day(self, _, interaction1: discord.Interaction):
         self1 = self
 
@@ -198,7 +191,7 @@ class TimeTableDaySwitcherView(View):
                         max_length=8,
                         required=True,
                     ),
-                    title="Date to view timetable of:"
+                    title="Date to view timetable of:",
                 )
 
             async def callback(self, interaction2: discord.Interaction):
@@ -209,16 +202,12 @@ class TimeTableDaySwitcherView(View):
                 else:
                     self1.update_buttons()
                     await interaction2.response.edit_message(
-                        content=self1.cog.format_timetable_message(self1.current_date),
-                        view=self1
+                        content=self1.cog.format_timetable_message(self1.current_date), view=self1
                     )
 
         return await interaction1.response.send_modal(InputModal())
 
-    @discord.ui.button(
-        custom_id="day_after",
-        emoji="\N{black rightwards arrow}"
-    )
+    @discord.ui.button(custom_id="day_after", emoji="\N{black rightwards arrow}")
     async def day_after(self, _, interaction: discord.Interaction):
         self.mod_date(1)
         await interaction.response.edit_message(content=self.cog.format_timetable_message(self.current_date), view=self)

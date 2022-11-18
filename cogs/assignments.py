@@ -6,8 +6,16 @@ from typing import Optional
 import discord
 from discord.ext import commands, tasks
 import config
-from utils import Assignments, Tutors, simple_embed_paginator, get_or_none, Student, hyperlink, console, \
-    SelectAssigneesView
+from utils import (
+    Assignments,
+    Tutors,
+    simple_embed_paginator,
+    get_or_none,
+    Student,
+    hyperlink,
+    console,
+    SelectAssigneesView,
+)
 
 BOOL_EMOJI = {True: "\N{white heavy check mark}", False: "\N{cross mark}"}
 
@@ -114,7 +122,7 @@ class AssignmentsCog(commands.Cog):
                     await assignment.update(reminders=assignment.reminders + [reminder_name])
                 else:
                     cur_text = msg_format.format(
-                        mentions=", ".join(map(self.resolve_user, assignment.assignees)) or '@everyone',
+                        mentions=", ".join(map(self.resolve_user, assignment.assignees)) or "@everyone",
                         reminder_name=reminder_name,
                         project_title=textwrap.shorten(assignment.title, 100, placeholder="..."),
                         project_tutor=assignment.tutor.name.title(),
@@ -172,10 +180,7 @@ class AssignmentsCog(commands.Cog):
             f"(finished: {BOOL_EMOJI[assignment.finished]} | Submitted: {BOOL_EMOJI[assignment.submitted]})",
             inline=False,
         )
-        embed.add_field(
-            name="Assignees",
-            value=", ".join(map(self.resolve_user, assignment.assignees)) or '*everyone*'
-        )
+        embed.add_field(name="Assignees", value=", ".join(map(self.resolve_user, assignment.assignees)) or "*everyone*")
         if assignment.reminders:
             embed.set_footer(text="Reminders sent: " + ", ".join(assignment.reminders))
         return embed
@@ -240,7 +245,7 @@ class AssignmentsCog(commands.Cog):
                     "shared_doc": None,
                     "due_by": None,
                     "tutor": None,
-                    "assignees": []
+                    "assignees": [],
                 }
                 super().__init__(
                     discord.ui.InputText(
@@ -329,8 +334,8 @@ class AssignmentsCog(commands.Cog):
                     assigner = SelectAssigneesView()
                     await msg.edit(
                         content="Please select people who've been assigned to this task (leave blank or skip to assign"
-                                " everyone)",
-                        view=assigner
+                        " everyone)",
+                        view=assigner,
                     )
                     await assigner.wait()
                     self.create_kwargs["assignees"] = [x.id for x in assigner.users]
@@ -611,9 +616,7 @@ class AssignmentsCog(commands.Cog):
             async def view_details(self, _, interaction: discord.Interaction):
                 await interaction.response.defer(ephemeral=True)
                 await assignment.created_by.load()
-                await interaction.followup.send(
-                    embed=cog.generate_assignment_embed(assignment), ephemeral=True
-                )
+                await interaction.followup.send(embed=cog.generate_assignment_embed(assignment), ephemeral=True)
                 await self.update_display(interaction)
 
         await ctx.respond(view=EditAssignmentView())

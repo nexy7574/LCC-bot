@@ -5,3 +5,4 @@ orm[sqlite]==0.3.1
 httpx==0.23.0
 jishkucord==2.5.2
 rich==12.5.1
+nltk==3.7
