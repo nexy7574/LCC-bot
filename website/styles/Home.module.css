@@ -1,0 +1,31 @@
+ul.timetableList {
+  background-color: #2F3136;
+  padding: 2rem;
+  border-radius: 10%;
+}
+
+div.timetableListContainer {
+  background-color: #202225;
+  border-radius: 10%;
+  padding: 2rem;
+  margin: 2rem;
+  max-width: 400px;
+}
+
+div.timetableList_Old {
+  opacity: 50%;
+}
+
+div.todaysTimeTable {
+  display: grid;
+  /*flex-direction: column;*/
+  /*align-items: center;*/
+  /*justify-content: space-evenly;*/
+  justify-content: center;
+  background-color: #2A2E32;
+  margin-left: 10%;
+  margin-right: 10%;
+  box-shadow: 5px 5px 5px 0 rgba(0, 0, 0, 0.3);
+  border-radius: 0.5rem;
+  border: 1px black
+}
