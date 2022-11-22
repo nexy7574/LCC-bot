@@ -82,7 +82,9 @@ class Events(commands.Cog):
 
         channel: discord.TextChannel = discord.utils.get(member.guild.text_channels, name="general")
         if channel and channel.can_send():
-            await channel.send(f"{LTR} {member.mention} {f'({student.id})' if student else '(pending verification)'}")
+            await channel.send(
+                f"{LTR} {member.mention} (`{member}`, {f'{student.id}' if student else 'pending verification'})"
+            )
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
@@ -92,7 +94,9 @@ class Events(commands.Cog):
         student: Optional[Student] = await get_or_none(Student, user_id=member.id)
         channel: discord.TextChannel = discord.utils.get(member.guild.text_channels, name="general")
         if channel and channel.can_send():
-            await channel.send(f"{RTL} {member.mention} {f'({student.id})' if student else '(pending verification)'}")
+            await channel.send(
+                f"{RTL} {member.mention} (`{member}`, {f'{student.id}' if student else 'pending verification'})"
+            )
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):

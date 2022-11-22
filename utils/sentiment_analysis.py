@@ -12,8 +12,8 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 positive_tweets = twitter_samples.strings("positive_tweets.json")
 negative_tweets = twitter_samples.strings("negative_tweets.json")
-positive_reviews = movie_reviews.categories('pos')
-negative_reviews = movie_reviews.categories('neg')
+positive_reviews = movie_reviews.categories("pos")
+negative_reviews = movie_reviews.categories("neg")
 positive_tweets += positive_reviews
 # negative_tweets += negative_reviews
 positive_tweet_tokens = twitter_samples.tokenized("positive_tweets.json")

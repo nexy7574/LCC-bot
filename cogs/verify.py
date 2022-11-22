@@ -19,8 +19,22 @@ class VerifyCog(commands.Cog):
         except orm.NoMatch:
             pass
 
-        view = VerifyView(ctx)
-        return await ctx.respond(view=view, ephemeral=True)
+        role = discord.utils.find(lambda r: r.name.lower() == "verified", ctx.guild.roles)
+        channel = discord.utils.get(ctx.guild.text_channels, name="verify")
+        if role and role < ctx.me.top_role:
+            await ctx.author.remove_roles(role, reason=f"Auto de-verified")
+            if channel:
+                try:
+                    await ctx.author.send(
+                        f"You have been automatically de-verified. Please re-verify by going to {channel.mention} and"
+                        f" typing </verify:{ctx.command.id}>."
+                    )
+                except discord.Forbidden:
+                    pass
+            return
+        else:
+            view = VerifyView(ctx)
+            return await ctx.respond(view=view, ephemeral=True)
 
     @commands.command(name="de-verify")
     @commands.is_owner()
