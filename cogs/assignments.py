@@ -360,7 +360,7 @@ class AssignmentsCog(commands.Cog):
                 if channel and channel.permissions_for(ctx.me).create_public_threads:
                     channel: discord.ForumChannel
                     opts = [60, 1440, 4320, 10080]
-                    hours_away = (modal.create_kwargs["due_by"] - datetime.datetime.now().timestamp()) / 3600
+                    hours_away = (modal.create_kwargs["due_by"] - datetime.datetime.now()) / 3600
                     for option in opts:
                         if hours_away > option:
                             continue
