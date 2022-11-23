@@ -223,7 +223,7 @@ class AssignmentsCog(commands.Cog):
                 f"due {discord.utils.format_dt(due_by, 'R')}"
             )
 
-        embeds = simple_embed_paginator(lines, assert_ten=True, colour=ctx.author.colour)
+        embeds = simple_embed_paginator(lines, assert_ten=True, colour=ctx.user.colour)
         embeds = embeds or [discord.Embed(description="No projects match the provided criteria.")]
 
         return await ctx.respond(embeds=embeds)
@@ -231,7 +231,7 @@ class AssignmentsCog(commands.Cog):
     @assignments_command.command(name="add")
     async def create_assignment(self, ctx: discord.ApplicationContext):
         """Adds/creates an assignment."""
-        author = await get_or_none(Student, user_id=ctx.author.id)
+        author = await get_or_none(Student, user_id=ctx.user.id)
         if author is None:
             return await ctx.respond("\N{cross mark} You must have verified to use this command.", ephemeral=True)
 
@@ -355,6 +355,35 @@ class AssignmentsCog(commands.Cog):
         except sqlite3.Error as e:
             return await modal.msg.edit(content="SQL Error: %s.\nAssignment not saved." % e)
         else:
+            try:
+                channel = discord.utils.get(ctx.guild.forum_channels, name="assignments")
+                if channel and channel.permissions_for(ctx.me).create_public_threads:
+                    channel: discord.ForumChannel
+                    opts = [60, 1440, 4320, 10080]
+                    hours_away = (modal.create_kwargs["due_by"] - datetime.datetime.now()).total_seconds() / 3600
+                    for option in opts:
+                        if hours_away > option:
+                            continue
+                        else:
+                            break
+                    else:
+                        option = 10080
+                    name = textwrap.shorten(modal.create_kwargs["title"], width=100, placeholder="...")
+                    await channel.create_thread(
+                        name=name,
+                        content="Assignment name: {0}\nDue: {1}\nTutor: {2}\nCreated by: {3}".format(
+                            modal.create_kwargs["title"],
+                            discord.utils.format_dt(modal.create_kwargs["due_by"], style="F"),
+                            modal.create_kwargs["tutor"].name,
+                            ctx.user.mention
+                        ),
+                        auto_archive_duration=option,
+                        applied_tags=[
+                            discord.utils.get(channel.available_tags, name=modal.create_kwargs['tutor'].name)
+                        ] or None
+                    )
+            except discord.HTTPException:
+                pass
             return await modal.msg.edit(content=f"\N{white heavy check mark} Created assignment!")
 
     @assignments_command.command(name="view")
