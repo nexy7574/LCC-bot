@@ -370,6 +370,7 @@ class AssignmentsCog(commands.Cog):
                     else:
                         option = 10080
                     name = textwrap.shorten(modal.create_kwargs["title"], width=100, placeholder="...")
+                    tag = discord.utils.get(channel.available_tags, name=modal.create_kwargs['tutor'].name.title())
                     await channel.create_thread(
                         name=name,
                         content="Assignment name: {0}\nDue: {1} ({4})\nTutor: {2}\nCreated by: {3}".format(
@@ -382,9 +383,7 @@ class AssignmentsCog(commands.Cog):
                             discord.utils.format_dt(due_dt, "R")
                         ),
                         auto_archive_duration=option,
-                        applied_tags=[
-                            discord.utils.get(channel.available_tags, name=modal.create_kwargs['tutor'].name)
-                        ]
+                        applied_tags=[tag] if tag else [],
                     )
             except discord.HTTPException:
                 pass
