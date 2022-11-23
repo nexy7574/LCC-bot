@@ -51,16 +51,27 @@ class VerifyView(View):
                         ban = await get_or_none(BannedStudentID, student_id=existing.student_id)
                         if ban is not None:
                             self.stop()
-                            return await interaction.user.ban(
+                            return await interaction.user.kick(
                                 reason=f"Attempted to verify with banned student ID {ban.student_id}"
                                 f" (originally associated with account {ban.associated_account})"
                             )
-                        await Student.objects.create(id=existing.student_id, user_id=interaction.user.id)
+                        await Student.objects.create(
+                            id=existing.student_id,
+                            user_id=interaction.user.id,
+                            name=existing.name
+                        )
                         await existing.delete()
                         role = discord.utils.find(lambda r: r.name.lower() == "verified", interaction.guild.roles)
+                        member = await interaction.guild.fetch_member(interaction.user.id)
                         if role and role < interaction.guild.me.top_role:
-                            member = await interaction.guild.fetch_member(interaction.user.id)
                             await member.add_roles(role, reason="Verified")
+                        try:
+                            await member.edit(
+                                nick=f"{existing.name}",
+                                reason="Verified"
+                            )
+                        except discord.HTTPException:
+                            pass
                         console.log(f"[green]{interaction.user} verified ({interaction.user.id}/{existing.student_id})")
                         self.stop()
                         return await interaction.followup.send(
@@ -83,6 +94,13 @@ class VerifyView(View):
                         placeholder="B...",
                         min_length=7,
                         max_length=7,
+                    ),
+                    discord.ui.InputText(
+                        custom_id="name",
+                        label="What is your name?",
+                        placeholder="Nicknames are okay too.",
+                        min_length=2,
+                        max_length=32,
                     ),
                     title="Enter your student ID number",
                     timeout=120,
@@ -110,7 +128,8 @@ class VerifyView(View):
                 except Exception as e:
                     return await interaction.followup.send(f"\N{cross mark} Failed to send email - {e}. Try again?")
                 console.log(f"Sending verification email to {interaction.user} ({interaction.user.id}/{st})...")
-                __code = await VerifyCode.objects.create(code=_code, bind=interaction.id, student_id=st)
+                name = self.children[1].value
+                __code = await VerifyCode.objects.create(code=_code, bind=interaction.id, student_id=st, name=name)
                 console.log(
                     f"[green]Sent verification email to {interaction.user} ({interaction.user.id}/{st}): " f"{_code!r}"
                 )

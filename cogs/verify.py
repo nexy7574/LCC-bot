@@ -27,8 +27,8 @@ class VerifyCog(commands.Cog):
                 if channel:
                     try:
                         await ctx.author.send(
-                            f"You have been automatically de-verified. Please re-verify by going to {channel.mention} and"
-                            f" typing </verify:{ctx.command.id}>."
+                            f"You have been automatically de-verified. Please re-verify by going to {channel.mention} "
+                            f"and typing </verify:{ctx.command.id}>."
                         )
                     except discord.Forbidden:
                         pass

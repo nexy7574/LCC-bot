@@ -46,12 +46,14 @@ class VerifyCode(orm.Model):
         "code": orm.String(min_length=8, max_length=64, unique=True),
         "bind": orm.BigInteger(),
         "student_id": orm.String(min_length=7, max_length=7),
+        "name": orm.String(min_length=2, max_length=32),
     }
     if TYPE_CHECKING:
         id: int
         code: str
         bind: int
         student_id: str
+        name: str
 
 
 class Student(orm.Model):
@@ -61,11 +63,13 @@ class Student(orm.Model):
         "entry_id": orm.UUID(primary_key=True, default=uuid.uuid4),
         "id": orm.String(min_length=7, max_length=7, unique=True),
         "user_id": orm.BigInteger(unique=True),
+        "name": orm.String(min_length=2, max_length=32),
     }
     if TYPE_CHECKING:
         entry_id: uuid.UUID
         id: str
         user_id: int
+        name: str
 
 
 class BannedStudentID(orm.Model):
