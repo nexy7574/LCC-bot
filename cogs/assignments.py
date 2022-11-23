@@ -360,7 +360,8 @@ class AssignmentsCog(commands.Cog):
                 if channel and channel.permissions_for(ctx.me).create_public_threads:
                     channel: discord.ForumChannel
                     opts = [60, 1440, 4320, 10080]
-                    hours_away = (modal.create_kwargs["due_by"] - (datetime.datetime.now().timestamp())) / 3600
+                    due_dt = datetime.datetime.fromtimestamp(modal.create_kwargs["due_by"])
+                    hours_away = (due_dt - datetime.datetime.now()).total_seconds() / 3600
                     for option in opts:
                         if hours_away > option:
                             continue
@@ -371,11 +372,14 @@ class AssignmentsCog(commands.Cog):
                     name = textwrap.shorten(modal.create_kwargs["title"], width=100, placeholder="...")
                     await channel.create_thread(
                         name=name,
-                        content="Assignment name: {0}\nDue: {1}\nTutor: {2}\nCreated by: {3}".format(
+                        content="Assignment name: {0}\nDue: {1} ({4})\nTutor: {2}\nCreated by: {3}".format(
                             modal.create_kwargs["title"],
-                            discord.utils.format_dt(modal.create_kwargs["due_by"], style="F"),
+                            discord.utils.format_dt(
+                                due_dt, style="F"
+                            ),
                             modal.create_kwargs["tutor"].name,
-                            ctx.user.mention
+                            ctx.user.mention,
+                            discord.utils.format_dt(due_dt, "R")
                         ),
                         auto_archive_duration=option,
                         applied_tags=[
