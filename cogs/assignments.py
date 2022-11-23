@@ -384,7 +384,7 @@ class AssignmentsCog(commands.Cog):
                         auto_archive_duration=option,
                         applied_tags=[
                             discord.utils.get(channel.available_tags, name=modal.create_kwargs['tutor'].name)
-                        ] or None
+                        ]
                     )
             except discord.HTTPException:
                 pass
