@@ -1,3 +1,4 @@
+import random
 import secrets
 from datetime import datetime, timedelta
 
@@ -108,13 +109,18 @@ class VerifyView(View):
 
             async def callback(self, interaction: discord.Interaction):
                 await interaction.response.defer()
-                st = self.children[0].value
+                st = self.children[0].value.strip()
                 if not st:  # timed out
                     return
 
                 if not re.match(r"^B\d{6}$", st):
                     btn.disabled = False
-                    return await interaction.followup.send("\N{cross mark} Invalid student ID.", delete_after=60)
+                    return await interaction.followup.send(
+                        "\N{cross mark} Invalid student ID - Failed to verify with regex."
+                        " Please try again with a valid student ID. Make sure it is formatted as `BXXXXXX` "
+                        "(e.g. `B{}`)".format(''.join(str(random.randint(0, 9)) for _ in range(6))),
+                        delete_after=60
+                    )
 
                 ex = await get_or_none(Student, id=st)
                 if ex:
