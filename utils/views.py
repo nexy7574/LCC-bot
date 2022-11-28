@@ -126,7 +126,8 @@ class VerifyView(View):
                 if ex:
                     btn.disabled = False
                     return await interaction.followup.send(
-                        "\N{cross mark} Student ID is already associated.", delete_after=60
+                        "\N{cross mark} Student ID is already associated.",
+                        delete_after=60
                     )
 
                 try:
@@ -142,8 +143,8 @@ class VerifyView(View):
                 await interaction.followup.send(
                     "\N{white heavy check mark} Verification email sent to your college email "
                     f"({st}@my.leedscitycollege.ac.uk)\n"
-                    f"Once you get that email, run this command again, with the first option being the 16"
-                    f" character code.\n\n"
+                    f"Once you get that email, copy the long hexadecimal code, and come back here, then press "
+                    f"'I have a code'.\n\n"
                     f">>> If you don't know how to access your email, go to <https://gmail.com>, then "
                     f"sign in as `{st}@leedscitycollege.ac.uk` (notice there's no `my.` "
                     f"prefix to sign into gmail), and you should be greeted by your inbox. The default password "
