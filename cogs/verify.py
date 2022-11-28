@@ -14,19 +14,19 @@ class VerifyCog(commands.Cog):
         """Verifies or generates a verification code"""
 
         try:
-            student: Student = await Student.objects.get(user_id=ctx.author.id)
+            student: Student = await Student.objects.get(user_id=ctx.user.id)
             return await ctx.respond(f"\N{cross mark} You're already verified as {student.id}!", ephemeral=True)
         except orm.NoMatch:
             pass
 
         role = discord.utils.find(lambda r: r.name.lower() == "verified", ctx.guild.roles)
         channel = discord.utils.get(ctx.guild.text_channels, name="verify")
-        if role in ctx.author.roles:
+        if role in ctx.user.roles:
             if role and role < ctx.me.top_role:
-                await ctx.author.remove_roles(role, reason=f"Auto de-verified")
+                await ctx.user.remove_roles(role, reason=f"Auto de-verified")
                 if channel:
                     try:
-                        await ctx.author.send(
+                        await ctx.user.send(
                             f"You have been automatically de-verified. Please re-verify by going to {channel.mention} "
                             f"and typing </verify:{ctx.command.id}>."
                         )

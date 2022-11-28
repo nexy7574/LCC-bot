@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 from utils import Student, get_or_none, BannedStudentID
-import orm
 
 
 class Mod(commands.Cog):
@@ -24,7 +23,7 @@ class Mod(commands.Cog):
                 associated_account=member.id,
             )
 
-        await member.ban(reason=f"Banned ID {ban.student_id} by {ctx.author}")
+        await member.ban(reason=f"Banned ID {ban.student_id} by {ctx.user}")
         return await ctx.respond(
             f"\N{white heavy check mark} Banned {ban.student_id} (and {member.mention})", ephemeral=True
         )
@@ -44,7 +43,7 @@ class Mod(commands.Cog):
             return await ctx.respond(f"\N{white heavy check mark} Unbanned {student_id}. No user to unban.")
         else:
             try:
-                await ctx.guild.unban(discord.Object(user_id), reason=f"Unbanned by {ctx.author}")
+                await ctx.guild.unban(discord.Object(user_id), reason=f"Unbanned by {ctx.user}")
             except discord.HTTPException as e:
                 return await ctx.respond(
                     f"\N{white heavy check mark} Unbanned {student_id}. Failed to unban {user_id} - HTTP {e.status}."

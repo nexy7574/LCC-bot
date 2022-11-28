@@ -1,6 +1,5 @@
-import asyncio
 import sys
-from typing import Optional, Union, Dict, Callable
+from typing import Optional, Union, Dict
 
 import discord
 from discord.ext import commands, tasks
@@ -239,7 +238,7 @@ class TimeTableCog(commands.Cog):
             date = datetime.now()
 
         text = self.format_timetable_message(date)
-        view = TimeTableDaySwitcherView(ctx.author, self, date)
+        view = TimeTableDaySwitcherView(ctx.user, self, date)
         view.update_buttons()
         await ctx.respond(text, view=view)
 

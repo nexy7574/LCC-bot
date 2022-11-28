@@ -28,7 +28,7 @@ async def on_connect():
 @bot.listen("on_application_command_error")
 async def on_application_command_error(ctx: discord.ApplicationContext, error: Exception):
     await ctx.respond("Application Command Error: `%r`" % error)
-    raise error
+    raise error from None
 
 
 @bot.listen("on_command_error")
@@ -36,7 +36,7 @@ async def on_command_error(ctx: commands.Context, error: Exception):
     if isinstance(error, commands.CommandNotFound):
         return
     await ctx.reply("Command Error: `%r`" % error)
-    raise error
+    raise error from None
 
 
 @bot.listen("on_application_command")

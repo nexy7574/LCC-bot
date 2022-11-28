@@ -430,7 +430,7 @@ class AssignmentsCog(commands.Cog):
                 super().__init__(timeout=300)
 
             async def interaction_check(self, interaction: discord.Interaction) -> bool:
-                return interaction.user == ctx.author
+                return interaction.user == ctx.user
 
             async def on_timeout(self) -> None:
                 await self.message.delete(delay=0.1)
