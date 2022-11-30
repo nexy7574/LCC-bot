@@ -94,7 +94,7 @@ class StarBoardCog(commands.Cog):
             entry, created = database
             if created:
                 # noinspection PyUnresolvedReferences
-                cap = message.channel if "thread" in message.channel.type.name else message.guild
+                cap = message.channel
                 if self.bot.intents.members and hasattr(cap, "members"):
                     cap = len([x for x in cap.members if not x.bot]) * 0.1
                 else:
