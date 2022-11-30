@@ -103,6 +103,7 @@ class Assignments(orm.Model):
         "finished": orm.Boolean(default=False),
         "submitted": orm.Boolean(default=False),
         "assignees": orm.JSON(default=[]),
+        # "description": orm.Text(min_length=2, max_length=2000, allow_null=True, default=None),
     }
     if TYPE_CHECKING:
         entry_id: int
@@ -117,3 +118,4 @@ class Assignments(orm.Model):
         finished: bool
         submitted: bool
         assignees: list[int]
+        # description: Optional[str]
