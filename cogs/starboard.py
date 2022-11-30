@@ -125,7 +125,7 @@ class StarBoardCog(commands.Cog):
     async def get_starboard_info(self, ctx: discord.ApplicationContext, message: discord.Message):
         return await ctx.respond(embed=await self.generate_starboard_embed(message))
 
-    @commands.command(name="threshold")
+    @commands.slash_command(name="threshold")
     @commands.guild_only()
     async def get_threshold(self, ctx: commands.Context):
         """Shows you the current starboard threshold"""
@@ -133,7 +133,7 @@ class StarBoardCog(commands.Cog):
             cap = len([x for x in ctx.channel.members if not x.bot]) * 0.1
         else:
             cap = ctx.channel.member_count * 0.1
-        return await ctx.reply(f"Messages currently need {c:.2f} stars in this channel to be posted to the starboard.")
+        return await ctx.reply(f"Messages currently need {cap:.2f} stars in this channel to be posted to the starboard.")
 
 
 def setup(bot):
