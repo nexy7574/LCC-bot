@@ -13,7 +13,16 @@ bot = commands.Bot(
 )
 bot.training_lock = Lock()
 
-extensions = ["jishaku", "cogs.verify", "cogs.mod", "cogs.events", "cogs.assignments", "cogs.timetable", "cogs.other"]
+extensions = [
+    "jishaku",
+    "cogs.verify",
+    "cogs.mod",
+    "cogs.events",
+    "cogs.assignments",
+    "cogs.timetable",
+    "cogs.other",
+    "cogs.starboard",
+]
 for ext in extensions:
     bot.load_extension(ext)
     console.log(f"Loaded extension [green]{ext}")

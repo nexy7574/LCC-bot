@@ -119,3 +119,20 @@ class Assignments(orm.Model):
         submitted: bool
         assignees: list[int]
         # description: Optional[str]
+
+
+class StarBoardMessage(orm.Model):
+    tablename = "starboard"
+    registry = registry
+    fields = {
+        "entry_id": orm.UUID(primary_key=True, default=uuid.uuid4),
+        "id": orm.BigInteger(unique=True),
+        "channel": orm.BigInteger(),
+        "starboard_message": orm.BigInteger(default=None, allow_null=True),
+    }
+
+    if TYPE_CHECKING:
+        entry_id: uuid.UUID
+        id: int
+        channel: int
+        starboard_message: int | None

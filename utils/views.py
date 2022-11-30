@@ -57,9 +57,7 @@ class VerifyView(View):
                                 f" (originally associated with account {ban.associated_account})"
                             )
                         await Student.objects.create(
-                            id=existing.student_id,
-                            user_id=interaction.user.id,
-                            name=existing.name
+                            id=existing.student_id, user_id=interaction.user.id, name=existing.name
                         )
                         await existing.delete()
                         role = discord.utils.find(lambda r: r.name.lower() == "verified", interaction.guild.roles)
@@ -67,10 +65,7 @@ class VerifyView(View):
                         if role and role < interaction.guild.me.top_role:
                             await member.add_roles(role, reason="Verified")
                         try:
-                            await member.edit(
-                                nick=f"{existing.name}",
-                                reason="Verified"
-                            )
+                            await member.edit(nick=f"{existing.name}", reason="Verified")
                         except discord.HTTPException:
                             pass
                         console.log(f"[green]{interaction.user} verified ({interaction.user.id}/{existing.student_id})")
@@ -118,16 +113,15 @@ class VerifyView(View):
                     return await interaction.followup.send(
                         "\N{cross mark} Invalid student ID - Failed to verify with regex."
                         " Please try again with a valid student ID. Make sure it is formatted as `BXXXXXX` "
-                        "(e.g. `B{}`)".format(''.join(str(random.randint(0, 9)) for _ in range(6))),
-                        delete_after=60
+                        "(e.g. `B{}`)".format("".join(str(random.randint(0, 9)) for _ in range(6))),
+                        delete_after=60,
                     )
 
                 ex = await get_or_none(Student, id=st)
                 if ex:
                     btn.disabled = False
                     return await interaction.followup.send(
-                        "\N{cross mark} Student ID is already associated.",
-                        delete_after=60
+                        "\N{cross mark} Student ID is already associated.", delete_after=60
                     )
 
                 try:
