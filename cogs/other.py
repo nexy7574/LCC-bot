@@ -176,6 +176,7 @@ class OtherCog(commands.Cog):
             _data = _data[:ctx.guild.filesize_limit - 100]
             file.write(_data)
             file.seek(0)
+        file.seek(0)
         return await ctx.respond(file=discord.File(file, attachment.filename))
 
 
