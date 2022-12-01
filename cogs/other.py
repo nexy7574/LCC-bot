@@ -189,7 +189,7 @@ class OtherCog(commands.Cog):
         file.seek(0)
         await ctx.edit(content="Corrupting file...")
         file = await asyncio.to_thread(
-            self.corrupt_file,
+            self.do_file_corruption,
             file,
             passes,
             bound_start,
