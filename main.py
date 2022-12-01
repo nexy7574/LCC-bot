@@ -9,7 +9,7 @@ bot = commands.Bot(
     commands.when_mentioned_or("h!"),
     debug_guilds=config.guilds,
     allowed_mentions=discord.AllowedMentions.none(),
-    intents=discord.Intents.default() + discord.Intents.members,
+    intents=discord.Intents.default() + discord.Intents.members + discord.Intents.messages,
 )
 bot.training_lock = Lock()
 
