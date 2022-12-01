@@ -165,6 +165,7 @@ class OtherCog(commands.Cog):
             file.seek(random.randint(bound_start, bound_end))
             file.write(os.urandom(random.randint(128, 2048)))
             file.seek(0)
+        return file
 
     @corrupt_file.command(name="ruin")
     async def ruin_corrupt_file(
@@ -186,7 +187,7 @@ class OtherCog(commands.Cog):
         file = io.BytesIO(await file.read())
         file.seek(0)
         await ctx.edit(content="Corrupting file...")
-        await self.bot.loop.run_in_executor(
+        file = await self.bot.loop.run_in_executor(
             None,
             self.corrupt_file,
             file,
