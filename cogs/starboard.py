@@ -68,7 +68,7 @@ class StarBoardCog(commands.Cog):
                 spoiler = file.is_spoiler()
                 if not spoiler and file.url.lower().endswith(("png", "jpeg", "jpg", "gif", "webp")) and not embed.image:
                     embed.set_image(url=file.url)
-                elif spoiler:
+                if spoiler:
                     embed.add_field(name=name, value=f"||[{file.filename}]({file.url})||", inline=False)
                 else:
                     embed.add_field(name=name, value=f"[{file.filename}]({file.url})", inline=False)
