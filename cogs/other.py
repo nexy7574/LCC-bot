@@ -1,3 +1,5 @@
+import io
+import os
 from typing import Tuple, Optional
 
 import discord
@@ -140,6 +142,41 @@ class OtherCog(commands.Cog):
         embed.add_field(name="Compound", value="{:.2%}".format(result[3]))
         embed.url = message.jump_url
         return await ctx.edit(content=None, embed=embed)
+
+    corrupt_file = discord.SlashCommandGroup(
+        name="corrupt-file",
+        description="Corrupts files.",
+    )
+
+    @corrupt_file.command(name="generate")
+    async def generate_corrupt_file(self, ctx: discord.ApplicationContext, file_name: str, size_in_megabytes: float):
+        """Generates a "corrupted" file."""
+        if size_in_megabytes > 8:
+            return await ctx.respond("File size must be less than 8 MB.")
+        await ctx.defer()
+        file = io.BytesIO()
+        file.write(os.urandom(int(size_in_megabytes * 1024 * 1024)))
+        file.seek(0)
+        return await ctx.respond(file=discord.File(file, file_name))
+
+    @corrupt_file.command(name="ruin")
+    async def ruin_corrupt_file(self, ctx: discord.ApplicationContext, file: discord.Attachment, passes: int = 10):
+        """Takes a file and corrupts parts of it"""
+        await ctx.defer()
+        attachment = file
+        file = io.BytesIO(await file.read())
+        file.seek(0)
+        for _ in range(passes):
+            file.seek(random.randint(0, file.getbuffer().nbytes))
+            file.write(os.urandom(random.randint(256, 2048)))
+            file.seek(0)
+        if len(file.read()) >= ctx.guild.filesize_limit:
+            file.seek(0)
+            _data = file.read()
+            _data = _data[:ctx.guild.filesize_limit - 100]
+            file.write(_data)
+            file.seek(0)
+        return await ctx.respond(file=discord.File(file, attachment.filename))
 
 
 def setup(bot):
