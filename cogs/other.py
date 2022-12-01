@@ -1,3 +1,4 @@
+import asyncio
 import io
 import os
 from typing import Tuple, Optional
@@ -187,8 +188,7 @@ class OtherCog(commands.Cog):
         file = io.BytesIO(await file.read())
         file.seek(0)
         await ctx.edit(content="Corrupting file...")
-        file = await self.bot.loop.run_in_executor(
-            None,
+        file = await asyncio.to_thread(
             self.corrupt_file,
             file,
             passes,
