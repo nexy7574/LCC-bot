@@ -164,6 +164,8 @@ class OtherCog(commands.Cog):
         """Takes a file and corrupts parts of it"""
         await ctx.defer()
         attachment = file
+        if attachment.size > 8388608:
+            return await ctx.respond("File is too large. Max size 8mb.")
         file = io.BytesIO(await file.read())
         file.seek(0)
         for _ in range(passes):
