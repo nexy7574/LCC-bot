@@ -159,6 +159,13 @@ class OtherCog(commands.Cog):
         file.seek(0)
         return await ctx.respond(file=discord.File(file, file_name))
 
+    @staticmethod
+    def do_file_corruption(file: io.BytesIO, passes: int, bound_start: int, bound_end: int):
+        for _ in range(passes):
+            file.seek(random.randint(bound_start, bound_end))
+            file.write(os.urandom(random.randint(128, 2048)))
+            file.seek(0)
+
     @corrupt_file.command(name="ruin")
     async def ruin_corrupt_file(
             self,
@@ -175,14 +182,21 @@ class OtherCog(commands.Cog):
         bound_pct = attachment.size * (0.01 * metadata_safety_boundary)
         bound_start = round(bound_pct)
         bound_end = round(attachment.size - bound_pct)
+        await ctx.respond("Downloading file...")
         file = io.BytesIO(await file.read())
         file.seek(0)
-        for _ in range(passes):
-            file.seek(random.randint(bound_start, bound_end))
-            file.write(os.urandom(random.randint(128, 2048)))
-            file.seek(0)
+        await ctx.edit(content="Corrupting file...")
+        await self.bot.loop.run_in_executor(
+            None,
+            self.corrupt_file,
+            file,
+            passes,
+            bound_start,
+            bound_end
+        )
         file.seek(0)
-        return await ctx.respond(file=discord.File(file, attachment.filename))
+        await ctx.edit(content="Uploading file...")
+        await ctx.edit(content="Here's your corrupted file!", file=discord.File(file, attachment.filename))
 
 
 def setup(bot):
