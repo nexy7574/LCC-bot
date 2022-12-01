@@ -160,23 +160,26 @@ class OtherCog(commands.Cog):
         return await ctx.respond(file=discord.File(file, file_name))
 
     @corrupt_file.command(name="ruin")
-    async def ruin_corrupt_file(self, ctx: discord.ApplicationContext, file: discord.Attachment, passes: int = 10):
+    async def ruin_corrupt_file(
+            self,
+            ctx: discord.ApplicationContext,
+            file: discord.Attachment,
+            passes: int = 10,
+            metadata_safety_boundary: float = 5
+    ):
         """Takes a file and corrupts parts of it"""
         await ctx.defer()
         attachment = file
         if attachment.size > 8388608:
             return await ctx.respond("File is too large. Max size 8mb.")
+        bound_pct = attachment.size * (0.01 * metadata_safety_boundary)
+        bound_start = round(bound_pct)
+        bound_end = round(attachment.size - bound_pct)
         file = io.BytesIO(await file.read())
         file.seek(0)
         for _ in range(passes):
-            file.seek(random.randint(0, file.getbuffer().nbytes))
-            file.write(os.urandom(random.randint(256, 2048)))
-            file.seek(0)
-        if len(file.read()) >= ctx.guild.filesize_limit:
-            file.seek(0)
-            _data = file.read()
-            _data = _data[:ctx.guild.filesize_limit - 100]
-            file.write(_data)
+            file.seek(random.randint(bound_start, bound_end))
+            file.write(os.urandom(random.randint(128, 2048)))
             file.seek(0)
         file.seek(0)
         return await ctx.respond(file=discord.File(file, attachment.filename))
