@@ -3,7 +3,7 @@ from datetime import datetime, time
 
 import discord
 from discord.ext import commands, tasks
-from utils import Student, get_or_none
+from utils import Student, get_or_none, console
 from config import guilds, lupupa_warning
 
 
@@ -104,8 +104,8 @@ class Events(commands.Cog):
             if "mpreg" in message.content.lower() or "\U0001fac3" in message.content.lower():
                 try:
                     await message.add_reaction("\U0001fac3")
-                except discord.HTTPException:
-                    pass
+                except discord.HTTPException as e:
+                    console.log("Failed to add mpreg reaction:", e)
         if not message.guild:
             return
         if message.channel.name == "pinboard":
