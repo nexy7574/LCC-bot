@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <dataSource name="main">
-  <database-model serializer="dbm" dbms="SQLITE" family-id="SQLITE" format-version="4.43">
+  <database-model serializer="dbm" dbms="SQLITE" family-id="SQLITE" format-version="4.45">
     <root id="1"/>
     <collation id="2" parent="1" name="RTRIM"/>
     <collation id="3" parent="1" name="NOCASE"/>
@@ -1318,22 +1318,22 @@
     </table>
     <table id="485" parent="166" name="students"/>
     <column id="486" parent="482" name="entry_id">
-      <DataType>CHAR(32)|0s</DataType>
+      <DasType>CHAR(32)|0s</DasType>
       <NotNull>1</NotNull>
       <Position>1</Position>
     </column>
     <column id="487" parent="482" name="student_id">
-      <DataType>VARCHAR(7)|0s</DataType>
+      <DasType>VARCHAR(7)|0s</DasType>
       <NotNull>1</NotNull>
       <Position>2</Position>
     </column>
     <column id="488" parent="482" name="associated_account">
-      <DataType>BIGINT|0s</DataType>
+      <DasType>BIGINT|0s</DasType>
       <NotNull>1</NotNull>
       <Position>3</Position>
     </column>
     <column id="489" parent="482" name="banned_at_timestamp">
-      <DataType>FLOAT|0s</DataType>
+      <DasType>FLOAT|0s</DasType>
       <NotNull>1</NotNull>
       <Position>4</Position>
     </column>
@@ -1357,22 +1357,22 @@
       <UnderlyingIndexName>sqlite_autoindex_banned_2</UnderlyingIndexName>
     </key>
     <column id="494" parent="483" name="id">
-      <DataType>INTEGER|0s</DataType>
+      <DasType>INTEGER|0s</DasType>
       <NotNull>1</NotNull>
       <Position>1</Position>
     </column>
     <column id="495" parent="483" name="code">
-      <DataType>VARCHAR(64)|0s</DataType>
+      <DasType>VARCHAR(64)|0s</DasType>
       <NotNull>1</NotNull>
       <Position>2</Position>
     </column>
     <column id="496" parent="483" name="bind">
-      <DataType>BIGINT|0s</DataType>
+      <DasType>BIGINT|0s</DasType>
       <NotNull>1</NotNull>
       <Position>3</Position>
     </column>
     <column id="497" parent="483" name="student_id">
-      <DataType>VARCHAR(7)|0s</DataType>
+      <DasType>VARCHAR(7)|0s</DasType>
       <NotNull>1</NotNull>
       <Position>4</Position>
     </column>
@@ -1390,37 +1390,37 @@
       <UnderlyingIndexName>sqlite_autoindex_codes_1</UnderlyingIndexName>
     </key>
     <column id="501" parent="484" name="type">
-      <DataType>TEXT|0s</DataType>
+      <DasType>TEXT|0s</DasType>
       <Position>1</Position>
     </column>
     <column id="502" parent="484" name="name">
-      <DataType>TEXT|0s</DataType>
+      <DasType>TEXT|0s</DasType>
       <Position>2</Position>
     </column>
     <column id="503" parent="484" name="tbl_name">
-      <DataType>TEXT|0s</DataType>
+      <DasType>TEXT|0s</DasType>
       <Position>3</Position>
     </column>
     <column id="504" parent="484" name="rootpage">
-      <DataType>INT|0s</DataType>
+      <DasType>INT|0s</DasType>
       <Position>4</Position>
     </column>
     <column id="505" parent="484" name="sql">
-      <DataType>TEXT|0s</DataType>
+      <DasType>TEXT|0s</DasType>
       <Position>5</Position>
     </column>
     <column id="506" parent="485" name="entry_id">
-      <DataType>CHAR(32)|0s</DataType>
+      <DasType>CHAR(32)|0s</DasType>
       <NotNull>1</NotNull>
       <Position>1</Position>
     </column>
     <column id="507" parent="485" name="id">
-      <DataType>VARCHAR(7)|0s</DataType>
+      <DasType>VARCHAR(7)|0s</DasType>
       <NotNull>1</NotNull>
       <Position>2</Position>
     </column>
     <column id="508" parent="485" name="user_id">
-      <DataType>BIGINT|0s</DataType>
+      <DasType>BIGINT|0s</DasType>
       <NotNull>1</NotNull>
       <Position>3</Position>
     </column>
