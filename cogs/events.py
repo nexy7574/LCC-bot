@@ -100,6 +100,12 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
+        if message.content:
+            if "mpreg" in message.content.lower() or "\U0001fac3" in message.content.lower():
+                try:
+                    await message.add_reaction("\U0001fac3")
+                except discord.HTTPException:
+                    pass
         if not message.guild:
             return
         if message.channel.name == "pinboard":
@@ -137,11 +143,6 @@ class Events(commands.Cog):
                                 text=f"Pos: {pos*100:.2f}% | Neutral: {neut*100:.2f}% | Neg: {neg*100:.2f}%"
                             )
                         return await message.reply(embed=embed)
-            if "mpreg" in message.content.lower() or "\U0001fac3" in message.content.lower():
-                try:
-                    await message.add_reaction("\U0001fac3")
-                except discord.HTTPException:
-                    pass
 
 
 def setup(bot):
