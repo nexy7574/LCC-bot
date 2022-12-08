@@ -152,11 +152,15 @@ class OtherCog(commands.Cog):
     @corrupt_file.command(name="generate")
     async def generate_corrupt_file(self, ctx: discord.ApplicationContext, file_name: str, size_in_megabytes: float):
         """Generates a "corrupted" file."""
-        if size_in_megabytes > 8:
-            return await ctx.respond("File size must be less than 8 MB.")
+        limit_mb = round(ctx.guild.filesize_limit / 1024 / 1024)
+        if size_in_megabytes > limit_mb:
+            return await ctx.respond(f"File size must be less than {limit_mb} MB.")
         await ctx.defer()
+
+        size = max(min(int(size_in_megabytes * 1024 * 1024), ctx.guild.filesize_limit), 1)
+
         file = io.BytesIO()
-        file.write(os.urandom(int(size_in_megabytes * 1024 * 1024)))
+        file.write(os.urandom(size))
         file.seek(0)
         return await ctx.respond(file=discord.File(file, file_name))
 
