@@ -160,7 +160,7 @@ class OtherCog(commands.Cog):
         size = max(min(int(size_in_megabytes * 1024 * 1024), ctx.guild.filesize_limit), 1)
 
         file = io.BytesIO()
-        file.write(os.urandom(size))
+        file.write(os.urandom(size - 1024))
         file.seek(0)
         return await ctx.respond(file=discord.File(file, file_name))
 
