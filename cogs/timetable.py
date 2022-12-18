@@ -228,7 +228,7 @@ class TimeTableCog(commands.Cog):
         await self.update_timetable_message(ctx, date, no_prefix=True)
         if random.randint(1, 10) == 1:
             end_date = datetime(2023, 7, 13, 0, 0, 0, tzinfo=timezone.utc)
-            days_left = (end_date - datetime.now()).days
+            days_left = (end_date - discord.utils.utcnow()).days
             await ctx.respond("There are only {:,} days before the end of this academic year.".format(days_left))
 
     @commands.slash_command(name="timetable")
