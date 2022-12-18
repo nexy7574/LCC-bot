@@ -137,7 +137,7 @@ class TimeTableCog(commands.Cog):
         date = date or datetime.now()
         _break = self.are_on_break(date)
         if _break is not None:
-            next_lesson = self.absolute_next_lesson(date)
+            next_lesson = self.absolute_next_lesson(date + timedelta(days=1))
             text = (
                 "[tt] On break {!r} from {} until {}. Break ends {}, and the first lesson back is "
                 "{lesson[name]!r} with {lesson[tutor]} in {lesson[room]}.".format(
@@ -229,7 +229,7 @@ class TimeTableCog(commands.Cog):
         if random.randint(1, 10) == 1:
             end_date = datetime(2023, 7, 13, 0, 0, 0, tzinfo=timezone.utc)
             days_left = (end_date - discord.utils.utcnow()).days
-            await ctx.respond("There are only {:,} days before the end of this academic year.".format(days_left))
+            await ctx.respond("There are only {:,} days left of this academic year.".format(days_left))
 
     @commands.slash_command(name="timetable")
     async def _timetable(self, ctx: discord.ApplicationContext, date: str = None):
