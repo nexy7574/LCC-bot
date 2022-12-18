@@ -141,7 +141,7 @@ class Events(commands.Cog):
                         except discord.HTTPException as e:
                             console.log("Failed to add mpreg reaction:", e)
 
-                    if self.bot.user in message.mentions:
+                    if self.bot.user in message.mentions or message.channel.id == 1032974266527907901:
                         T_EMOJI = "\U0001f3f3\U0000fe0f\U0000200d\U000026a7\U0000fe0f"
                         G_EMOJI = "\U0001f3f3\U0000fe0f\U0000200d\U0001f308"
                         N_EMOJI = "\U0001f922"
