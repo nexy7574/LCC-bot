@@ -57,9 +57,9 @@ class VerifyCog(commands.Cog):
     @commands.command(name="verify")
     @commands.is_owner()
     @commands.guild_only()
-    async def verification_force(self, ctx: commands.Context, user: discord.Member, _id: str):
+    async def verification_force(self, ctx: commands.Context, user: discord.Member, _id: str, name: str):
         """Manually verifies someone"""
-        await Student.objects.create(id=_id, user_id=user.id)
+        await Student.objects.create(id=_id, user_id=user.id, name=name)
         role = discord.utils.find(lambda r: r.name.lower() == "verified", ctx.guild.roles)
         if role and role < ctx.me.top_role:
             member = await ctx.guild.fetch_member(ctx.author.id)
