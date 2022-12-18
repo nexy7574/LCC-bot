@@ -227,7 +227,7 @@ class TimeTableCog(commands.Cog):
         await ctx.defer()
         await self.update_timetable_message(ctx, date, no_prefix=True)
         if random.randint(1, 10) == 1:
-            end_date = datetime(2023, 13, 7, 0, 0, 0, 0, tzinfo=timezone.utc)
+            end_date = datetime(2023, 7, 13, 0, 0, 0, tzinfo=timezone.utc)
             days_left = (end_date - datetime.now()).days
             await ctx.respond("There are only {:,} days before the end of this academic year.".format(days_left))
 
