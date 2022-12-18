@@ -1,3 +1,4 @@
+import random
 import sys
 from typing import Optional, Union, Dict
 
@@ -8,7 +9,7 @@ from pathlib import Path
 
 import config
 from utils import console, TimeTableDaySwitcherView
-from datetime import time, datetime, timedelta
+from datetime import time, datetime, timedelta, timezone
 
 
 def schedule_times():
@@ -225,6 +226,10 @@ class TimeTableCog(commands.Cog):
             date = datetime.now()
         await ctx.defer()
         await self.update_timetable_message(ctx, date, no_prefix=True)
+        if random.randint(1, 10) == 1:
+            end_date = datetime(2023, 13, 7, 0, 0, 0, 0, tzinfo=timezone.utc)
+            days_left = (end_date - datetime.now()).days
+            await ctx.respond("There are only {:,} days before the end of this academic year.".format(days_left))
 
     @commands.slash_command(name="timetable")
     async def _timetable(self, ctx: discord.ApplicationContext, date: str = None):
