@@ -1,7 +1,7 @@
 import discord
 import orm
 from discord.ext import commands
-from utils import VerifyCode, Student, VerifyView, get_or_none
+from utils import VerifyCode, Student, VerifyView, get_or_none, console
 
 
 class VerifyCog(commands.Cog):
@@ -59,11 +59,15 @@ class VerifyCog(commands.Cog):
     @commands.guild_only()
     async def verification_force(self, ctx: commands.Context, user: discord.Member, _id: str, name: str):
         """Manually verifies someone"""
-        await Student.objects.create(id=_id, user_id=user.id, name=name)
+        existing = await Student.objects.create(id=_id, user_id=user.id, name=name)
         role = discord.utils.find(lambda r: r.name.lower() == "verified", ctx.guild.roles)
-        if role and role < ctx.me.top_role:
-            member = await ctx.guild.fetch_member(ctx.author.id)
-            await member.add_roles(role, reason="Verified")
+        if role and role < ctx.guild.me.top_role:
+            await user.add_roles(role, reason="Verified")
+        try:
+            await user.edit(nick=f"{existing.name}", reason="Verified")
+        except discord.HTTPException:
+            pass
+        console.log(f"[green]{ctx.author} verified {user} ({user.id}/{existing.student_id})")
         await ctx.message.delete(delay=10)
         return await ctx.reply(
             "\N{white heavy check mark} Verification complete!",
