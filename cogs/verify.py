@@ -67,7 +67,7 @@ class VerifyCog(commands.Cog):
             await user.edit(nick=f"{existing.name}", reason="Verified")
         except discord.HTTPException:
             pass
-        console.log(f"[green]{ctx.author} verified {user} ({user.id}/{existing.student_id})")
+        console.log(f"[green]{ctx.author} verified {user} ({user.id})")
         await ctx.message.delete(delay=10)
         return await ctx.reply(
             "\N{white heavy check mark} Verification complete!",
