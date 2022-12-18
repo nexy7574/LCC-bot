@@ -101,7 +101,7 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if not message.guild:
-            return
+            return console.log("Ignoring, was not in a guild.")
         if message.channel.name == "pinboard":
             if message.type == discord.MessageType.pins_add:
                 await message.delete(delay=0.01)
@@ -120,6 +120,7 @@ class Events(commands.Cog):
             if message.content:
                 if message.channel.can_send():
                     if "linux" in message.content.lower() and self.bot.user in message.mentions:
+                        console.log("Responding with linux copypasta")
                         try:
                             with open("./copypasta.txt", "r") as f:
                                 await message.reply(f.read())
@@ -145,7 +146,7 @@ class Events(commands.Cog):
                         G_EMOJI = "\U0001f3f3\U0000fe0f\U0000200d\U0001f308"
                         N_EMOJI = "\U0001f922"
                         C_EMOJI = "\U0000271d\U0000fe0f"
-                        if "trans" in message.content.lower() or T_EMOJI in message.content.lower():
+                        if any((x in message.content.lower() for x in ("trans", T_EMOJI, "femboy"))):
                             try:
                                 await message.add_reaction(N_EMOJI)
                             except discord.HTTPException as e:
@@ -155,6 +156,8 @@ class Events(commands.Cog):
                                 await message.add_reaction(C_EMOJI)
                             except discord.HTTPException as e:
                                 console.log("Failed to add gay reaction:", e)
+            else:
+                console.log("No content.")
 
             if self.bot.user in message.mentions:
                 if message.content.startswith(self.bot.user.mention):

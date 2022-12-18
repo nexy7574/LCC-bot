@@ -7,6 +7,7 @@ from utils import registry, console
 
 intents = discord.Intents.default()
 intents += discord.Intents.messages
+intents += discord.Intents.message_content
 intents += discord.Intents.members
 
 
