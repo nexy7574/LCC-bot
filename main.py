@@ -5,11 +5,16 @@ import config
 from utils import registry, console
 
 
+intents = discord.Intents.default()
+intents += discord.Intents.messages
+intents += discord.Intents.members
+
+
 bot = commands.Bot(
     commands.when_mentioned_or("h!"),
     debug_guilds=config.guilds,
     allowed_mentions=discord.AllowedMentions.none(),
-    intents=discord.Intents.default() + discord.Intents.members + discord.Intents.messages,
+    intents=intents,
 )
 bot.training_lock = Lock()
 

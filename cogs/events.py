@@ -100,12 +100,6 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.content:
-            if "mpreg" in message.content.lower() or "\U0001fac3" in message.content.lower():
-                try:
-                    await message.add_reaction("\U0001fac3")
-                except discord.HTTPException as e:
-                    console.log("Failed to add mpreg reaction:", e)
         if not message.guild:
             return
         if message.channel.name == "pinboard":
@@ -123,6 +117,45 @@ class Events(commands.Cog):
         else:
             if message.author.bot is True:
                 return
+            if message.content:
+                if message.channel.can_send():
+                    if "linux" in message.content.lower() and self.bot.user in message.mentions:
+                        try:
+                            with open("./copypasta.txt", "r") as f:
+                                await message.reply(f.read())
+                        except FileNotFoundError:
+                            await message.reply(
+                                "I'd just like to interject for a moment. What you're referring to as Linux, "
+                                "is in fact, uh... I don't know, I forgot."
+                            )
+                if message.channel.permissions_for(message.guild.me).add_reactions:
+                    if "mpreg" in message.content.lower() or "\U0001fac3" in message.content.lower():
+                        try:
+                            await message.add_reaction("\U0001fac3")
+                        except discord.HTTPException as e:
+                            console.log("Failed to add mpreg reaction:", e)
+                    if "lupupa" in message.content.lower():
+                        try:
+                            await message.add_reaction("\U0001fac3")
+                        except discord.HTTPException as e:
+                            console.log("Failed to add mpreg reaction:", e)
+
+                    if self.bot.user in message.mentions:
+                        T_EMOJI = "\U0001f3f3\U0000fe0f\U0000200d\U000026a7\U0000fe0f"
+                        G_EMOJI = "\U0001f3f3\U0000fe0f\U0000200d\U0001f308"
+                        N_EMOJI = "\U0001f922"
+                        C_EMOJI = "\U0000271d\U0000fe0f"
+                        if "trans" in message.content.lower() or T_EMOJI in message.content.lower():
+                            try:
+                                await message.add_reaction(N_EMOJI)
+                            except discord.HTTPException as e:
+                                console.log("Failed to add trans reaction:", e)
+                        if "gay" in message.content.lower() or G_EMOJI in message.content.lower():
+                            try:
+                                await message.add_reaction(C_EMOJI)
+                            except discord.HTTPException as e:
+                                console.log("Failed to add gay reaction:", e)
+
             if self.bot.user in message.mentions:
                 if message.content.startswith(self.bot.user.mention):
                     if message.content.lower().endswith("bot"):
