@@ -1,3 +1,4 @@
+import random
 from typing import Optional, Tuple
 from datetime import datetime, time
 
@@ -120,7 +121,7 @@ class Events(commands.Cog):
             if message.content:
                 if message.channel.can_send():
                     if "linux" in message.content.lower() and self.bot.user in message.mentions:
-                        console.log("Responding with linux copypasta")
+                        console.log(f"Responding to {message.author} with linux copypasta")
                         try:
                             with open("./copypasta.txt", "r") as f:
                                 await message.reply(f.read())
@@ -141,12 +142,13 @@ class Events(commands.Cog):
                         except discord.HTTPException as e:
                             console.log("Failed to add mpreg reaction:", e)
 
-                    if self.bot.user in message.mentions or message.channel.id == 1032974266527907901:
+                    is_naus = random.randint(1, 100) == 32
+                    if self.bot.user in message.mentions or message.channel.id == 1032974266527907901 or is_naus:
                         T_EMOJI = "\U0001f3f3\U0000fe0f\U0000200d\U000026a7\U0000fe0f"
                         G_EMOJI = "\U0001f3f3\U0000fe0f\U0000200d\U0001f308"
                         N_EMOJI = "\U0001f922"
                         C_EMOJI = "\U0000271d\U0000fe0f"
-                        if any((x in message.content.lower() for x in ("trans", T_EMOJI, "femboy"))):
+                        if any((x in message.content.lower() for x in ("trans", T_EMOJI, "femboy"))) or is_naus:
                             try:
                                 await message.add_reaction(N_EMOJI)
                             except discord.HTTPException as e:
