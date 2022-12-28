@@ -1,5 +1,4 @@
-# py-cord==2.2.0
-git+https://github.com/pycord-development/pycord.git@master#egg=py-cord
+py-cord==2.3.2
 aiosmtplib==1.1.7
 orm[sqlite]==0.3.1
 httpx==0.23.0

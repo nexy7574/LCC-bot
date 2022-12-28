@@ -1,6 +1,7 @@
 import asyncio
 import io
 import os
+import time
 from typing import Tuple, Optional
 
 import discord
@@ -154,7 +155,11 @@ class OtherCog(commands.Cog):
         """Generates a "corrupted" file."""
         limit_mb = round(ctx.guild.filesize_limit / 1024 / 1024)
         if size_in_megabytes > limit_mb:
-            return await ctx.respond(f"File size must be less than {limit_mb} MB.")
+            return await ctx.respond(
+                f"File size must be less than {limit_mb} MB.\n"
+                "Want to corrupt larger files? see https://github.com/EEKIM10/cli-utils#installing-the-right-way"
+                " (and then run `ruin <file>`)."
+            )
         await ctx.defer()
 
         size = max(min(int(size_in_megabytes * 1024 * 1024), ctx.guild.filesize_limit), 1)
@@ -174,17 +179,21 @@ class OtherCog(commands.Cog):
 
     @corrupt_file.command(name="ruin")
     async def ruin_corrupt_file(
-            self,
-            ctx: discord.ApplicationContext,
-            file: discord.Attachment,
-            passes: int = 10,
-            metadata_safety_boundary: float = 5
+        self,
+        ctx: discord.ApplicationContext,
+        file: discord.Attachment,
+        passes: int = 10,
+        metadata_safety_boundary: float = 5,
     ):
         """Takes a file and corrupts parts of it"""
         await ctx.defer()
         attachment = file
         if attachment.size > 8388608:
-            return await ctx.respond("File is too large. Max size 8mb.")
+            return await ctx.respond(
+                "File is too large. Max size 8mb.\n"
+                "Want to corrupt larger files? see https://github.com/EEKIM10/cli-utils#installing-the-right-way"
+                " (and then run `ruin <file>`)."
+            )
         bound_pct = attachment.size * (0.01 * metadata_safety_boundary)
         bound_start = round(bound_pct)
         bound_end = round(attachment.size - bound_pct)
@@ -192,16 +201,16 @@ class OtherCog(commands.Cog):
         file = io.BytesIO(await file.read())
         file.seek(0)
         await ctx.edit(content="Corrupting file...")
-        file = await asyncio.to_thread(
-            self.do_file_corruption,
-            file,
-            passes,
-            bound_start,
-            bound_end
-        )
+        file = await asyncio.to_thread(self.do_file_corruption, file, passes, bound_start, bound_end)
         file.seek(0)
         await ctx.edit(content="Uploading file...")
         await ctx.edit(content="Here's your corrupted file!", file=discord.File(file, attachment.filename))
+
+    @commands.command(name="kys", aliases=['kill'])
+    @commands.is_owner()
+    async def end_your_life(self, ctx: commands.Context):
+        await ctx.send(":( okay")
+        await self.bot.close()
 
 
 def setup(bot):
