@@ -1,19 +1,43 @@
 import asyncio
 import io
 import os
-import time
-from typing import Tuple, Optional
+import psutil
+from typing import Tuple, Optional, Dict
 
 import discord
 import aiohttp
 import random
 from discord.ext import commands
+from rich.tree import Tree
+from utils import console
 
 
 # noinspection DuplicatedCode
 class OtherCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @staticmethod
+    async def get_interface_ip_addresses() -> Dict[str, list[Dict[str, str | bool | int]]]:
+        addresses = await asyncio.to_thread(psutil.net_if_addrs)
+        stats = await asyncio.to_thread(psutil.net_if_stats)
+        result = {}
+        for key in addresses.keys():
+            result[key] = []
+            for ip_addr in addresses[key]:
+                if ip_addr.broadcast is None:
+                    continue
+                else:
+                    result[key].append(
+                        {
+                            "ip": ip_addr.address,
+                            "netmask": ip_addr.netmask,
+                            "broadcast": ip_addr.broadcast,
+                            "up": stats[key].isup,
+                            "speed": stats[key].speed
+                        }
+                    )
+        return result
 
     async def analyse_text(self, text: str) -> Optional[Tuple[float, float, float, float]]:
         """Analyse text for positivity, negativity and neutrality."""
@@ -206,12 +230,52 @@ class OtherCog(commands.Cog):
         await ctx.edit(content="Uploading file...")
         await ctx.edit(content="Here's your corrupted file!", file=discord.File(file, attachment.filename))
 
-    @commands.command(name="kys", aliases=['kill'])
+    @commands.command(name="kys", aliases=["kill"])
     @commands.is_owner()
     async def end_your_life(self, ctx: commands.Context):
         await ctx.send(":( okay")
         await self.bot.close()
 
+    @commands.slash_command()
+    async def ip(self, ctx: discord.ApplicationContext, detailed: bool = False, secure: bool = True):
+        """Gets current IP"""
+        if not await self.bot.is_owner(ctx.user):
+            return await ctx.respond("Internal IP: 0.0.0.0\n"
+                                     "External IP: 0.0.0.0")
+
+        await ctx.defer(ephemeral=secure)
+        ips = await self.get_interface_ip_addresses()
+        root = Tree("IP Addresses")
+        internal = root.add("Internal")
+        external = root.add("External")
+        interfaces = internal.add("Interfaces")
+        for interface, addresses in ips.items():
+            interface_tree = interfaces.add(interface)
+            for address in addresses:
+                colour = "green" if address["up"] else "red"
+                ip_tree = interface_tree.add(
+                    f"[{colour}]" + address["ip"] + ((" (up)" if address["up"] else " (down)") if not detailed else "")
+                )
+                if detailed:
+                    ip_tree.add(f"IF Up: {'yes' if address['up'] else 'no'}")
+                    ip_tree.add(f"Netmask: {address['netmask']}")
+                    ip_tree.add(f"Broadcast: {address['broadcast']}")
+
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get("https://api.ipify.org") as resp:
+                    external.add(await resp.text())
+            except aiohttp.ClientError as e:
+                external.add(f" [red]Error: {e}")
+
+        with console.capture() as capture:
+            console.print(root)
+        text = capture.get()
+        paginator = commands.Paginator(prefix="```", suffix="```")
+        for line in text.splitlines():
+            paginator.add_line(line)
+        for page in paginator.pages:
+            await ctx.respond(page, ephemeral=secure)
 
 def setup(bot):
     bot.add_cog(OtherCog(bot))
