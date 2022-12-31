@@ -1,4 +1,5 @@
 import random
+from pathlib import Path
 from typing import Optional, Tuple
 from datetime import datetime, time
 
@@ -130,6 +131,9 @@ class Events(commands.Cog):
                                 "I'd just like to interject for a moment. What you're referring to as Linux, "
                                 "is in fact, uh... I don't know, I forgot."
                             )
+                    if "carat" in message.content.lower():
+                        file = discord.File(Path(__file__).parent.parent / "carat.jpg")
+                        await message.reply(file=file)
                 if message.channel.permissions_for(message.guild.me).add_reactions:
                     if "mpreg" in message.content.lower() or "\U0001fac3" in message.content.lower():
                         try:
