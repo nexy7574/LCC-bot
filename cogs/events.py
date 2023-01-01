@@ -185,7 +185,7 @@ class Events(commands.Cog):
                                 text=f"Pos: {pos*100:.2f}% | Neutral: {neut*100:.2f}% | Neg: {neg*100:.2f}%"
                             )
                         return await message.reply(embed=embed)
-                    if message.content.lower() == "when is the year of the linux desktop?":
+                    if message.content.lower().endswith("when is the year of the linux desktop?"):
                         date = discord.utils.utcnow()
                         # date = date.replace(year=date.year + 1)
                         return await message.reply(date.strftime("%Y") + " will be the year of the linux desktop.")
