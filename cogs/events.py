@@ -188,7 +188,7 @@ class Events(commands.Cog):
                     if message.content.lower().endswith("when is the year of the linux desktop?"):
                         date = discord.utils.utcnow()
                         # date = date.replace(year=date.year + 1)
-                        return await message.reply(date.strftime("%Y") + " will be the year of the linux desktop.")
+                        return await message.reply(date.strftime("%Y") + " will be the year of the GNU+Linux desktop.")
 
 
 def setup(bot):
