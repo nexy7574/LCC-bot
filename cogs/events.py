@@ -103,7 +103,8 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if not message.guild:
-            return console.log("Ignoring, was not in a guild.")
+            return
+            # return console.log("Ignoring, was not in a guild.")
         if message.channel.name == "pinboard":
             if message.type == discord.MessageType.pins_add:
                 await message.delete(delay=0.01)
@@ -185,7 +186,13 @@ class Events(commands.Cog):
                                 text=f"Pos: {pos*100:.2f}% | Neutral: {neut*100:.2f}% | Neg: {neg*100:.2f}%"
                             )
                         return await message.reply(embed=embed)
-                    if message.content.lower().endswith("when is the year of the linux desktop?"):
+                    if message.content.lower().endswith(
+                            (
+                                    "when is the year of the linux desktop?",
+                                "year of the linux desktop?",
+                                "year of the linux desktop",
+                            )
+                    ):
                         date = discord.utils.utcnow()
                         # date = date.replace(year=date.year + 1)
                         return await message.reply(date.strftime("%Y") + " will be the year of the GNU+Linux desktop.")
