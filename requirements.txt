@@ -6,3 +6,5 @@ jishkucord==2.5.2
 rich==12.5.1
 nltk==3.7
 psutil==5.9.4
+selenium==4.7.2
+chromedriver==2.24.1

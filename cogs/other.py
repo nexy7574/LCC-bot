@@ -1,14 +1,24 @@
 import asyncio
 import io
 import os
-import psutil
-from typing import Tuple, Optional, Dict
-
-import discord
-import aiohttp
 import random
+import re
+from time import sleep as time_sleep
+from typing import Literal
+from typing import Tuple, Optional, Dict
+from pathlib import Path
+
+import aiohttp
+import discord
+import psutil
 from discord.ext import commands
 from rich.tree import Tree
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.firefox.service import Service as FirefoxService
+
 from utils import console
 
 
@@ -16,6 +26,54 @@ from utils import console
 class OtherCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @staticmethod
+    def screenshot_website(website: str, driver: Literal['chrome', 'firefox'], render_time: int = 10) -> discord.File:
+        if not Path("/usr/bin/firefox").exists():
+            driver = 'chrome'
+        if not Path("/usr/bin/geckodriver").exists():
+            driver = 'chrome'
+
+        if driver == 'chrome':
+            options = ChromeOptions()
+            options.add_argument("--headless")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--disable-gpu")
+            options.add_argument("--window-size=1920x1080")
+            options.add_argument("--disable-extensions")
+            options.add_argument("--incognito")
+            for opt in ("chrome", "chromium"):
+                if Path(f"/usr/bin/{opt}").exists():
+                    options.binary_location = f"/usr/bin/{opt}"
+                    break
+            else:
+                options.binary_location = "/usr/bin/chromium"
+            service = ChromeService("/usr/bin/chromedriver")
+            driver = webdriver.Chrome(service=service, options=options)
+        else:
+            options = FirefoxOptions()
+            options.add_argument('--headless')
+            options.add_argument("--private-window")
+            options.add_argument("--safe-mode")
+            options.add_argument("--new-instance")
+            for opt in ("firefox", "firefox-esr"):
+                if Path(f"/usr/bin/{opt}").exists():
+                    options.binary_location = f"/usr/bin/{opt}"
+                    break
+            else:
+                options.binary_location = "/usr/bin/firefox"
+            service = FirefoxService("/usr/bin/geckodriver")
+            driver = webdriver.Firefox(service=service, options=options)
+
+        driver.get(website)
+        time_sleep(render_time)
+        domain = re.sub(r"https?://", "", website)
+        _io = io.BytesIO()
+        _io.write(driver.get_screenshot_as_png())
+        _io.seek(0)
+        driver.quit()
+        return discord.File(_io, f"{domain}.png")
 
     @staticmethod
     async def get_interface_ip_addresses() -> Dict[str, list[Dict[str, str | bool | int]]]:
@@ -276,6 +334,42 @@ class OtherCog(commands.Cog):
             paginator.add_line(line)
         for page in paginator.pages:
             await ctx.respond(page, ephemeral=secure)
+
+    @commands.slash_command()
+    async def screenshot(
+            self,
+            ctx: discord.ApplicationContext,
+            url: str,
+            browser: discord.Option(
+                str,
+                description="Browser to use",
+                choices=[
+                    "chrome",
+                    "firefox"
+                ],
+                default="chrome"
+            ),
+            render_timeout: int = 10
+    ):
+        """Takes a screenshot of a URL"""
+        await ctx.defer()
+        if ctx.user.id == 1019233057519177778:
+            if getattr(self.bot, "ALLOW_MATTHEW", False) is False:
+                return await ctx.respond("No.")
+
+        await ctx.respond("Taking screenshot...")
+        try:
+            screenshot = await asyncio.to_thread(
+                self.screenshot_website,
+                url,
+                browser,
+                render_timeout
+            )
+        except Exception as e:
+            console.log(f"Error taking screenshot: {e}")
+            return await ctx.edit(content=f"Error: {e}")
+        else:
+            await ctx.edit(content="Here's your screenshot!", file=screenshot)
 
 def setup(bot):
     bot.add_cog(OtherCog(bot))
