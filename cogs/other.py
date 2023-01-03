@@ -415,9 +415,13 @@ class OtherCog(commands.Cog):
                     blacklist.write(line)
         await ctx.respond("Removed domain from blacklist.")
 
-    domains_matthew = discord.SlashCommandGroup("matthew", "Commands for managing Matthew")
+    @commands.group(name="domains", invoke_without_command=True)
+    @commands.is_owner()
+    async def domains_group(self, ctx: commands.Context):
+        """Commands for managing domains"""
+        await ctx.send_help(ctx.command)
 
-    @domains_matthew.command(name="enable")
+    @domains_group.command(name="enable")
     async def enable_matthew(self, ctx: discord.ApplicationContext):
         """Enables Matthew"""
         await ctx.defer()
@@ -426,7 +430,7 @@ class OtherCog(commands.Cog):
         self.bot.ALLOW_MATTHEW = True
         await ctx.respond("Matthew enabled.")
 
-    @domains_matthew.command(name="disable")
+    @domains_group.command(name="disable")
     async def disable_matthew(self, ctx: discord.ApplicationContext):
         """Disables Matthew"""
         await ctx.defer()
