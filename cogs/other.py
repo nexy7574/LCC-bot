@@ -67,13 +67,14 @@ class OtherCog(commands.Cog):
             driver = webdriver.Firefox(service=service, options=options)
 
         await ctx.edit(content="Loading website...")
-        driver.get(website)
+        await asyncio.to_thread(driver.get(website))
         await ctx.edit(content=f"Waiting {render_time:,} seconds to render...")
-        time_sleep(render_time)
+        await asyncio.sleep(render_time)
         await ctx.edit(content="Taking screenshot...")
         domain = re.sub(r"https?://", "", website)
+        data = await asyncio.to_thread(driver.get_screenshot_as_png())
         _io = io.BytesIO()
-        _io.write(driver.get_screenshot_as_png())
+        _io.write(data)
         _io.seek(0)
         driver.quit()
         return discord.File(_io, f"{domain}.png")
@@ -368,14 +369,11 @@ class OtherCog(commands.Cog):
 
         await ctx.respond("Taking screenshot...")
         try:
-            screenshot = await self.bot.loop.run_in_executor(
-                None,
-                self.screenshot_website(
-                    ctx,
-                    url,
-                    browser,
-                    render_timeout
-                )
+            screenshot = await self.screenshot_website(
+                ctx,
+                url,
+                browser,
+                render_timeout
             )
         except Exception as e:
             console.log(f"Error taking screenshot: {e}")
