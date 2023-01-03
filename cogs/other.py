@@ -3,7 +3,10 @@ import io
 import os
 import random
 import re
+import textwrap
+
 import dns.resolver
+import aiofiles
 from time import sleep as time_sleep
 from typing import Literal
 from typing import Tuple, Optional, Dict
@@ -368,15 +371,16 @@ class OtherCog(commands.Cog):
 
         url = urlparse(url)
 
-        await ctx.respond(f"Taking screenshot of {url.geturl()}..."[:2000])
+        await ctx.respond(f"Preparing to screenshot {textwrap.shorten(url.geturl(), 100)}... (checking local filters)")
 
-        with open("domains.txt") as blacklist:
-            for line in blacklist:
+        async with aiofiles.open("domains.txt") as blacklist:
+            for line in await blacklist.readlines():
                 if not line.strip():
                     continue
                 if re.match(line.strip(), url.netloc):
                     return await ctx.edit(content="That domain is blacklisted.")
 
+        await ctx.respond(f"Preparing to screenshot {textwrap.shorten(url.geturl(), 100)}... (checking DNS filters)")
         try:
             for response in await asyncio.to_thread(dns.resolver.resolve, url.netloc, "A"):
                 if response.address == "0.0.0.0":
@@ -386,6 +390,7 @@ class OtherCog(commands.Cog):
         except dns.resolver.NoAnswer:
             return await ctx.edit(content="DNS resolver did not respond.")
 
+        await ctx.respond(f"Preparing to screenshot {textwrap.shorten(url.geturl(), 100)}... (Filters OK)")
         try:
             screenshot = await self.screenshot_website(
                 ctx,
@@ -407,8 +412,8 @@ class OtherCog(commands.Cog):
         await ctx.defer()
         if not await self.bot.is_owner(ctx.user):
             return await ctx.respond("You are not allowed to do that.")
-        with open("domains.txt", "a") as blacklist:
-            blacklist.write(domain.lower() + "\n")
+        async with aiofiles.open("domains.txt", "a") as blacklist:
+            await blacklist.write(domain.lower() + "\n")
         await ctx.respond("Added domain to blacklist.")
 
     @domains.command(name="remove")
@@ -417,12 +422,12 @@ class OtherCog(commands.Cog):
         await ctx.defer()
         if not await self.bot.is_owner(ctx.user):
             return await ctx.respond("You are not allowed to do that.")
-        with open("domains.txt") as blacklist:
-            lines = blacklist.readlines()
-        with open("domains.txt", "w") as blacklist:
+        async with aiofiles.open("domains.txt") as blacklist:
+            lines = await blacklist.readlines()
+        async with aiofiles.open("domains.txt", "w") as blacklist:
             for line in lines:
                 if line.strip() != domain.lower():
-                    blacklist.write(line)
+                    await blacklist.write(line)
         await ctx.respond("Removed domain from blacklist.")
 
     @commands.group(name="domains", invoke_without_command=True)
