@@ -367,12 +367,15 @@ class OtherCog(commands.Cog):
 
         url = urlparse(url)
 
+        await ctx.respond(f"Taking screenshot of {url.geturl()}..."[:2000])
+
         with open("domains.txt") as blacklist:
             for line in blacklist:
-                if line.strip() == url.netloc.lower():
-                    return await ctx.respond("That domain is blacklisted.")
+                if not line.strip():
+                    continue
+                if re.match(line.strip(), url.netloc):
+                    return await ctx.edit(content="That domain is blacklisted.")
 
-        await ctx.respond("Taking screenshot...")
         try:
             screenshot = await self.screenshot_website(
                 ctx,
