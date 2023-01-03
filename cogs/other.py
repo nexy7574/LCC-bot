@@ -28,7 +28,7 @@ class OtherCog(commands.Cog):
         self.bot = bot
 
     @staticmethod
-    def screenshot_website(website: str, driver: Literal['chrome', 'firefox'], render_time: int = 10) -> discord.File:
+    async def screenshot_website(ctx: discord.ApplicationContext, website: str, driver: Literal['chrome', 'firefox'], render_time: int = 10) -> discord.File:
         if not Path("/usr/bin/firefox").exists():
             driver = 'chrome'
         if not Path("/usr/bin/geckodriver").exists():
@@ -66,8 +66,11 @@ class OtherCog(commands.Cog):
             service = FirefoxService("/usr/bin/geckodriver")
             driver = webdriver.Firefox(service=service, options=options)
 
+        await ctx.edit(content="Loading website...")
         driver.get(website)
+        await ctx.edit(content=f"Waiting {render_time:,} seconds to render...")
         time_sleep(render_time)
+        await ctx.edit(content="Taking screenshot...")
         domain = re.sub(r"https?://", "", website)
         _io = io.BytesIO()
         _io.write(driver.get_screenshot_as_png())
@@ -357,10 +360,18 @@ class OtherCog(commands.Cog):
             if getattr(self.bot, "ALLOW_MATTHEW", False) is False:
                 return await ctx.respond("No.")
 
+        if "2girls1cup.ca" in url:
+            return await ctx.respond("No.")
+
+        if not url.startswith("http"):
+            url = "https://" + url
+
         await ctx.respond("Taking screenshot...")
         try:
-            screenshot = await asyncio.to_thread(
+            screenshot = await self.bot.loop.run_in_executor(
+                None,
                 self.screenshot_website,
+                ctx,
                 url,
                 browser,
                 render_timeout
