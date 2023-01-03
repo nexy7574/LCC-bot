@@ -415,7 +415,7 @@ class OtherCog(commands.Cog):
                     blacklist.write(line)
         await ctx.respond("Removed domain from blacklist.")
 
-    domains_matthew = discord.SlashCommandGroup("matthew", "Commands for managing Matthew", parent=domains)
+    domains_matthew = discord.SlashCommandGroup("matthew", "Commands for managing Matthew")
 
     @domains_matthew.command(name="enable")
     async def enable_matthew(self, ctx: discord.ApplicationContext):
