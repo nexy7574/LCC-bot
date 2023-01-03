@@ -370,11 +370,12 @@ class OtherCog(commands.Cog):
         try:
             screenshot = await self.bot.loop.run_in_executor(
                 None,
-                self.screenshot_website,
-                ctx,
-                url,
-                browser,
-                render_timeout
+                self.screenshot_website(
+                    ctx,
+                    url,
+                    browser,
+                    render_timeout
+                )
             )
         except Exception as e:
             console.log(f"Error taking screenshot: {e}")
