@@ -7,6 +7,7 @@ from time import sleep as time_sleep
 from typing import Literal
 from typing import Tuple, Optional, Dict
 from pathlib import Path
+from urllib.parse import urlparse
 
 import aiohttp
 import discord
@@ -361,17 +362,21 @@ class OtherCog(commands.Cog):
             if getattr(self.bot, "ALLOW_MATTHEW", False) is False:
                 return await ctx.respond("No.")
 
-        if "2girls1cup.ca" in url:
-            return await ctx.respond("No.")
-
         if not url.startswith("http"):
             url = "https://" + url
+
+        url = urlparse(url)
+
+        with open("domains.txt") as blacklist:
+            for line in blacklist:
+                if line.strip() == url.netloc.lower():
+                    return await ctx.respond("That domain is blacklisted.")
 
         await ctx.respond("Taking screenshot...")
         try:
             screenshot = await self.screenshot_website(
                 ctx,
-                url,
+                url.geturl(),
                 browser,
                 render_timeout
             )
@@ -380,6 +385,53 @@ class OtherCog(commands.Cog):
             return await ctx.edit(content=f"Error: {e}")
         else:
             await ctx.edit(content="Here's your screenshot!", file=screenshot)
+
+    domains = discord.SlashCommandGroup("domains", "Commands for managing domains")
+
+    @domains.command(name="add")
+    async def add_domain(self, ctx: discord.ApplicationContext, domain: str):
+        """Adds a domain to the blacklist"""
+        await ctx.defer()
+        if not await self.bot.is_owner(ctx.user):
+            return await ctx.respond("You are not allowed to do that.")
+        with open("domains.txt", "a") as blacklist:
+            blacklist.write(domain.lower() + "\n")
+        await ctx.respond("Added domain to blacklist.")
+
+    @domains.command(name="remove")
+    async def remove_domain(self, ctx: discord.ApplicationContext, domain: str):
+        """Removes a domain from the blacklist"""
+        await ctx.defer()
+        if not await self.bot.is_owner(ctx.user):
+            return await ctx.respond("You are not allowed to do that.")
+        with open("domains.txt") as blacklist:
+            lines = blacklist.readlines()
+        with open("domains.txt", "w") as blacklist:
+            for line in lines:
+                if line.strip() != domain.lower():
+                    blacklist.write(line)
+        await ctx.respond("Removed domain from blacklist.")
+
+    domains_matthew = discord.SlashCommandGroup("matthew", "Commands for managing Matthew", parent=domains)
+
+    @domains_matthew.command(name="enable")
+    async def enable_matthew(self, ctx: discord.ApplicationContext):
+        """Enables Matthew"""
+        await ctx.defer()
+        if not await self.bot.is_owner(ctx.user):
+            return await ctx.respond("You are not allowed to do that.")
+        self.bot.ALLOW_MATTHEW = True
+        await ctx.respond("Matthew enabled.")
+
+    @domains_matthew.command(name="disable")
+    async def disable_matthew(self, ctx: discord.ApplicationContext):
+        """Disables Matthew"""
+        await ctx.defer()
+        if not await self.bot.is_owner(ctx.user):
+            return await ctx.respond("You are not allowed to do that.")
+        self.bot.ALLOW_MATTHEW = False
+        await ctx.respond("Matthew disabled.")
+
 
 def setup(bot):
     bot.add_cog(OtherCog(bot))
