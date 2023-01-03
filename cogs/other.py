@@ -3,6 +3,7 @@ import io
 import os
 import random
 import re
+import dns.resolver
 from time import sleep as time_sleep
 from typing import Literal
 from typing import Tuple, Optional, Dict
@@ -375,6 +376,15 @@ class OtherCog(commands.Cog):
                     continue
                 if re.match(line.strip(), url.netloc):
                     return await ctx.edit(content="That domain is blacklisted.")
+
+        try:
+            for response in await asyncio.to_thread(dns.resolver.resolve, url.netloc, "A"):
+                if response.address == "0.0.0.0":
+                    return await ctx.edit(content="That domain is filtered.")
+        except dns.resolver.NXDOMAIN:
+            return await ctx.edit(content="That domain does not exist.")
+        except dns.resolver.NoAnswer:
+            return await ctx.edit(content="DNS resolver did not respond.")
 
         try:
             screenshot = await self.screenshot_website(
