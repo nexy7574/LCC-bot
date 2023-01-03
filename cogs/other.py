@@ -33,13 +33,15 @@ class OtherCog(commands.Cog):
         self.bot = bot
 
     @staticmethod
-    async def screenshot_website(ctx: discord.ApplicationContext, website: str, driver: Literal['chrome', 'firefox'], render_time: int = 10) -> discord.File:
+    async def screenshot_website(
+        ctx: discord.ApplicationContext, website: str, driver: Literal["chrome", "firefox"], render_time: int = 10
+    ) -> discord.File:
         if not Path("/usr/bin/firefox").exists():
-            driver = 'chrome'
+            driver = "chrome"
         if not Path("/usr/bin/geckodriver").exists():
-            driver = 'chrome'
+            driver = "chrome"
 
-        if driver == 'chrome':
+        if driver == "chrome":
             options = ChromeOptions()
             options.add_argument("--headless")
             options.add_argument("--no-sandbox")
@@ -58,7 +60,7 @@ class OtherCog(commands.Cog):
             driver = webdriver.Chrome(service=service, options=options)
         else:
             options = FirefoxOptions()
-            options.add_argument('--headless')
+            options.add_argument("--headless")
             options.add_argument("--private-window")
             options.add_argument("--safe-mode")
             options.add_argument("--new-instance")
@@ -101,7 +103,7 @@ class OtherCog(commands.Cog):
                             "netmask": ip_addr.netmask,
                             "broadcast": ip_addr.broadcast,
                             "up": stats[key].isup,
-                            "speed": stats[key].speed
+                            "speed": stats[key].speed,
                         }
                     )
         return result
@@ -307,8 +309,7 @@ class OtherCog(commands.Cog):
     async def ip(self, ctx: discord.ApplicationContext, detailed: bool = False, secure: bool = True):
         """Gets current IP"""
         if not await self.bot.is_owner(ctx.user):
-            return await ctx.respond("Internal IP: 0.0.0.0\n"
-                                     "External IP: 0.0.0.0")
+            return await ctx.respond("Internal IP: 0.0.0.0\n" "External IP: 0.0.0.0")
 
         await ctx.defer(ephemeral=secure)
         ips = await self.get_interface_ip_addresses()
@@ -346,19 +347,11 @@ class OtherCog(commands.Cog):
 
     @commands.slash_command()
     async def screenshot(
-            self,
-            ctx: discord.ApplicationContext,
-            url: str,
-            browser: discord.Option(
-                str,
-                description="Browser to use",
-                choices=[
-                    "chrome",
-                    "firefox"
-                ],
-                default="chrome"
-            ),
-            render_timeout: int = 10
+        self,
+        ctx: discord.ApplicationContext,
+        url: str,
+        browser: discord.Option(str, description="Browser to use", choices=["chrome", "firefox"], default="chrome"),
+        render_timeout: int = 10,
     ):
         """Takes a screenshot of a URL"""
         await ctx.defer()
@@ -371,7 +364,9 @@ class OtherCog(commands.Cog):
 
         url = urlparse(url)
 
-        await ctx.respond(f"Preparing to screenshot {textwrap.shorten(url.geturl(), 100)}... (checking local filters)")
+        await ctx.edit(
+            content=f"Preparing to screenshot {textwrap.shorten(url.geturl(), 100)}... (checking local filters)"
+        )
 
         async with aiofiles.open("domains.txt") as blacklist:
             for line in await blacklist.readlines():
@@ -380,7 +375,9 @@ class OtherCog(commands.Cog):
                 if re.match(line.strip(), url.netloc):
                     return await ctx.edit(content="That domain is blacklisted.")
 
-        await ctx.respond(f"Preparing to screenshot {textwrap.shorten(url.geturl(), 100)}... (checking DNS filters)")
+        await ctx.edit(
+            content=f"Preparing to screenshot {textwrap.shorten(url.geturl(), 100)}... (checking DNS filters)"
+        )
         try:
             for response in await asyncio.to_thread(dns.resolver.resolve, url.netloc, "A"):
                 if response.address == "0.0.0.0":
@@ -390,14 +387,9 @@ class OtherCog(commands.Cog):
         except dns.resolver.NoAnswer:
             return await ctx.edit(content="DNS resolver did not respond.")
 
-        await ctx.respond(f"Preparing to screenshot {textwrap.shorten(url.geturl(), 100)}... (Filters OK)")
+        await ctx.edit(content=f"Preparing to screenshot {textwrap.shorten(url.geturl(), 100)}... (Filters OK)")
         try:
-            screenshot = await self.screenshot_website(
-                ctx,
-                url.geturl(),
-                browser,
-                render_timeout
-            )
+            screenshot = await self.screenshot_website(ctx, url.geturl(), browser, render_timeout)
         except Exception as e:
             console.print_exception()
             return await ctx.edit(content=f"Error: {e}")
@@ -430,29 +422,27 @@ class OtherCog(commands.Cog):
                     await blacklist.write(line)
         await ctx.respond("Removed domain from blacklist.")
 
-    @commands.group(name="domains", invoke_without_command=True)
+    @commands.group(name="matthew", invoke_without_command=True)
     @commands.is_owner()
-    async def domains_group(self, ctx: commands.Context):
+    async def matthew_group(self, ctx: commands.Context):
         """Commands for managing domains"""
         await ctx.send_help(ctx.command)
 
-    @domains_group.command(name="enable")
-    async def enable_matthew(self, ctx: discord.ApplicationContext):
+    @matthew_group.command(name="enable")
+    async def enable_matthew(self, ctx: commands.Context):
         """Enables Matthew"""
-        await ctx.defer()
         if not await self.bot.is_owner(ctx.user):
             return await ctx.respond("You are not allowed to do that.")
         self.bot.ALLOW_MATTHEW = True
-        await ctx.respond("Matthew enabled.")
+        await ctx.reply("Matthew enabled.")
 
-    @domains_group.command(name="disable")
-    async def disable_matthew(self, ctx: discord.ApplicationContext):
+    @matthew_group.command(name="disable")
+    async def disable_matthew(self, ctx: commands.Context):
         """Disables Matthew"""
-        await ctx.defer()
         if not await self.bot.is_owner(ctx.user):
             return await ctx.respond("You are not allowed to do that.")
         self.bot.ALLOW_MATTHEW = False
-        await ctx.respond("Matthew disabled.")
+        await ctx.reply("Matthew disabled.")
 
 
 def setup(bot):

@@ -187,11 +187,11 @@ class Events(commands.Cog):
                             )
                         return await message.reply(embed=embed)
                     if message.content.lower().endswith(
-                            (
-                                    "when is the year of the linux desktop?",
-                                "year of the linux desktop?",
-                                "year of the linux desktop",
-                            )
+                        (
+                            "when is the year of the linux desktop?",
+                            "year of the linux desktop?",
+                            "year of the linux desktop",
+                        )
                     ):
                         date = discord.utils.utcnow()
                         # date = date.replace(year=date.year + 1)
