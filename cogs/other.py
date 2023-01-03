@@ -431,16 +431,16 @@ class OtherCog(commands.Cog):
     @matthew_group.command(name="enable")
     async def enable_matthew(self, ctx: commands.Context):
         """Enables Matthew"""
-        if not await self.bot.is_owner(ctx.user):
-            return await ctx.respond("You are not allowed to do that.")
+        if not await self.bot.is_owner(ctx.author):
+            return await ctx.reply("You are not allowed to do that.")
         self.bot.ALLOW_MATTHEW = True
         await ctx.reply("Matthew enabled.")
 
     @matthew_group.command(name="disable")
     async def disable_matthew(self, ctx: commands.Context):
         """Disables Matthew"""
-        if not await self.bot.is_owner(ctx.user):
-            return await ctx.respond("You are not allowed to do that.")
+        if not await self.bot.is_owner(ctx.author):
+            return await ctx.reply("You are not allowed to do that.")
         self.bot.ALLOW_MATTHEW = False
         await ctx.reply("Matthew disabled.")
 
