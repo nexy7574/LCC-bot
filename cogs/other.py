@@ -67,7 +67,7 @@ class OtherCog(commands.Cog):
             driver = webdriver.Firefox(service=service, options=options)
 
         await ctx.edit(content="Loading website...")
-        await asyncio.to_thread(driver.get(website))
+        await asyncio.to_thread(driver.get, website)
         await ctx.edit(content=f"Waiting {render_time:,} seconds to render...")
         await asyncio.sleep(render_time)
         await ctx.edit(content="Taking screenshot...")
@@ -376,7 +376,7 @@ class OtherCog(commands.Cog):
                 render_timeout
             )
         except Exception as e:
-            console.log(f"Error taking screenshot: {e}")
+            console.print_exception()
             return await ctx.edit(content=f"Error: {e}")
         else:
             await ctx.edit(content="Here's your screenshot!", file=screenshot)
