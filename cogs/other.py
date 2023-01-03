@@ -72,7 +72,7 @@ class OtherCog(commands.Cog):
         await asyncio.sleep(render_time)
         await ctx.edit(content="Taking screenshot...")
         domain = re.sub(r"https?://", "", website)
-        data = await asyncio.to_thread(driver.get_screenshot_as_png())
+        data = await asyncio.to_thread(driver.get_screenshot_as_png)
         _io = io.BytesIO()
         _io.write(data)
         _io.seek(0)
