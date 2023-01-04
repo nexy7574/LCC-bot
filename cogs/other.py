@@ -360,7 +360,7 @@ class OtherCog(commands.Cog):
                 return await ctx.respond("No.")
 
         if not url.startswith("http"):
-            url = "https://" + url
+            url = "http://" + url
 
         url = urlparse(url)
 
@@ -379,7 +379,7 @@ class OtherCog(commands.Cog):
             content=f"Preparing to screenshot {textwrap.shorten(url.geturl(), 100)}... (checking DNS filters)"
         )
         try:
-            for response in await asyncio.to_thread(dns.resolver.resolve, url.netloc, "A"):
+            for response in await asyncio.to_thread(dns.resolver.resolve, url.hostname, "A"):
                 if response.address == "0.0.0.0":
                     return await ctx.edit(content="That domain is filtered.")
         except dns.resolver.NXDOMAIN:
