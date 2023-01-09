@@ -37,9 +37,12 @@ class VerifyCog(commands.Cog):
         return await ctx.respond(view=view, ephemeral=True)
 
     @commands.command(name="de-verify")
-    @commands.is_owner()
+    @commands.guild_only()
     async def verification_del(self, ctx: commands.Context, *, user: discord.Member):
         """Removes a user's verification status"""
+        if not await self.bot.is_owner(ctx.author):
+            if not ctx.author.guild_permissions.administrator:
+                return await ctx.reply(":x: Permission denied.")
         await ctx.trigger_typing()
         for code in await VerifyCode.objects.all(bind=user.id):
             await code.delete()
@@ -55,10 +58,12 @@ class VerifyCog(commands.Cog):
         return await ctx.reply(f"\N{white heavy check mark} De-verified {user}.")
 
     @commands.command(name="verify")
-    @commands.is_owner()
     @commands.guild_only()
     async def verification_force(self, ctx: commands.Context, user: discord.Member, _id: str, name: str):
         """Manually verifies someone"""
+        if not await self.bot.is_owner(ctx.author):
+            if not ctx.author.guild_permissions.administrator:
+                return await ctx.reply(":x: Permission denied.")
         existing = await Student.objects.create(id=_id, user_id=user.id, name=name)
         role = discord.utils.find(lambda r: r.name.lower() == "verified", ctx.guild.roles)
         if role and role < ctx.guild.me.top_role:
