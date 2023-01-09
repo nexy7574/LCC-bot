@@ -32,9 +32,8 @@ class OtherCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @staticmethod
     async def screenshot_website(
-        ctx: discord.ApplicationContext, website: str, driver: Literal["chrome", "firefox"], render_time: int = 10
+        self, ctx: discord.ApplicationContext, website: str, driver: Literal["chrome", "firefox"], render_time: int = 10
     ) -> discord.File:
         if not Path("/usr/bin/firefox").exists():
             driver = "chrome"
@@ -74,11 +73,14 @@ class OtherCog(commands.Cog):
             driver = webdriver.Firefox(service=service, options=options)
         friendly_url = textwrap.shorten(website, 100)
 
-        await ctx.edit(content=f"Screenshotting {friendly_url}... (49%)")
+        async def _edit(content: str):
+            self.bot.loop.create_task(ctx.interaction.edit_original_response(content=content))
+
+        await _edit(content=f"Screenshotting {friendly_url}... (49%)")
         await asyncio.to_thread(driver.get, website)
-        await ctx.edit(content=f"Screenshotting {friendly_url}... (66%)")
+        await _edit(content=f"Screenshotting {friendly_url}... (66%)")
         await asyncio.sleep(render_time)
-        await ctx.edit(content="Screenshotting {friendly_url}... (83%)")
+        await _edit(content=f"Screenshotting {friendly_url}... (83%)")
         domain = re.sub(r"https?://", "", website)
         data = await asyncio.to_thread(driver.get_screenshot_as_png)
         _io = io.BytesIO()
@@ -370,21 +372,21 @@ class OtherCog(commands.Cog):
             content=f"Preparing to screenshot {friendly_url}... (0%)"
         )
 
-        async def blacklist_check() -> bool:
+        async def blacklist_check() -> bool | str:
             async with aiofiles.open("domains.txt") as blacklist:
                 for line in await blacklist.readlines():
                     if not line.strip():
                         continue
                     if re.match(line.strip(), url.netloc):
-                        return False
+                        return "Local blacklist"
                         # return await ctx.edit(content="That domain is blacklisted.")
             return True
 
-        async def dns_check() -> Optional[bool]:
+        async def dns_check() -> Optional[bool | str]:
             try:
                 for response in await asyncio.to_thread(dns.resolver.resolve, url.hostname, "A"):
                     if response.address == "0.0.0.0":
-                        return False
+                        return "DNS blacklist"
             except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
                 return
             else:
@@ -397,19 +399,25 @@ class OtherCog(commands.Cog):
             ],
             return_when=asyncio.FIRST_COMPLETED,
         )
+        done = done or pending
         done = done.pop()
-        if done.result() is not True:
+        result = await done
+        if result is not True:
             return await ctx.edit(
                 content="That domain is blacklisted, doesn't exist, or there was no answer from the DNS server."
+                        f" ({result!r})"
             )
 
+        await asyncio.sleep(1)
         await ctx.edit(content=f"Preparing to screenshot {friendly_url}... (16%)")
         okay = await pending.pop()
         if okay is not True:
             return await ctx.edit(
                 content="That domain is blacklisted, doesn't exist, or there was no answer from the DNS server."
+                        f" ({result!r})"
             )
 
+        await asyncio.sleep(1)
         await ctx.edit(content=f"Screenshotting {textwrap.shorten(url.geturl(), 100)}... (33%)")
         try:
             screenshot = await self.screenshot_website(ctx, url.geturl(), browser, render_timeout)
