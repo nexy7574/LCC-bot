@@ -402,7 +402,13 @@ class OtherCog(commands.Cog):
         done_tasks = done
         done = done_tasks or pending
         done = pending or done_tasks
-        done = done.pop()
+        try:
+            done = done.pop()
+        except KeyError:
+            return await ctx.respond(
+                "Something went wrong. Try again?\n"
+                f"`DONE:{done}|DONETASKS:{done_tasks}|PENDING:{pending}`"
+            )
         result = await done
         if result is not True:
             return await ctx.edit(
