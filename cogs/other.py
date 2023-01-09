@@ -400,10 +400,8 @@ class OtherCog(commands.Cog):
             return_when=asyncio.FIRST_COMPLETED,
         )
         done_tasks = done
-        done = done_tasks or pending
-        done = pending or done_tasks
         try:
-            done = done.pop()
+            done = done_tasks.pop()
         except KeyError:
             return await ctx.respond(
                 "Something went wrong. Try again?\n"
@@ -418,7 +416,7 @@ class OtherCog(commands.Cog):
 
         await asyncio.sleep(1)
         await ctx.edit(content=f"Preparing to screenshot {friendly_url}... (16%)")
-        okay = await pending.pop()
+        okay = await (pending or done_tasks).pop()
         if okay is not True:
             return await ctx.edit(
                 content="That domain is blacklisted, doesn't exist, or there was no answer from the DNS server."
