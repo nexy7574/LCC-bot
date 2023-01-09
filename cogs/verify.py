@@ -1,7 +1,7 @@
 import discord
 import orm
 from discord.ext import commands
-from utils import VerifyCode, Student, VerifyView, get_or_none, console
+from utils import VerifyCode, Student, VerifyView, get_or_none, console, owner_or_admin
 
 
 class VerifyCog(commands.Cog):
@@ -38,11 +38,12 @@ class VerifyCog(commands.Cog):
 
     @commands.command(name="de-verify")
     @commands.guild_only()
+    @owner_or_admin()
     async def verification_del(self, ctx: commands.Context, *, user: discord.Member):
         """Removes a user's verification status"""
-        if not await self.bot.is_owner(ctx.author):
-            if not ctx.author.guild_permissions.administrator:
-                return await ctx.reply(":x: Permission denied.")
+        # if not await self.bot.is_owner(ctx.author):
+        #     if not ctx.author.guild_permissions.administrator:
+        #         return await ctx.reply(":x: Permission denied.")
         await ctx.trigger_typing()
         for code in await VerifyCode.objects.all(bind=user.id):
             await code.delete()
@@ -59,11 +60,9 @@ class VerifyCog(commands.Cog):
 
     @commands.command(name="verify")
     @commands.guild_only()
+    @owner_or_admin()
     async def verification_force(self, ctx: commands.Context, user: discord.Member, _id: str, name: str):
         """Manually verifies someone"""
-        if not await self.bot.is_owner(ctx.author):
-            if not ctx.author.guild_permissions.administrator:
-                return await ctx.reply(":x: Permission denied.")
         existing = await Student.objects.create(id=_id, user_id=user.id, name=name)
         role = discord.utils.find(lambda r: r.name.lower() == "verified", ctx.guild.roles)
         if role and role < ctx.guild.me.top_role:
@@ -96,7 +95,7 @@ class VerifyCog(commands.Cog):
             )
 
     @commands.command(name="rebind")
-    @commands.is_owner()
+    @owner_or_admin()
     async def rebind_code(self, ctx: commands.Context, b_number: str, *, user: discord.Member):
         # noinspection GrazieInspection
         """Changes which account a B number is bound to"""

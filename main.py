@@ -30,8 +30,12 @@ extensions = [
     "cogs.starboard",
 ]
 for ext in extensions:
-    bot.load_extension(ext)
-    console.log(f"Loaded extension [green]{ext}")
+    try:
+        bot.load_extension(ext)
+    except discord.ExtensionFailed as e:
+        console.log(f"[red]Failed to load extension {ext}: {e}")
+    else:
+        console.log(f"Loaded extension [green]{ext}")
 bot.loop.run_until_complete(registry.create_all())
 
 

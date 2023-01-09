@@ -72,12 +72,13 @@ class OtherCog(commands.Cog):
                 options.binary_location = "/usr/bin/firefox"
             service = FirefoxService("/usr/bin/geckodriver")
             driver = webdriver.Firefox(service=service, options=options)
+        friendly_url = textwrap.shorten(website, 100)
 
-        await ctx.edit(content="Loading website...")
+        await ctx.edit(content=f"Screenshotting {friendly_url}... (49%)")
         await asyncio.to_thread(driver.get, website)
-        await ctx.edit(content=f"Waiting {render_time:,} seconds to render...")
+        await ctx.edit(content=f"Screenshotting {friendly_url}... (66%)")
         await asyncio.sleep(render_time)
-        await ctx.edit(content="Taking screenshot...")
+        await ctx.edit(content="Screenshotting {friendly_url}... (83%)")
         domain = re.sub(r"https?://", "", website)
         data = await asyncio.to_thread(driver.get_screenshot_as_png)
         _io = io.BytesIO()
@@ -309,7 +310,7 @@ class OtherCog(commands.Cog):
     async def ip(self, ctx: discord.ApplicationContext, detailed: bool = False, secure: bool = True):
         """Gets current IP"""
         if not await self.bot.is_owner(ctx.user):
-            return await ctx.respond("Internal IP: 0.0.0.0\n" "External IP: 0.0.0.0")
+            return await ctx.respond("Internal IP: 0.0.0.0\nExternal IP: 0.0.0.0")
 
         await ctx.defer(ephemeral=secure)
         ips = await self.get_interface_ip_addresses()
@@ -351,7 +352,7 @@ class OtherCog(commands.Cog):
         ctx: discord.ApplicationContext,
         url: str,
         browser: discord.Option(str, description="Browser to use", choices=["chrome", "firefox"], default="chrome"),
-        render_timeout: int = 10,
+        render_timeout: int = 5,
     ):
         """Takes a screenshot of a URL"""
         await ctx.defer()
@@ -363,37 +364,61 @@ class OtherCog(commands.Cog):
             url = "http://" + url
 
         url = urlparse(url)
+        friendly_url = textwrap.shorten(url.geturl(), 100)
 
         await ctx.edit(
-            content=f"Preparing to screenshot {textwrap.shorten(url.geturl(), 100)}... (checking local filters)"
+            content=f"Preparing to screenshot {friendly_url}... (0%)"
         )
 
-        async with aiofiles.open("domains.txt") as blacklist:
-            for line in await blacklist.readlines():
-                if not line.strip():
-                    continue
-                if re.match(line.strip(), url.netloc):
-                    return await ctx.edit(content="That domain is blacklisted.")
+        async def blacklist_check() -> bool:
+            async with aiofiles.open("domains.txt") as blacklist:
+                for line in await blacklist.readlines():
+                    if not line.strip():
+                        continue
+                    if re.match(line.strip(), url.netloc):
+                        return False
+                        # return await ctx.edit(content="That domain is blacklisted.")
+            return True
 
-        await ctx.edit(
-            content=f"Preparing to screenshot {textwrap.shorten(url.geturl(), 100)}... (checking DNS filters)"
+        async def dns_check() -> Optional[bool]:
+            try:
+                for response in await asyncio.to_thread(dns.resolver.resolve, url.hostname, "A"):
+                    if response.address == "0.0.0.0":
+                        return False
+            except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+                return
+            else:
+                return True
+
+        done, pending = await asyncio.wait(
+            [
+                asyncio.create_task(blacklist_check(), name="local"),
+                asyncio.create_task(dns_check(), name="dns"),
+            ],
+            return_when=asyncio.FIRST_COMPLETED,
         )
-        try:
-            for response in await asyncio.to_thread(dns.resolver.resolve, url.hostname, "A"):
-                if response.address == "0.0.0.0":
-                    return await ctx.edit(content="That domain is filtered.")
-        except dns.resolver.NXDOMAIN:
-            return await ctx.edit(content="That domain does not exist.")
-        except dns.resolver.NoAnswer:
-            return await ctx.edit(content="DNS resolver did not respond.")
+        done = done.pop()
+        if done.result() is not True:
+            return await ctx.edit(
+                content="That domain is blacklisted, doesn't exist, or there was no answer from the DNS server."
+            )
 
-        await ctx.edit(content=f"Preparing to screenshot {textwrap.shorten(url.geturl(), 100)}... (Filters OK)")
+        await ctx.edit(content=f"Preparing to screenshot {friendly_url}... (16%)")
+        okay = await pending.pop()
+        if okay is not True:
+            return await ctx.edit(
+                content="That domain is blacklisted, doesn't exist, or there was no answer from the DNS server."
+            )
+
+        await ctx.edit(content=f"Screenshotting {textwrap.shorten(url.geturl(), 100)}... (33%)")
         try:
             screenshot = await self.screenshot_website(ctx, url.geturl(), browser, render_timeout)
         except Exception as e:
             console.print_exception()
             return await ctx.edit(content=f"Error: {e}")
         else:
+            await ctx.edit(content=f"Screenshotting {friendly_url}... (99%)")
+            await asyncio.sleep(0.5)
             await ctx.edit(content="Here's your screenshot!", file=screenshot)
 
     domains = discord.SlashCommandGroup("domains", "Commands for managing domains")

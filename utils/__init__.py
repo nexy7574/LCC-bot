@@ -1,6 +1,8 @@
 from typing import Optional
 from urllib.parse import urlparse
 
+from discord.ext import commands
+
 from ._email import *
 from .db import *
 from .console import *
@@ -46,3 +48,11 @@ def hyperlink(url: str, *, text: str = None, max_length: int = None) -> str:
     if len(fmt) > max_length:
         return url
     return fmt
+
+
+def owner_or_admin():
+    async def predicate(ctx: commands.Context):
+        if ctx.author.guild_permissions.administrator or await ctx.bot.is_owner(ctx.author):
+            return True
+        raise commands.MissingPermissions(["administrator"])
+    return commands.check(predicate)
