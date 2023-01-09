@@ -399,7 +399,9 @@ class OtherCog(commands.Cog):
             ],
             return_when=asyncio.FIRST_COMPLETED,
         )
-        done = done or pending
+        done_tasks = done
+        done = done_tasks or pending
+        done = pending or done_tasks
         done = done.pop()
         result = await done
         if result is not True:
