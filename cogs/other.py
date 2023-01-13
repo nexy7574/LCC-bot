@@ -376,7 +376,7 @@ class OtherCog(commands.Cog):
         self,
         ctx: discord.ApplicationContext,
         url: str,
-        browser: discord.Option(str, description="Browser to use", choices=["chrome", "firefox"], default="chrome"),
+        browser: discord.Option(str, description="Browser to use", choices=["chrome", "firefox"], default="firefox"),
         render_timeout: int = 5,
     ):
         """Takes a screenshot of a URL"""
@@ -452,7 +452,7 @@ class OtherCog(commands.Cog):
             screenshot = await self.screenshot_website(ctx, url.geturl(), browser, render_timeout)
         except Exception as e:
             console.print_exception()
-            return await ctx.edit(content=f"Error: {e}")
+            return await ctx.edit(content=f"Error: {e}", delete_after=30)
         else:
             await ctx.edit(content=f"Screenshotting {friendly_url}... (99%)")
             await asyncio.sleep(0.5)
