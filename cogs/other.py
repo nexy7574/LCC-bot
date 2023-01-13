@@ -35,10 +35,43 @@ class OtherCog(commands.Cog):
     async def screenshot_website(
         self, ctx: discord.ApplicationContext, website: str, driver: Literal["chrome", "firefox"], render_time: int = 10
     ) -> discord.File:
-        if not Path("/usr/bin/firefox").exists():
-            driver = "chrome"
-        if not Path("/usr/bin/geckodriver").exists():
-            driver = "chrome"
+        drivers = {
+            "firefox": [
+                '/usr/bin/firefox-esr',
+                '/usr/bin/firefox',
+                '/usr/bin/geckodriver'
+            ],
+            "chrome": [
+                '/usr/bin/chromedriver',
+                '/usr/bin/chromium',
+                '/usr/bin/chrome'
+            ]
+        }
+        selected_driver = driver
+        driver = None
+        driver_path = None
+        arr = drivers.pop(selected_driver)
+        for binary in arr:
+            b = Path(binary).resolve()
+            if not b.exists():
+                continue
+            driver = selected_driver
+            driver_path = b
+            break
+        else:
+            for key, value in drivers.items():
+                for binary in value:
+                    b = Path(binary).resolve()
+                    if not b.exists():
+                        continue
+                    driver = key
+                    driver_path = b
+                    break
+                else:
+                    continue
+                break
+            else:
+                raise RuntimeError("No browser binary.")
 
         if driver == "chrome":
             options = ChromeOptions()
@@ -49,12 +82,7 @@ class OtherCog(commands.Cog):
             options.add_argument("--window-size=1920x1080")
             options.add_argument("--disable-extensions")
             options.add_argument("--incognito")
-            for opt in ("chrome", "chromium"):
-                if Path(f"/usr/bin/{opt}").exists():
-                    options.binary_location = f"/usr/bin/{opt}"
-                    break
-            else:
-                options.binary_location = "/usr/bin/chromium"
+            options.binary_location = str(driver_path)
             service = ChromeService("/usr/bin/chromedriver")
             driver = webdriver.Chrome(service=service, options=options)
         else:
@@ -63,12 +91,7 @@ class OtherCog(commands.Cog):
             options.add_argument("--private-window")
             options.add_argument("--safe-mode")
             options.add_argument("--new-instance")
-            for opt in ("firefox", "firefox-esr"):
-                if Path(f"/usr/bin/{opt}").exists():
-                    options.binary_location = f"/usr/bin/{opt}"
-                    break
-            else:
-                options.binary_location = "/usr/bin/firefox"
+            options.binary_location = str(driver_path)
             service = FirefoxService("/usr/bin/geckodriver")
             driver = webdriver.Firefox(service=service, options=options)
         friendly_url = textwrap.shorten(website, 100)
