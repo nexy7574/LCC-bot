@@ -456,7 +456,7 @@ class OtherCog(commands.Cog):
                 for response in await asyncio.to_thread(dns.resolver.resolve, url.hostname, "A"):
                     if response.address == "0.0.0.0":
                         return "DNS blacklist"
-            except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+            except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.resolver.LifetimeTimeout):
                 return
             else:
                 return True
