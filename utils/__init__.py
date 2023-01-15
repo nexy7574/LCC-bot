@@ -55,4 +55,5 @@ def owner_or_admin():
         if ctx.author.guild_permissions.administrator or await ctx.bot.is_owner(ctx.author):
             return True
         raise commands.MissingPermissions(["administrator"])
+
     return commands.check(predicate)
