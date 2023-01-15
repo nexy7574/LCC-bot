@@ -58,6 +58,7 @@ class OtherCog(commands.Cog):
                     "/usr/bin/chromium",
                     "/usr/bin/chrome",
                     "/usr/bin/chrome-browser",
+                    "/usr/bin/google-chrome"
                 ],
             }
             selected_driver = driver
