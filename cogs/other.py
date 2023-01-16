@@ -46,7 +46,7 @@ class OtherCog(commands.Cog):
             return await self.bot.loop.run_in_executor(None, *args)
 
         def find_driver():
-            nonlocal driver
+            nonlocal driver, driver_path
             drivers = {
                 "firefox": [
                     "/usr/bin/firefox-esr",
