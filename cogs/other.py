@@ -440,7 +440,7 @@ class OtherCog(commands.Cog):
             else:
                 hostname = url.path
                 path = ""
-            url = url._replace(scheme="http", hostname=hostname, path=path)
+            url = url._replace(scheme="http", netloc=hostname, path=path)
 
         friendly_url = textwrap.shorten(url.geturl(), 100)
 
