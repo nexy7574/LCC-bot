@@ -435,7 +435,12 @@ class OtherCog(commands.Cog):
                 return await ctx.respond("No.")
         url = urlparse(url)
         if not url.scheme:
-            url = url._replace(scheme="http")
+            if "/" in url.path:
+                hostname, path = url.path.split("/", 1)
+            else:
+                hostname = url.path
+                path = ""
+            url = url._replace(scheme="http", hostname=hostname, path=path)
 
         friendly_url = textwrap.shorten(url.geturl(), 100)
 
