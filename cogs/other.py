@@ -433,11 +433,10 @@ class OtherCog(commands.Cog):
         if ctx.user.id == 1019233057519177778:
             if getattr(self.bot, "ALLOW_MATTHEW", False) is False:
                 return await ctx.respond("No.")
-
-        if not url.startswith("http"):
-            url = "http://" + url
-
         url = urlparse(url)
+        if not url.scheme:
+            url = urlparse(url.geturl(), scheme="http")
+
         friendly_url = textwrap.shorten(url.geturl(), 100)
 
         await ctx.edit(content=f"Preparing to screenshot {friendly_url}... (0%)")
