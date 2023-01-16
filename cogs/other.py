@@ -435,7 +435,7 @@ class OtherCog(commands.Cog):
                 return await ctx.respond("No.")
         url = urlparse(url)
         if not url.scheme:
-            url = urlparse(url.geturl(), scheme="http")
+            url = url._replace(scheme="http")
 
         friendly_url = textwrap.shorten(url.geturl(), 100)
 
@@ -456,7 +456,7 @@ class OtherCog(commands.Cog):
                 for response in await asyncio.to_thread(dns.resolver.resolve, url.hostname, "A"):
                     if response.address == "0.0.0.0":
                         return "DNS blacklist"
-            except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.resolver.LifetimeTimeout):
+            except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.resolver.LifetimeTimeout, AttributeError):
                 return
             else:
                 return True
