@@ -1,7 +1,7 @@
 import asyncio
 import datetime
 from datetime import timedelta
-from typing import Dict
+from typing import Dict, Tuple
 
 import discord
 import httpx
@@ -61,6 +61,20 @@ class UptimeCompetition(commands.Cog):
         assert response.status_code == 200
         assert response.text.strip() == "<!DOCTYPE html><html><body>Hello Jimmy!</body></html>"
 
+    async def _test_url(self, url: str, max_retries: int = 10, timeout: int = 30) -> Tuple[int, Response | Exception]:
+        attempts = 1
+        err = RuntimeError("Unknown Error")
+        while attempts < max_retries:
+            try:
+                response = await self.http.get(url, timeout=timeout)
+                response.raise_for_status()
+            except (httpx.TimeoutException, httpx.HTTPStatusError) as err:
+                attempts += 1
+                continue
+            else:
+                return attempts, response
+        return attempts, err
+
     async def do_test_uptimes(self):
         console.log("Testing uptimes...")
         # First we need to check that we are online.
@@ -79,23 +93,25 @@ class UptimeCompetition(commands.Cog):
             kwargs: Dict[str, str | int | None] = {
                 "target_id": key,
                 "target": url,
+                "notes": ""
             }
-            try:
-                response = await self.http.get(url)
-            except httpx.HTTPError as e:
+            attempts, response = await self._test_url(url)
+            if isinstance(response, Exception):
                 kwargs["is_up"] = False
                 kwargs["response_time"] = None
-                kwargs["notes"] = str(e)
+                kwargs["notes"] += f"Failed to access page after {attempts:,} attempts: {response}"
             else:
+                if attempts > 1:
+                    kwargs["notes"] += f"After {attempts:,} attempts, "
                 try:
                     self.assert_uptime_server_response(response)
                 except AssertionError as e:
                     kwargs["is_up"] = False
-                    kwargs["notes"] = str(e)
+                    kwargs["notes"] += "content was invalid: " + str(e)
                 else:
                     kwargs["is_up"] = True
                     kwargs["response_time"] = round(response.elapsed.total_seconds() * 1000)
-                    kwargs["notes"] = None
+                    kwargs["notes"] += "nothing notable."
             create_tasks.append(
                 self.bot.loop.create_task(
                     UptimeEntry.objects.create(
@@ -135,7 +151,7 @@ class UptimeCompetition(commands.Cog):
                                 target="SHRoNK Bot",
                                 is_up=shronk_bot.status is not discord.Status.offline,
                                 response_time=None,
-                                notes=None,
+                                notes="*Unable to monitor response time, not a HTTP request.*",
                             )
                         )
                     )
