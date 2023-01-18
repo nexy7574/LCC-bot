@@ -25,6 +25,7 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
+
 # from selenium.webdriver.ie
 
 from utils import console
@@ -56,12 +57,7 @@ class OtherCog(commands.Cog):
                     "/usr/bin/firefox-esr",
                     "/usr/bin/firefox",
                 ],
-                "chrome": [
-                    "/usr/bin/chromium",
-                    "/usr/bin/chrome",
-                    "/usr/bin/chrome-browser",
-                    "/usr/bin/google-chrome"
-                ],
+                "chrome": ["/usr/bin/chromium", "/usr/bin/chrome", "/usr/bin/chrome-browser", "/usr/bin/google-chrome"],
             }
             selected_driver = driver
             arr = drivers.pop(selected_driver)
@@ -128,11 +124,7 @@ class OtherCog(commands.Cog):
         start_init = time()
         driver, friendly_url = await asyncio.to_thread(_setup)
         end_init = time()
-        console.log(
-            "Driver '{}' initialised in {} seconds.".format(
-                driver_name, round(end_init - start_init, 2)
-            )
-        )
+        console.log("Driver '{}' initialised in {} seconds.".format(driver_name, round(end_init - start_init, 2)))
 
         async def _edit(content: str):
             self.bot.loop.create_task(ctx.interaction.edit_original_response(content=content))
@@ -441,7 +433,7 @@ class OtherCog(commands.Cog):
             name="capture-full-page",
             description="(firefox only) whether to capture the full page or just the viewport.",
             default=False,
-        )
+        ),
     ):
         """Takes a screenshot of a URL"""
         window_width = max(min(1080 * 6, window_width), 1080 // 6)
@@ -536,13 +528,13 @@ class OtherCog(commands.Cog):
             await asyncio.sleep(0.5)
             await ctx.edit(
                 content="Here's your screenshot!\n"
-                        "Details:\n"
-                        f"\\* Browser: {driver}\n"
-                        f"\\* Resolution: {window_height}x{window_width} ({window_width*window_height:,} pixels)\n"
-                        f"\\* URL: <{friendly_url}>\n"
-                        f"\\* Load time: {fetch_time:.2f}ms\n"
-                        f"\\* Screenshot render time: {screenshot_time:.2f}ms\n",
-                file=screenshot
+                "Details:\n"
+                f"\\* Browser: {driver}\n"
+                f"\\* Resolution: {window_height}x{window_width} ({window_width*window_height:,} pixels)\n"
+                f"\\* URL: <{friendly_url}>\n"
+                f"\\* Load time: {fetch_time:.2f}ms\n"
+                f"\\* Screenshot render time: {screenshot_time:.2f}ms\n",
+                file=screenshot,
             )
 
     domains = discord.SlashCommandGroup("domains", "Commands for managing domains")

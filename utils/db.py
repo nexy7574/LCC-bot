@@ -21,7 +21,16 @@ class Tutors(IntEnum):
 os.chdir(Path(__file__).parent.parent)
 
 
-__all__ = ["registry", "get_or_none", "VerifyCode", "Student", "BannedStudentID", "Assignments", "Tutors", "UptimeEntry"]
+__all__ = [
+    "registry",
+    "get_or_none",
+    "VerifyCode",
+    "Student",
+    "BannedStudentID",
+    "Assignments",
+    "Tutors",
+    "UptimeEntry",
+]
 
 T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)

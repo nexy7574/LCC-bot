@@ -29,7 +29,7 @@ extensions = [
     "cogs.timetable",
     "cogs.other",
     "cogs.starboard",
-    "cogs.uptime"
+    "cogs.uptime",
 ]
 for ext in extensions:
     try:

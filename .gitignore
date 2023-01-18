@@ -4,3 +4,4 @@ __pycache__
 venv
 domains.txt
 geckodriver.log
+targets.json
