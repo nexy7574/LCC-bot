@@ -34,6 +34,7 @@ from utils import console
 class OtherCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.lock = asyncio.Lock()
 
     async def screenshot_website(
         self,
@@ -513,9 +514,10 @@ class OtherCog(commands.Cog):
         await asyncio.sleep(1)
         await ctx.edit(content=f"Screenshotting {textwrap.shorten(url.geturl(), 100)}... (33%)")
         try:
-            screenshot, driver, fetch_time, screenshot_time = await self.screenshot_website(
-                ctx, url.geturl(), browser, render_timeout, window_height, window_width, capture_whole_page
-            )
+            async with self.lock:
+                screenshot, driver, fetch_time, screenshot_time = await self.screenshot_website(
+                    ctx, url.geturl(), browser, render_timeout, window_height, window_width, capture_whole_page
+                )
         except TimeoutError:
             return await ctx.edit(content="Rendering screenshot timed out. Try using a smaller resolution.")
         except WebDriverException as e:
