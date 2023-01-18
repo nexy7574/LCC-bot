@@ -21,7 +21,7 @@ class Tutors(IntEnum):
 os.chdir(Path(__file__).parent.parent)
 
 
-__all__ = ["registry", "get_or_none", "VerifyCode", "Student", "BannedStudentID", "Assignments", "Tutors"]
+__all__ = ["registry", "get_or_none", "VerifyCode", "Student", "BannedStudentID", "Assignments", "Tutors", "UptimeEntry"]
 
 T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
@@ -136,3 +136,26 @@ class StarBoardMessage(orm.Model):
         id: int
         channel: int
         starboard_message: int | None
+
+
+class UptimeEntry(orm.Model):
+    tablename = "uptime"
+    registry = registry
+    fields = {
+        "entry_id": orm.UUID(primary_key=True, default=uuid.uuid4),
+        "target_id": orm.String(min_length=2, max_length=128),
+        "target": orm.String(min_length=2, max_length=128),
+        "is_up": orm.Boolean(),
+        "timestamp": orm.Float(default=lambda: datetime.datetime.utcnow().timestamp()),
+        "response_time": orm.Integer(allow_null=True),
+        "notes": orm.Text(allow_null=True, default=None),
+    }
+
+    if TYPE_CHECKING:
+        entry_id: uuid.UUID
+        target_id: str
+        target: str
+        is_up: bool
+        timestamp: float
+        response_time: int | None
+        notes: str | None

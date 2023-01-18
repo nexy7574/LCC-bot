@@ -9,6 +9,7 @@ intents = discord.Intents.default()
 intents += discord.Intents.messages
 intents += discord.Intents.message_content
 intents += discord.Intents.members
+intents += discord.Intents.presences
 
 
 bot = commands.Bot(
@@ -28,6 +29,7 @@ extensions = [
     "cogs.timetable",
     "cogs.other",
     "cogs.starboard",
+    "cogs.uptime"
 ]
 for ext in extensions:
     try:

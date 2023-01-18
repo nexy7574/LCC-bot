@@ -10,3 +10,4 @@ selenium==4.7.2
 chromedriver==2.24.1
 dnspython==2.2.1
 aiofiles==22.1.0
+httpx==0.23.0
