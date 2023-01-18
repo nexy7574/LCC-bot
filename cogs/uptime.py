@@ -12,6 +12,14 @@ from httpx import AsyncClient, Response
 from discord.ext import commands, tasks, pages
 from utils import UptimeEntry, console
 
+"""
+Notice to anyone looking at this code:
+Don't
+It doesn't look nice
+It's not well written
+It just works
+"""
+
 
 BASE_JSON = """[
     {
@@ -227,8 +235,8 @@ class UptimeCompetition(commands.Cog):
         return await asyncio.gather(*create_tasks, return_exceptions=True)
         # All done!
 
-    # @tasks.loop(minutes=1)
-    @tasks.loop(seconds=10)
+    @tasks.loop(minutes=1)
+    # @tasks.loop(seconds=30)
     async def test_uptimes(self):
         self.task_event.clear()
         async with self.task_lock:

@@ -1604,12 +1604,17 @@
       <DasType>TEXT|0s</DasType>
       <Position>7</Position>
     </column>
-    <index id="549" parent="488" name="sqlite_autoindex_uptime_1">
+    <column id="549" parent="488" name="notice_sent">
+      <DasType>BOOLEAN|0s</DasType>
+      <NotNull>1</NotNull>
+      <Position>8</Position>
+    </column>
+    <index id="550" parent="488" name="sqlite_autoindex_uptime_1">
       <ColNames>entry_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <Unique>1</Unique>
     </index>
-    <key id="550" parent="488">
+    <key id="551" parent="488">
       <ColNames>entry_id</ColNames>
       <Primary>1</Primary>
       <UnderlyingIndexName>sqlite_autoindex_uptime_1</UnderlyingIndexName>
