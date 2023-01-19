@@ -143,7 +143,7 @@ class UptimeCompetition(commands.Cog):
         # If we aren't online, this isn't very fair.
         try:
             await self.http.get("https://google.co.uk/")
-        except httpx.ConnectError:
+        except (httpx.HTTPError, Exception):
             return  # Offline :pensive:
 
         create_tasks = []
