@@ -1,6 +1,8 @@
+from datetime import datetime
+
 import discord
 from discord.ext import commands
-from utils import Student, get_or_none, BannedStudentID
+from utils import Student, get_or_none, BannedStudentID, owner_or_admin, JimmyBans
 
 
 class Mod(commands.Cog):
@@ -50,6 +52,36 @@ class Mod(commands.Cog):
                 )
             else:
                 return await ctx.respond(f"\N{white heavy check mark} Unbanned {student_id}. Unbanned {user_id}.")
+
+    @commands.slash_command(name="block")
+    @owner_or_admin()
+    async def block_user(self, ctx: discord.ApplicationContext, user: discord.Member, reason: str, *, until: str):
+        """Blocks a user from using the bot."""
+        await ctx.defer()
+        try:
+            hour, minute = map(int, until.split(":"))
+        except ValueError:
+            return await ctx.respond("\N{cross mark} Invalid time format. Use HH:MM.")
+        end = datetime.utcnow().replace(hour=hour, minute=minute)
+
+        # get an entry for the user's ID, and if it doesn't exist, create it. Otherwise, alert the user.
+        entry = await get_or_none(JimmyBans, user_id=user.id)
+        if entry is None:
+            await JimmyBans.objects.create(user_id=user.id, reason=reason, until=end.timestamp())
+        else:
+            return await ctx.respond("\N{cross mark} That user is already blocked.")
+        await ctx.respond(f"\N{white heavy check mark} Blocked {user.mention} until {discord.utils.format_dt(end)}.")
+
+    @commands.slash_command(name="unblock")
+    @owner_or_admin()
+    async def unblock_user(self, ctx: discord.ApplicationContext, user: discord.Member):
+        """Unblocks a user from using the bot."""
+        await ctx.defer()
+        entry = await get_or_none(JimmyBans, user_id=user.id)
+        if entry is None:
+            return await ctx.respond("\N{cross mark} That user isn't blocked.")
+        await entry.delete()
+        await ctx.respond(f"\N{white heavy check mark} Unblocked {user.mention}.")
 
 
 def setup(bot):

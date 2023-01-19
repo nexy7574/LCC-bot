@@ -30,6 +30,7 @@ __all__ = [
     "Assignments",
     "Tutors",
     "UptimeEntry",
+    "JimmyBans"
 ]
 
 T = TypeVar("T")
@@ -168,3 +169,21 @@ class UptimeEntry(orm.Model):
         timestamp: float
         response_time: int | None
         notes: str | None
+
+
+class JimmyBans(orm.Model):
+    tablename = "jimmy_bans"
+    registry = registry
+    fields = {
+        "entry_id": orm.UUID(primary_key=True, default=uuid.uuid4),
+        "user_id": orm.BigInteger(),
+        "reason": orm.Text(allow_null=True, default=None),
+        "timestamp": orm.Float(default=lambda: datetime.datetime.utcnow().timestamp()),
+        "until": orm.Float(),
+    }
+    if TYPE_CHECKING:
+        entry_id: uuid.UUID
+        user_id: int
+        reason: str | None
+        timestamp: float
+        until: float | None

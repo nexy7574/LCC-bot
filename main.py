@@ -2,7 +2,8 @@ import discord
 from discord.ext import commands
 from asyncio import Lock
 import config
-from utils import registry, console
+from datetime import datetime, timezone
+from utils import registry, console, get_or_none, JimmyBans
 
 
 intents = discord.Intents.default()
@@ -81,6 +82,27 @@ async def ping(ctx: discord.ApplicationContext):
     return await ctx.respond(f"\N{white heavy check mark} Pong! `{gateway}ms`.")
 
 
+@bot.check_once
+async def check_not_banned(ctx: discord.ApplicationContext | commands.Context):
+    if await bot.is_owner(ctx.author):
+        return True
+    user = ctx.author
+    ban: JimmyBans = await get_or_none(JimmyBans, user_id=user.id)
+    if ban:
+        dt = datetime.fromtimestamp(ban.until, timezone.utc)
+        if dt < discord.utils.utcnow():
+            await ban.delete()
+        else:
+            reply = ctx.reply if isinstance(ctx, commands.Context) else ctx.respond
+            try:
+                await reply(content=f":x: You can use commands {discord.utils.format_dt(dt, 'R')}")
+            except discord.HTTPException:
+                pass
+            finally:
+                return False
+    return True
+
+
 if __name__ == "__main__":
-    print("Starting...")
+    console.log("Starting...")
     bot.run(config.token)
