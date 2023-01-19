@@ -35,7 +35,7 @@ BASE_JSON = """[
     {
         "name": "Nex's Pi",
         "id": "PI",
-        "uri": "http://wg.nexy7574.cyou:9000/"
+        "uri": "http://wg.nexy7574.co.uk:9000/"
     },
     {
         "name": "SHRoNK Droplet",
