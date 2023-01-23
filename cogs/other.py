@@ -6,6 +6,7 @@ import re
 import textwrap
 
 import dns.resolver
+from dns import asyncresolver
 import aiofiles
 from time import time
 from typing import Literal
@@ -432,6 +433,61 @@ class OtherCog(commands.Cog):
             paginator.add_line(line)
         for page in paginator.pages:
             await ctx.respond(page, ephemeral=secure)
+
+    @commands.slash_command()
+    async def dig(
+            self,
+            ctx: discord.ApplicationContext,
+            domain: str,
+            _type: discord.Option(
+                str,
+                name="type",
+                default="A",
+                choices=[
+                    "A",
+                    "AAAA",
+                    "ANY",
+                    "AXFR",
+                    "CNAME",
+                    "HINFO",
+                    "LOC",
+                    "MX",
+                    "NS",
+                    "PTR",
+                    "SOA",
+                    "SRV",
+                    "TXT",
+                ]
+            )
+    ):
+        """Looks up a domain name"""
+        await ctx.defer()
+        if re.search(r"\s+", domain):
+            return await ctx.respond("Domain name cannot contain spaces.")
+        try:
+            response = await asyncresolver.resolve(
+                domain,
+                _type.upper(),
+            )
+        except Exception as e:
+            return await ctx.respond(f"Error: {e}")
+        res = response
+        tree = Tree(f"DNS Lookup for {domain}")
+        for record in res:
+            record_tree = tree.add(f"{record.rdtype.name} Record")
+            record_tree.add(f"Name: {res.name}")
+            record_tree.add(f"Value: {record.to_text()}")
+        with console.capture() as capture:
+            console.print(tree)
+        text = capture.get()
+        paginator = commands.Paginator(prefix="```", suffix="```")
+        for line in text.splitlines():
+            paginator.add_line(line)
+        paginator.add_line(empty=True)
+        paginator.add_line(f"Exit code: {0}")
+        paginator.add_line(f"DNS Server used: {res.nameserver}")
+        for page in paginator.pages:
+            await ctx.respond(page)
 
     @commands.slash_command()
     @commands.max_concurrency(1, commands.BucketType.user)
