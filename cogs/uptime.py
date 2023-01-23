@@ -64,6 +64,7 @@ class UptimeCompetition(commands.Cog):
         self.bot = bot
         self.http = AsyncClient()
         self._warning_posted = False
+        self.test_uptimes.add_exception_type(Exception)
         self.test_uptimes.start()
         self.last_result: list[UptimeEntry] = []
         self.task_lock = asyncio.Lock()
@@ -158,7 +159,11 @@ class UptimeCompetition(commands.Cog):
             if max_retries := target.get("max_retries"):
                 request_kwargs["max_retries"] = max_retries
             kwargs: Dict[str, str | int | None] = {"target_id": target["id"], "target": target["uri"], "notes": ""}
-            attempts, response = await self._test_url(target["uri"], **request_kwargs)
+            try:
+                attempts, response = await self._test_url(target["uri"], **request_kwargs)
+            except Exception as e:
+                response = e
+                attempts = 1
             if isinstance(response, Exception):
                 kwargs["is_up"] = False
                 kwargs["response_time"] = None
@@ -240,7 +245,11 @@ class UptimeCompetition(commands.Cog):
     async def test_uptimes(self):
         self.task_event.clear()
         async with self.task_lock:
-            self.last_result = await self.do_test_uptimes()
+            try:
+                self.last_result = await self.do_test_uptimes()
+            except (Exception, ConnectionError):
+                print()
+                console.print_exception()
         self.task_event.set()
 
     uptime = discord.SlashCommandGroup("uptime", "Commands for the uptime competition.")
