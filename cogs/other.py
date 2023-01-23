@@ -129,15 +129,16 @@ class OtherCog(commands.Cog):
         async def _edit(content: str):
             self.bot.loop.create_task(ctx.interaction.edit_original_response(content=content))
 
-        await _edit(content=f"Screenshotting <{friendly_url}>... (49%)")
+        await _edit(content=f"Screenshotting <{friendly_url}>... (49%, loading webpage)")
         await _blocking(driver.set_page_load_timeout, render_time)
         start = time()
         await _blocking(driver.get, website)
         end = time()
         get_time = round((end - start) * 1000)
-        await _edit(content=f"Screenshotting <{friendly_url}>... (66%)")
+        render_time_expires = round(time() + render_time)
+        await _edit(content=f"Screenshotting <{friendly_url}>... (66%, stopping render <t:{render_time_expires}:R>)")
         await asyncio.sleep(render_time)
-        await _edit(content=f"Screenshotting <{friendly_url}>... (83%)")
+        await _edit(content=f"Screenshotting <{friendly_url}>... (83%, saving screenshot)")
         domain = re.sub(r"https?://", "", website)
 
         screenshot_method = driver.get_screenshot_as_png
@@ -453,16 +454,15 @@ class OtherCog(commands.Cog):
 
         friendly_url = textwrap.shorten(url.geturl(), 100)
 
-        await ctx.edit(content=f"Preparing to screenshot <{friendly_url}>... (0%)")
+        await ctx.edit(content=f"Preparing to screenshot <{friendly_url}>... (0%, checking filters)")
 
         async def blacklist_check() -> bool | str:
             async with aiofiles.open("domains.txt") as blacklist:
-                for line in await blacklist.readlines():
-                    if not line.strip():
+                for ln in await blacklist.readlines():
+                    if not ln.strip():
                         continue
-                    if re.match(line.strip(), url.netloc):
+                    if re.match(ln.strip(), url.netloc):
                         return "Local blacklist"
-                        # return await ctx.edit(content="That domain is blacklisted.")
             return True
 
         async def dns_check() -> Optional[bool | str]:
@@ -471,7 +471,7 @@ class OtherCog(commands.Cog):
                     if response.address == "0.0.0.0":
                         return "DNS blacklist"
             except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.resolver.LifetimeTimeout, AttributeError):
-                return
+                return "Invalid domain or DNS error"
             else:
                 return True
 
@@ -495,7 +495,7 @@ class OtherCog(commands.Cog):
             )
 
         await asyncio.sleep(1)
-        await ctx.edit(content=f"Preparing to screenshot <{friendly_url}>... (16%)")
+        await ctx.edit(content=f"Preparing to screenshot <{friendly_url}>... (16%, checking filters)")
         okay = await (pending or done_tasks).pop()
         if okay is not True:
             return await ctx.edit(
@@ -504,7 +504,7 @@ class OtherCog(commands.Cog):
             )
 
         await asyncio.sleep(1)
-        await ctx.edit(content=f"Screenshotting {textwrap.shorten(url.geturl(), 100)}... (33%)")
+        await ctx.edit(content=f"Screenshotting {textwrap.shorten(url.geturl(), 100)}... (33%, initializing browser)")
         try:
             async with self.lock:
                 screenshot, driver, fetch_time, screenshot_time = await self.screenshot_website(
@@ -524,7 +524,7 @@ class OtherCog(commands.Cog):
             console.print_exception()
             return await ctx.edit(content=f"Failed: {e}", delete_after=30)
         else:
-            await ctx.edit(content=f"Screenshotting <{friendly_url}>... (99%)")
+            await ctx.edit(content=f"Screenshotting <{friendly_url}>... (99%, uploading image)")
             await asyncio.sleep(0.5)
             await ctx.edit(
                 content="Here's your screenshot!\n"
