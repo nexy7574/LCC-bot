@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from asyncio import Lock
 import config
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from utils import registry, console, get_or_none, JimmyBans
 
 
@@ -49,6 +49,19 @@ async def on_connect():
 
 @bot.listen("on_application_command_error")
 async def on_application_command_error(ctx: discord.ApplicationContext, error: Exception):
+    if isinstance(error, commands.CommandOnCooldown):
+        now = discord.utils.utcnow()
+        now += timedelta(seconds=error.retry_after)
+        return await ctx.respond(
+            f"\N{stopwatch} This command is on cooldown. You can use this command again "
+            f"{discord.utils.format_dt(now, 'R')}.",
+            delete_after=error.retry_after,
+        )
+    elif isinstance(error, commands.MaxConcurrencyReached):
+        return await ctx.respond(
+            f"\N{warning sign} This command is already running. Please wait for it to finish.",
+            ephemeral=True,
+        )
     await ctx.respond("Application Command Error: `%r`" % error)
     raise error
 
