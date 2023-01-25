@@ -79,10 +79,18 @@ class StarBoardCog(commands.Cog):
     @commands.Cog.listener("on_raw_reaction_add")
     @commands.Cog.listener("on_raw_reaction_remove")
     async def on_star_add(self, payload: discord.RawReactionActionEvent):
+        if not payload.guild_id:
+            return
         async with self.lock:
             if str(payload.emoji) != "\N{white medium star}":
                 return
             message: discord.Message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
+            if message.author.id == payload.user_id and payload.event_type == "REACTION_ADD":
+                if message.channel.permissions_for(message.guild.me).manage_messages:
+                    await message.remove_reaction(payload.emoji, message.author)
+                return await message.reply(
+                    f"You can't star your own messages you pretentious dick, {message.author.mention}."
+                )
             star_count = [x for x in message.reactions if str(x.emoji) == "\N{white medium star}"]
             if not star_count:
                 star_count = 0
