@@ -1,7 +1,7 @@
 import random
 from pathlib import Path
 from typing import Optional, Tuple
-from datetime import datetime, time, timedelta
+from datetime import datetime, time
 import discord
 from discord.ext import commands, tasks
 from utils import Student, get_or_none, console
@@ -68,7 +68,7 @@ class Events(commands.Cog):
                 return
             if message.author.id == self.bot.user.id:
                 if payload.emoji.name == "\N{wastebasket}\U0000fe0f":
-                    await message.delete(delay=1)
+                    await message.delete(delay=0.5)
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
@@ -103,7 +103,7 @@ class Events(commands.Cog):
     async def on_message(self, message: discord.Message):
         if not message.guild:
             return
-            # return console.log("Ignoring, was not in a guild.")
+
         if message.channel.name == "pinboard":
             if message.type == discord.MessageType.pins_add:
                 await message.delete(delay=0.01)
@@ -117,6 +117,9 @@ class Events(commands.Cog):
                 await message.delete(delay=1)
 
         else:
+            if message.author.id == "1063875884274163732" and message.content.startswith("Congratulations!!"):
+                if message.channel.can_send():
+                    return await message.reply("Shut up SHRoNK Bot, nobody loves you.")
             if message.author.bot is True:
                 return
             if message.content:
