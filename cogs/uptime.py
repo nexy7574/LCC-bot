@@ -134,7 +134,7 @@ class UptimeCompetition(commands.Cog):
             except (httpx.TimeoutException, httpx.HTTPStatusError, ConnectionError, TimeoutError) as err2:
                 attempts += 1
                 err = err2
-                await asyncio.sleep(attempts)
+                await asyncio.sleep(attempts * 0.25)
                 continue
             else:
                 return attempts, response
