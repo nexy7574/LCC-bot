@@ -117,7 +117,7 @@ class Events(commands.Cog):
                 await message.delete(delay=1)
 
         else:
-            if message.author.id == "1063875884274163732" and message.content.startswith("Congratulations!!"):
+            if message.author.id == 1063875884274163732 and message.content.startswith("Congratulations!!"):
                 if message.channel.can_send():
                     return await message.reply("Shut up SHRoNK Bot, nobody loves you.")
             if message.author.bot is True:
