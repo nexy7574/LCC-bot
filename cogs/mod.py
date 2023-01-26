@@ -76,7 +76,7 @@ class Mod(commands.Cog):
             except ValueError:
                 return await ctx.respond("Invalid date format. Use `DD/MM/YYYY`.")
         try:
-            hour, minute = map(int, until.split(":"))
+            hour, minute = map(int, _time.split(":"))
         except ValueError:
             return await ctx.respond("\N{cross mark} Invalid time format. Use HH:MM.")
         end = date.replace(hour=hour, minute=minute)
