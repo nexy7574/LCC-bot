@@ -62,7 +62,7 @@ class UptimeCompetition(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.http = AsyncClient()
+        self.http = AsyncClient(verify=False)
         self._warning_posted = False
         self.test_uptimes.add_exception_type(Exception)
         self.test_uptimes.start()
@@ -134,7 +134,7 @@ class UptimeCompetition(commands.Cog):
             except (httpx.TimeoutException, httpx.HTTPStatusError, ConnectionError, TimeoutError) as err2:
                 attempts += 1
                 err = err2
-                await asyncio.sleep(attempts)
+                await asyncio.sleep(attempts * 0.25)
                 continue
             else:
                 return attempts, response
