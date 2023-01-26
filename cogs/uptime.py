@@ -131,8 +131,10 @@ class UptimeCompetition(commands.Cog):
             try:
                 response = await self.http.get(url, timeout=timeout)
                 response.raise_for_status()
-            except (httpx.TimeoutException, httpx.HTTPStatusError, ConnectionError, TimeoutError) as err:
+            except (httpx.TimeoutException, httpx.HTTPStatusError, ConnectionError, TimeoutError) as err2:
                 attempts += 1
+                err = err2
+                await asyncio.sleep(attempts)
                 continue
             else:
                 return attempts, response
