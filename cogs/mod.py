@@ -55,14 +55,31 @@ class Mod(commands.Cog):
 
     @commands.slash_command(name="block")
     @owner_or_admin()
-    async def block_user(self, ctx: discord.ApplicationContext, user: discord.Member, reason: str, *, until: str):
+    async def block_user(
+            self,
+            ctx: discord.ApplicationContext,
+            user: discord.Member,
+            reason: str,
+            until: str
+    ):
         """Blocks a user from using the bot."""
         await ctx.defer()
+        date = datetime.utcnow()
+        _time = until
+        try:
+            date, _time = until.split(" ")
+        except ValueError:
+            pass
+        else:
+            try:
+                date = datetime.strptime(date, "%d/%m/%Y")
+            except ValueError:
+                return await ctx.respond("Invalid date format. Use `DD/MM/YYYY`.")
         try:
             hour, minute = map(int, until.split(":"))
         except ValueError:
             return await ctx.respond("\N{cross mark} Invalid time format. Use HH:MM.")
-        end = datetime.utcnow().replace(hour=hour, minute=minute)
+        end = date.replace(hour=hour, minute=minute)
 
         # get an entry for the user's ID, and if it doesn't exist, create it. Otherwise, alert the user.
         entry = await get_or_none(JimmyBans, user_id=user.id)
