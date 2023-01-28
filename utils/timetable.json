@@ -5,7 +5,7 @@
       "start": [9, 0],
       "end": [10, 15],
       "tutor": "Jay",
-      "room": "A133"
+      "room": "A145"
     },
     {
       "name": "Unit 10 & 11",
@@ -17,18 +17,18 @@
   ],
   "tuesday": [
     {
-      "name": "Unit 5",
+      "name": "1:1",
       "start": [9, 0],
       "end": [10, 15],
       "tutor": "Other",
-      "room": "A229"
+      "room": "A144"
     },
     {
-      "name": "1:1",
+      "name": "Unit 5",
       "start": [10, 30],
       "end": [11, 45],
-      "tutor": "Other",
-      "room": "A113"
+      "tutor": "Zach",
+      "room": "A047"
     },
     {
       "name": "Unit 7, 9 & 12",
@@ -39,9 +39,16 @@
     },
     {
       "name": "Unit 1, 2, 6 & 8",
+      "start": [14, 0],
+      "end": [15, 15],
+      "tutor": "Rebecca",
+      "room": "A047"
+    },
+    {
+      "name": "Unit 1, 2, & 3 (PCE)",
       "start": [15, 30],
       "end": [16, 45],
-      "tutor": "Rebecca",
+      "teacher": "Jay",
       "room": "A047"
     }
   ],
@@ -58,7 +65,7 @@
       "name": "Unit 3 & 4",
       "start": [10, 30],
       "end": [11, 45],
-      "tutor": "Lupupa",
+      "tutor": "Other",
       "room": "A145"
     },
     {
@@ -72,7 +79,7 @@
       "name": "Unit 3 & 4",
       "start": [14, 0],
       "end": [15, 15],
-      "tutor": "Lupupa",
+      "tutor": "Other",
       "room": "A145"
     },
     {
@@ -111,13 +118,6 @@
       "end": [15, 15],
       "tutor": "Other",
       "room": "Oracle"
-    },
-    {
-      "name": "Unit 1, 2 & 3 (PCE)",
-      "start": [15, 30],
-      "end": [16, 45],
-      "tutor": "Jay",
-      "room": "A145"
     }
   ],
   "breaks": {
