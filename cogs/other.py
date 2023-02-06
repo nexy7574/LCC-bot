@@ -4,6 +4,7 @@ import os
 import random
 import re
 import textwrap
+from datetime import timedelta
 
 import dns.resolver
 from dns import asyncresolver
@@ -611,9 +612,9 @@ class OtherCog(commands.Cog):
         window_width = max(min(1080 * 6, window_width), 1080 // 6)
         window_height = max(min(1920 * 6, window_height), 1920 // 6)
         await ctx.defer()
-        # if ctx.user.id == 1019233057519177778:
-        #     if getattr(self.bot, "ALLOW_MATTHEW", False) is False:
-        #         return await ctx.respond("No.")
+        if ctx.user.id == 1019233057519177778 and ctx.me.guild_permissions.moderate_members:
+            if ctx.user.communication_disabled_until is None:
+                await ctx.user.timeout_for(timedelta(minutes=2), reason="no")
         url = urlparse(url)
         if not url.scheme:
             if "/" in url.path:
