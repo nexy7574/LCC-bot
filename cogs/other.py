@@ -62,6 +62,7 @@ class OtherCog(commands.Cog):
         website: str,
         driver: Literal["chrome", "firefox"],
         render_time: int = 10,
+        load_timeout: int = 30,
         window_height: int = 1920,
         window_width: int = 1080,
         full_screenshot: bool = False,
@@ -148,8 +149,9 @@ class OtherCog(commands.Cog):
         def _edit(content: str):
             self.bot.loop.create_task(ctx.interaction.edit_original_response(content=content))
 
-        _edit(content=f"Screenshotting <{friendly_url}>... (49%, loading webpage)")
-        await _blocking(driver.set_page_load_timeout, render_time)
+        expires = round(time() + load_timeout)
+        _edit(content=f"Screenshotting <{friendly_url}>... (49%, loading webpage, aborts <t:{expires}:R>)")
+        await _blocking(driver.set_page_load_timeout, load_timeout)
         start = time()
         await _blocking(driver.get, website)
         end = time()
@@ -593,8 +595,9 @@ class OtherCog(commands.Cog):
         self,
         ctx: discord.ApplicationContext,
         url: str,
-        browser: discord.Option(str, description="Browser to use", choices=["chrome", "firefox"], default="firefox"),
-        render_timeout: discord.Option(int, name="render-timeout", description="Timeout for rendering", default=10),
+        browser: discord.Option(str, description="Browser to use", choices=["chrome", "firefox"], default="chrome"),
+        render_timeout: discord.Option(int, name="render-timeout", description="Timeout for rendering", default=3),
+        load_timeout: discord.Option(int, name="load-timeout", description="Timeout for page load", default=60),
         window_height: discord.Option(
             int, name="window-height", description="the height of the window in pixels", default=1920
         ),
@@ -680,7 +683,7 @@ class OtherCog(commands.Cog):
         try:
             async with self.lock:
                 screenshot, driver, fetch_time, screenshot_time = await self.screenshot_website(
-                    ctx, url.geturl(), browser, render_timeout, window_height, window_width, capture_whole_page
+                    ctx, url.geturl(), browser, render_timeout, load_timeout, window_height, window_width, capture_whole_page
                 )
         except TimeoutError:
             return await ctx.edit(content="Rendering screenshot timed out. Try using a smaller resolution.")
