@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import json
+import hashlib
 from datetime import timedelta
 from pathlib import Path
 from typing import Dict, Tuple, List, Optional
@@ -114,9 +115,13 @@ class UptimeCompetition(commands.Cog):
         self.test_uptimes.cancel()
 
     @staticmethod
-    def assert_uptime_server_response(response: Response):
+    def assert_uptime_server_response(response: Response, expected_hash: str = None):
         assert response.status_code == 200
-        assert response.text.strip() == "<!DOCTYPE html><html><body>Hello Jimmy!</body></html>"
+        if expected_hash:
+            md5 = hashlib.md5()
+            md5.update(response.content)
+            resolved = md5.hexdigest()
+            assert resolved == expected_hash, f"{resolved}!={expected_hash}"
 
     async def _test_url(
         self, url: str, *, max_retries: int | None = 10, timeout: int | None = 30
@@ -145,7 +150,7 @@ class UptimeCompetition(commands.Cog):
         # First we need to check that we are online.
         # If we aren't online, this isn't very fair.
         try:
-            await self.http.get("https://google.co.uk/")
+            await self.http.get("https://discord.com/")
         except (httpx.HTTPError, Exception):
             return  # Offline :pensive:
 
@@ -174,7 +179,7 @@ class UptimeCompetition(commands.Cog):
                 if attempts > 1:
                     kwargs["notes"] += f"After {attempts:,} attempts, "
                 try:
-                    self.assert_uptime_server_response(response)
+                    self.assert_uptime_server_response(response, target.get("http_content_hash"))
                 except AssertionError as e:
                     kwargs["is_up"] = False
                     kwargs["notes"] += "content was invalid: " + str(e)
@@ -412,6 +417,9 @@ class UptimeCompetition(commands.Cog):
         http_timeout: discord.Option(
             int, description="The timeout for the HTTP request.", required=False, default=None
         ),
+        http_md5_content_hash: discord.Option(
+            str, description="The hash of the content to check for.", required=False, default=None
+        ),
     ):
         """Creates a monitor to... monitor"""
         await ctx.defer()
@@ -474,6 +482,10 @@ class UptimeCompetition(commands.Cog):
             options["uri"] = uri.geturl()
             options["http_max_retries"] = http_max_retries
             options["http_timeout"] = http_timeout
+
+            if http_md5_content_hash == "GEN":
+                http_md5_content_hash = hashlib.md5(response.content).hexdigest()
+            options["http_content_hash"] = http_md5_content_hash
         else:
             return await ctx.respond("Invalid URI scheme. Supported: HTTP[S], USER.")
 
@@ -485,6 +497,19 @@ class UptimeCompetition(commands.Cog):
         targets.append(options)
         self.write_targets(targets)
         await ctx.respond("Monitor added!")
+
+    @monitors.command(name="dump")
+    async def show_monitor(self, ctx: discord.ApplicationContext, name: discord.Option(str, description="The name of the monitor.")):
+        """Shows a monitors data."""
+        await ctx.defer()
+        name: str
+
+        targets = self.cached_targets
+        for target in targets:
+            if target["name"] == name or target["id"] == name:
+                return await ctx.respond(f"```json\n{json.dumps(target, indent=4)}```")
+        await ctx.respond("Monitor not found.")
+
 
     @monitors.command(name="remove")
     @commands.is_owner()
