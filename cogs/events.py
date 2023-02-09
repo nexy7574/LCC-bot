@@ -1,11 +1,10 @@
 import random
 from pathlib import Path
 from typing import Optional, Tuple
-from datetime import datetime, time
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 from utils import Student, get_or_none, console
-from config import guilds, lupupa_warning
+from config import guilds
 
 
 LTR = "\N{black rightwards arrow}\U0000fe0f"
@@ -15,7 +14,6 @@ RTL = "\N{leftwards black arrow}\U0000fe0f"
 class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.lupupa_warning_task.start()
 
     # noinspection DuplicatedCode
     async def analyse_text(self, text: str) -> Optional[Tuple[float, float, float, float]]:
@@ -31,32 +29,6 @@ class Events(commands.Cog):
 
         async with self.bot.training_lock:
             return await self.bot.loop.run_in_executor(None, inner)
-
-    def cog_unload(self):
-        self.lupupa_warning_task.stop()
-
-    @tasks.loop(minutes=30)
-    async def lupupa_warning_task(self):
-        if not self.bot.is_ready():
-            await self.bot.wait_until_ready()
-        now = datetime.now()
-        lupupa_warning_text = "\N{warning sign} Lupupa warning!!!"
-        lupupa_recovery_text = "\N{loudly crying face} Lupupa recovery..."
-        if lupupa_warning and now.strftime("%A") == "Thursday":
-            if now.time() > time(15, 15):
-                text = lupupa_recovery_text
-                status = discord.Status.idle
-            else:
-                text = lupupa_warning_text
-                status = discord.Status.dnd
-            if self.bot.activity:
-                if self.bot.activity.name == text:
-                    return
-            await self.bot.change_presence(
-                activity=discord.Activity(name=text, type=discord.ActivityType.playing), status=status
-            )
-        else:
-            await self.bot.change_presence()
 
     @commands.Cog.listener("on_raw_reaction_add")
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
