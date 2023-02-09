@@ -55,13 +55,7 @@ class Mod(commands.Cog):
 
     @commands.slash_command(name="block")
     @owner_or_admin()
-    async def block_user(
-            self,
-            ctx: discord.ApplicationContext,
-            user: discord.Member,
-            reason: str,
-            until: str
-    ):
+    async def block_user(self, ctx: discord.ApplicationContext, user: discord.Member, reason: str, until: str):
         """Blocks a user from using the bot."""
         await ctx.defer()
         date = datetime.utcnow()

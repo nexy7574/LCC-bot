@@ -30,7 +30,7 @@ __all__ = [
     "Assignments",
     "Tutors",
     "UptimeEntry",
-    "JimmyBans"
+    "JimmyBans",
 ]
 
 T = TypeVar("T")

@@ -282,7 +282,6 @@ class UptimeCompetition(commands.Cog):
 
         def generate_embed(target, specific_entries: list[UptimeEntry]):
             targ = target
-            # targ = self.get_target(target_id=target)
             embed = discord.Embed(
                 title=f"Uptime stats for {targ['name']}",
                 description=f"Showing uptime stats for the last {look_back:,} days.",
@@ -308,10 +307,12 @@ class UptimeCompetition(commands.Cog):
                     name="\u200b",
                     value=f"*Started monitoring {discord.utils.format_dt(first_check, style='R')}, "
                     f"{total_count:,} monitoring events collected*\n"
-                    f"**Online:**\n\t\\* {online_avg:.2f}% of the time\n\t\\* Last online: "
+                    f"**Online:**\n\t\\* {online_avg:.2f}% of the time ({online_count:,} events)\n\t"
+                    f"\\* Last seen online: "
                     f"{discord.utils.format_dt(last_online, 'R') if last_online else 'Never'}\n"
                     f"\n"
-                    f"**Offline:**\n\t\\* {100 - online_avg:.2f}% of the time\n\t\\* Last offline: "
+                    f"**Offline:**\n\t\\* {100 - online_avg:.2f}% of the time ({offline_count:,} events)\n\t"
+                    f"\\* Last seen offline: "
                     f"{discord.utils.format_dt(last_offline, 'R') if last_offline else 'Never'}\n"
                     f"\n"
                     f"**Average Response Time:**\n\t\\* {average_response_time:.2f}ms",
@@ -499,17 +500,17 @@ class UptimeCompetition(commands.Cog):
         await ctx.respond("Monitor added!")
 
     @monitors.command(name="dump")
-    async def show_monitor(self, ctx: discord.ApplicationContext, name: discord.Option(str, description="The name of the monitor.")):
-        """Shows a monitors data."""
+    async def show_monitor(
+        self, ctx: discord.ApplicationContext, name: discord.Option(str, description="The name of the monitor.")
+    ):
+        """Shows a monitor's data."""
         await ctx.defer()
         name: str
 
-        targets = self.cached_targets
-        for target in targets:
-            if target["name"] == name or target["id"] == name:
-                return await ctx.respond(f"```json\n{json.dumps(target, indent=4)}```")
+        target = self.get_target(name)
+        if target:
+            return await ctx.respond(f"```json\n{json.dumps(target, indent=4)}```")
         await ctx.respond("Monitor not found.")
-
 
     @monitors.command(name="remove")
     @commands.is_owner()

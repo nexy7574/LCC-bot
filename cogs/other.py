@@ -439,29 +439,29 @@ class OtherCog(commands.Cog):
 
     @commands.slash_command()
     async def dig(
-            self,
-            ctx: discord.ApplicationContext,
-            domain: str,
-            _type: discord.Option(
-                str,
-                name="type",
-                default="A",
-                choices=[
-                    "A",
-                    "AAAA",
-                    "ANY",
-                    "AXFR",
-                    "CNAME",
-                    "HINFO",
-                    "LOC",
-                    "MX",
-                    "NS",
-                    "PTR",
-                    "SOA",
-                    "SRV",
-                    "TXT",
-                ]
-            )
+        self,
+        ctx: discord.ApplicationContext,
+        domain: str,
+        _type: discord.Option(
+            str,
+            name="type",
+            default="A",
+            choices=[
+                "A",
+                "AAAA",
+                "ANY",
+                "AXFR",
+                "CNAME",
+                "HINFO",
+                "LOC",
+                "MX",
+                "NS",
+                "PTR",
+                "SOA",
+                "SRV",
+                "TXT",
+            ],
+        ),
     ):
         """Looks up a domain name"""
         await ctx.defer()
@@ -494,46 +494,28 @@ class OtherCog(commands.Cog):
 
     @commands.slash_command()
     async def traceroute(
-            self,
-            ctx: discord.ApplicationContext,
-            url: str,
-            port: discord.Option(
-                int,
-                description="Port to use",
-                default=None
-            ),
-            ping_type: discord.Option(
-                str,
-                name="ping-type",
-                description="Type of ping to use. See `traceroute --help`",
-                choices=["icmp", "tcp", "udp", "udplite", "dccp", "default"],
-                default="default"
-            ),
-            use_ip_version: discord.Option(
-                str,
-                name="ip-version",
-                description="IP version to use.",
-                choices=["ipv4", "ipv6"],
-                default="ipv4"
-            ),
-            max_ttl: discord.Option(
-                int,
-                name="ttl",
-                description="Max number of hops",
-                default=30
-            )
+        self,
+        ctx: discord.ApplicationContext,
+        url: str,
+        port: discord.Option(int, description="Port to use", default=None),
+        ping_type: discord.Option(
+            str,
+            name="ping-type",
+            description="Type of ping to use. See `traceroute --help`",
+            choices=["icmp", "tcp", "udp", "udplite", "dccp", "default"],
+            default="default",
+        ),
+        use_ip_version: discord.Option(
+            str, name="ip-version", description="IP version to use.", choices=["ipv4", "ipv6"], default="ipv4"
+        ),
+        max_ttl: discord.Option(int, name="ttl", description="Max number of hops", default=30),
     ):
         """Performs a traceroute request."""
         await ctx.defer()
         if re.search(r"\s+", url):
             return await ctx.respond("URL cannot contain spaces.")
 
-        args = [
-            "sudo",
-            "-E",
-            "-n",
-            "traceroute"
-        ]
+        args = ["sudo", "-E", "-n", "traceroute"]
         flags = {
             "ping_type": {
                 "icmp": "-I",
@@ -542,10 +524,7 @@ class OtherCog(commands.Cog):
                 "udplite": "-UL",
                 "dccp": "-D",
             },
-            "use_ip_version": {
-                "ipv4": "-4",
-                "ipv6": "-6"
-            }
+            "use_ip_version": {"ipv4": "-4", "ipv6": "-6"},
         }
 
         if ping_type != "default":
@@ -683,7 +662,14 @@ class OtherCog(commands.Cog):
         try:
             async with self.lock:
                 screenshot, driver, fetch_time, screenshot_time = await self.screenshot_website(
-                    ctx, url.geturl(), browser, render_timeout, load_timeout, window_height, window_width, capture_whole_page
+                    ctx,
+                    url.geturl(),
+                    browser,
+                    render_timeout,
+                    load_timeout,
+                    window_height,
+                    window_width,
+                    capture_whole_page,
                 )
         except TimeoutError:
             return await ctx.edit(content="Rendering screenshot timed out. Try using a smaller resolution.")
