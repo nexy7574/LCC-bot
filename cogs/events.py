@@ -89,9 +89,16 @@ class Events(commands.Cog):
                 await message.delete(delay=1)
 
         else:
-            if message.author.id == 1063875884274163732 and message.content.startswith("Congratulations!!"):
-                if message.channel.can_send():
-                    return await message.reply("Shut up SHRoNK Bot, nobody loves you.")
+            if message.author.id == 1063875884274163732 and message.channel.can_send():
+                RESPONSES = {
+                    "Congratulations!!": "Shut up SHRoNK Bot, nobody loves you.",
+                    "You run on a Raspberry Pi... I run on a real server": "At least my server gets action, "
+                                                                           "while yours just sits and collects dust!"
+                }
+                for k, v in RESPONSES.items():
+                    if k in message.content:
+                        await message.reply(v)
+                        break
             if message.author.bot is True:
                 return
             if message.content:
