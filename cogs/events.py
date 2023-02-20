@@ -97,7 +97,7 @@ class Events(commands.Cog):
                 }
                 for k, v in RESPONSES.items():
                     if k in message.content:
-                        await message.reply(v)
+                        await message.reply(v, delete_after=10)
                         break
             if message.author.bot is True:
                 return
