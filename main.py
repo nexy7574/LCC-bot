@@ -4,6 +4,8 @@ from asyncio import Lock
 import config
 from datetime import datetime, timezone, timedelta
 from utils import registry, console, get_or_none, JimmyBans
+from web.server import app
+import uvicorn
 
 
 intents = discord.Intents.default()
@@ -12,14 +14,6 @@ intents += discord.Intents.message_content
 intents += discord.Intents.members
 intents += discord.Intents.presences
 
-
-bot = commands.Bot(
-    commands.when_mentioned_or("h!"),
-    debug_guilds=config.guilds,
-    allowed_mentions=discord.AllowedMentions.none(),
-    intents=intents,
-)
-bot.training_lock = Lock()
 
 extensions = [
     "jishaku",
@@ -32,13 +26,35 @@ extensions = [
     "cogs.starboard",
     "cogs.uptime",
 ]
-for ext in extensions:
-    try:
-        bot.load_extension(ext)
-    except discord.ExtensionFailed as e:
-        console.log(f"[red]Failed to load extension {ext}: {e}")
-    else:
-        console.log(f"Loaded extension [green]{ext}")
+
+
+class Bot(commands.Bot):
+    def __init__(self):
+        super().__init__(
+            command_prefix=self.get_prefix,
+            debug_guilds=config.guilds,
+            allowed_mentions=discord.AllowedMentions.none(),
+            intents=intents,
+        )
+        self.training_lock = Lock()
+        self.started_at = datetime.now(tz=timezone.utc)
+        self.bans = JimmyBans()
+        for ext in extensions:
+            try:
+                bot.load_extension(ext)
+            except discord.ExtensionFailed as e:
+                console.log(f"[red]Failed to load extension {ext}: {e}")
+            else:
+                console.log(f"Loaded extension [green]{ext}")
+
+        app.state.bot = self
+        config = uvicorn.Config(
+            app,
+            port=3762
+        )
+
+
+bot = Bot()
 bot.loop.run_until_complete(registry.create_all())
 
 
@@ -118,4 +134,5 @@ async def check_not_banned(ctx: discord.ApplicationContext | commands.Context):
 
 if __name__ == "__main__":
     console.log("Starting...")
+    bot.started_at = discord.utils.utcnow()
     bot.run(config.token)
