@@ -5,3 +5,4 @@ venv
 domains.txt
 geckodriver.log
 targets.json
+*.kdev4

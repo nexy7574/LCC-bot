@@ -1,11 +1,13 @@
 import discord
 import os
 import httpx
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from hashlib import sha512
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
-from utils.db import Student, get_or_none
+from utils import Student, get_or_none, VerifyCode, console, BannedStudentID
+from config import guilds
 
 try:
     from config import OAUTH_ID, OAUTH_SECRET, OAUTH_REDIRECT_URI
@@ -37,8 +39,9 @@ def ping():
         "ping": "pong", 
         "online": app.state.bot.is_ready(), 
         "latency": app.state.bot.latency,
-        "uptime": bot_started
+        "uptime": bot_started.total_seconds()
     }
+
 
 @app.get("/auth")
 async def authenticate(req: Request, code: str = None, state: str = None):
@@ -94,7 +97,7 @@ async def authenticate(req: Request, code: str = None, state: str = None):
         user = response.json()
 
         # Now we need to fetch the student from the database
-        student = await get_or_none(Student, discord_id=user["id"])
+        student = await get_or_none(Student, user_id=user["id"])
         if not student:
             raise HTTPException(
                 status_code=404,
@@ -125,15 +128,69 @@ async def authenticate(req: Request, code: str = None, state: str = None):
             "/",
             status_code=307,
             headers={
-                "Cache-Control": "max-age=86400"
+                "Cache-Control": "max-age=604800"
             }
         )
-        # set the cookie for at most 86400 seconds - expire after that
+        # set the cookie for at most 604800 seconds - expire after that
         response.set_cookie(
             "token",
             token,
-            max_age=86400,
-            same_site="strict",
+            max_age=604800,
+            samesite="strict",
             httponly=True,
         )
         return response
+
+
+@app.get("/verify/{code}")
+async def verify(code: str):
+    guild = app.state.bot.get_guild(guilds[0])
+    if not guild:
+        raise HTTPException(
+            status_code=503,
+            detail="Not ready."
+        )
+
+    # First, we need to fetch the code from the database
+    verify_code = await get_or_none(VerifyCode, code=code)
+    if not verify_code:
+        raise HTTPException(
+            status_code=404,
+            detail="Code not found."
+        )
+    
+    # Now we need to fetch the student from the database
+    student = await get_or_none(Student, user_id=verify_code.bind)
+    if student:
+        raise HTTPException(
+            status_code=400,
+            detail="Already verified."
+        )
+
+    ban = await get_or_none(BannedStudentID, student_id=verify_code.student_id)
+    if ban is not None:
+        return await guild.kick(
+            reason=f"Attempted to verify with banned student ID {ban.student_id}"
+                   f" (originally associated with account {ban.associated_account})"
+        )
+    await Student.objects.create(
+        id=verify_code.student_id, user_id=verify_code.bind, name=verify_code.name
+    )
+    await verify_code.delete()
+    role = discord.utils.find(lambda r: r.name.lower() == "verified", guild.roles)
+    member = await guild.fetch_member(verify_code.bind)
+    if role and role < guild.me.top_role:
+        await member.add_roles(role, reason="Verified")
+    try:
+        await member.edit(nick=f"{verify_code.name}", reason="Verified")
+    except discord.HTTPException:
+        pass
+
+    # And delete the code
+    await verify_code.delete()
+
+    console.log(f"[green]{verify_code.bind} verified ({verify_code.bing}/{verify_code.student_id})")
+
+    return {
+        "message": "Successfully verified."
+    }

@@ -13,6 +13,7 @@ import os
 import discord
 
 # The IDs of guilds the bot should be in; used to determine where to make slash commands
+# If you put multiple IDs in here, the first one should be your "primary" server.
 guilds = [994710566612500550]
 
 # Email & email password for the email verification system
@@ -46,7 +47,15 @@ HTTP_HOST = "127.0.0.1"
 HTTP_PORT = 3762
 
 # You can also just fully turn the web server off
-WEB_SERVER = False
+WEB_SERVER = True  # change this to False to disable it
+
+# Or change uvicorn settings (see: https://www.uvicorn.org/settings/)
+# Note that passing `host` or `port` will raise an error, as those are configured above.
+UVICORN_CONFIG = {
+    "log_level": "error",
+    "access_log": False,
+    "lifespan": "off"
+}
 
 # Only change this if you want to test changes to the bot without sending too much traffic to discord.
 # Connect modes:

@@ -9,7 +9,10 @@
       <auth-provider>no-auth</auth-provider>
       <schema-mapping>
         <introspection-scope>
-          <node kind="schema" qname="@" />
+          <node kind="schema">
+            <name qname="@" />
+            <name qname="main" />
+          </node>
         </introspection-scope>
       </schema-mapping>
     </data-source>

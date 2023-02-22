@@ -1,61 +1,11 @@
+import asyncio
+
 import discord
 from discord.ext import commands
-from asyncio import Lock
 import config
 from datetime import datetime, timezone, timedelta
-from utils import registry, console, get_or_none, JimmyBans
-from web.server import app
-import uvicorn
-
-
-intents = discord.Intents.default()
-intents += discord.Intents.messages
-intents += discord.Intents.message_content
-intents += discord.Intents.members
-intents += discord.Intents.presences
-
-
-extensions = [
-    "jishaku",
-    "cogs.verify",
-    "cogs.mod",
-    "cogs.events",
-    "cogs.assignments",
-    "cogs.timetable",
-    "cogs.other",
-    "cogs.starboard",
-    "cogs.uptime",
-]
-
-
-class Bot(commands.Bot):
-    def __init__(self):
-        super().__init__(
-            command_prefix=self.get_prefix,
-            debug_guilds=config.guilds,
-            allowed_mentions=discord.AllowedMentions.none(),
-            intents=intents,
-        )
-        self.training_lock = Lock()
-        self.started_at = datetime.now(tz=timezone.utc)
-        self.bans = JimmyBans()
-        for ext in extensions:
-            try:
-                bot.load_extension(ext)
-            except discord.ExtensionFailed as e:
-                console.log(f"[red]Failed to load extension {ext}: {e}")
-            else:
-                console.log(f"Loaded extension [green]{ext}")
-
-        app.state.bot = self
-        config = uvicorn.Config(
-            app,
-            port=3762
-        )
-
-
-bot = Bot()
-bot.loop.run_until_complete(registry.create_all())
+from utils import console, get_or_none, JimmyBans
+from utils.client import bot
 
 
 @bot.listen()
@@ -101,6 +51,9 @@ async def on_application_command(ctx: discord.ApplicationContext):
 @bot.event
 async def on_ready():
     console.log("Logged in as", bot.user)
+    if getattr(config, "CONNECT_MODE", None) == 1:
+        console.log("Bot is now ready and exit target 1 is set, shutting down.")
+        await bot.close()
 
 
 @bot.slash_command()
@@ -135,4 +88,36 @@ async def check_not_banned(ctx: discord.ApplicationContext | commands.Context):
 if __name__ == "__main__":
     console.log("Starting...")
     bot.started_at = discord.utils.utcnow()
+
+    if getattr(config, "WEB_SERVER", True):
+        from web.server import app
+        import uvicorn
+
+        http_config = uvicorn.Config(
+            app,
+            host=getattr(config, "HTTP_HOST", "127.0.0.1"),
+            port=getattr(config, "HTTP_PORT", 3762),
+            lifespan="off",
+            access_log=False,
+            **getattr(config, "UVICORN_CONFIG", {})
+        )
+        server = uvicorn.Server(http_config)
+        console.log("Starting web server...")
+        loop = bot.loop
+        http_server_task = loop.create_task(server.serve())
+        bot.web = {
+            "server": server,
+            "config": http_config,
+            "task": http_server_task,
+        }
+
     bot.run(config.token)
+    if hasattr(bot, "web"):
+        console.log("Cancelling web task...")
+        bot.web["task"].cancel()
+        console.log("Shutting down web server...")
+        try:
+            bot.web["task"].result()
+        except asyncio.CancelledError:
+            pass
+        console.log("Web server closed.")

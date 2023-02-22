@@ -83,6 +83,9 @@ class Student(orm.Model):
         id: str
         user_id: int
         name: str
+        access_token: str | None
+        ip_info: dict | None
+        access_token_hash: str | None
 
 
 class BannedStudentID(orm.Model):

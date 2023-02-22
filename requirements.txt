@@ -13,4 +13,3 @@ aiofiles==22.1.0
 httpx==0.23.0
 fastapi==0.92.0
 uvicorn==0.20.0
-bcrypt==4.0.1
