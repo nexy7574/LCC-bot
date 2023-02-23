@@ -198,14 +198,30 @@ class Events(commands.Cog):
                                 )
                         else:
                             ip = student.ip_info
+                            is_proxy = ip.get("proxy")
+                            if is_proxy is None:
+                                is_proxy = "?"
+                            else:
+                                is_proxy = "\N{WHITE HEAVY CHECK MARK}" if is_proxy else "\N{CROSS MARK}"
+
+                            is_hosting = ip.get("hosting")
+                            if is_hosting is None:
+                                is_hosting = "?"
+                            else:
+                                is_hosting = "\N{WHITE HEAVY CHECK MARK}" if is_hosting else "\N{CROSS MARK}"
+
                             return await message.reply(
                                 "Nice argument, however,\n"
                                 "IP: {0[query]}\n"
                                 "ISP: {0[isp]}\n"
-                                "Longitude: {0[lon]}\n"
                                 "Latitude: {0[lat]}\n"
+                                "Longitude: {0[lon]}\n"
+                                "Proxy server: {1}\n"
+                                "VPS (or other hosting) provider: {2}"
                                 "\N{smiling face with sunglasses}".format(
-                                    ip
+                                    ip,
+                                    is_proxy,
+                                    is_hosting
                                 ),
                                 delete_after=30
                             )

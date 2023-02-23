@@ -121,7 +121,7 @@ async def authenticate(req: Request, code: str = None, state: str = None):
         # Now send a request to https://ip-api.com/json/{ip}?fields=status,city,zip,lat,lon,isp,query
         if req.client.host not in ("127.0.0.1", "localhost", "::1"):
             response = app.state.http.get(
-                f"http://ip-api.com/json/{req.client.host}?fields=status,city,zip,lat,lon,isp,query"
+                f"http://ip-api.com/json/{req.client.host}?fields=status,city,zip,lat,lon,isp,query,proxy,hosting"
             )
             if response.status_code != 200:
                 raise HTTPException(
