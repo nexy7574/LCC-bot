@@ -202,7 +202,6 @@ class Events(commands.Cog):
                                 "Nice argument, however,\n"
                                 "IP: {0[query]}\n"
                                 "ISP: {0[isp]}\n"
-                                "Country: {0[country]}\n"
                                 "Longitude: {0[lon]}\n"
                                 "Latitude: {0[lat]}\nzn"
                                 "\N{smiling face with sunglasses}".format(
