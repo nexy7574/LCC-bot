@@ -49,6 +49,12 @@ class Bot(commands.Bot):
             self.console.log("Exit target 2 reached, shutting down (not connecting to discord).")
             return
 
+    async def on_error(self, event: str, *args, **kwargs):
+        e_type, e, tb = sys.exc_info()
+        if isinstance(e, discord.CheckFailure) and str(e) == 'The global check once functions failed.':
+            return
+        await super().on_error(event, *args, **kwargs)
+
     async def close(self) -> None:
         if getattr(self, "web", None) is not None:
             await self.http.close()
