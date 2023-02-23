@@ -1,4 +1,5 @@
 import asyncio
+import sys
 
 import discord
 from discord.ext import commands
@@ -54,6 +55,7 @@ async def on_ready():
     if getattr(config, "CONNECT_MODE", None) == 1:
         console.log("Bot is now ready and exit target 1 is set, shutting down.")
         await bot.close()
+        sys.exit(0)
 
 
 @bot.slash_command()
@@ -92,13 +94,12 @@ if __name__ == "__main__":
     if getattr(config, "WEB_SERVER", True):
         from web.server import app
         import uvicorn
+        app.state.bot = bot
 
         http_config = uvicorn.Config(
             app,
             host=getattr(config, "HTTP_HOST", "127.0.0.1"),
             port=getattr(config, "HTTP_PORT", 3762),
-            lifespan="off",
-            access_log=False,
             **getattr(config, "UVICORN_CONFIG", {})
         )
         server = uvicorn.Server(http_config)
@@ -112,12 +113,3 @@ if __name__ == "__main__":
         }
 
     bot.run(config.token)
-    if hasattr(bot, "web"):
-        console.log("Cancelling web task...")
-        bot.web["task"].cancel()
-        console.log("Shutting down web server...")
-        try:
-            bot.web["task"].result()
-        except asyncio.CancelledError:
-            pass
-        console.log("Web server closed.")

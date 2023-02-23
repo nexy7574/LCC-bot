@@ -1,8 +1,15 @@
+import asyncio
+import sys
+
 import discord
 import config
 from asyncio import Lock
 from discord.ext import commands
 from datetime import datetime, timezone
+from typing import Optional, Dict, TYPE_CHECKING, Union
+if TYPE_CHECKING:
+    from uvicorn import Server, Config
+    from asyncio import Task
 
 
 __all__ = ("Bot", 'bot')
@@ -10,6 +17,9 @@ __all__ = ("Bot", 'bot')
 
 # noinspection PyAbstractClass
 class Bot(commands.Bot):
+    if TYPE_CHECKING:
+        web: Optional[Dict[str, Union[Server, Config, Task]]]
+
     def __init__(self, intents: discord.Intents, guilds: list[int], extensions: list[str]):
         from .db import JimmyBans, registry
         from .console import console
@@ -38,6 +48,28 @@ class Bot(commands.Bot):
         async def connect(self, *, reconnect: bool = True) -> None:
             self.console.log("Exit target 2 reached, shutting down (not connecting to discord).")
             return
+
+    async def close(self) -> None:
+        if getattr(self, "web", None) is not None:
+            await self.http.close()
+            self.console.log("Closing web server...")
+            await self.web["server"].shutdown()
+            self.web["task"].cancel()
+            self.console.log("Web server closed.")
+            try:
+                await self.web["task"]
+            except asyncio.CancelledError:
+                pass
+            del self.web["server"]
+            del self.web["config"]
+            del self.web["task"]
+            del self.web
+        try:
+            await asyncio.wait_for(asyncio.create_task(super().close()), timeout=10)
+        except asyncio.TimeoutError:
+            self.console.log("Timed out while closing, forcing shutdown.")
+            sys.exit(1)
+        self.console.log("Finished shutting down.")
 
 
 try:

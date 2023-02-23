@@ -21,6 +21,12 @@ app.state.bot = None
 app.state.states = set()
 app.state.http = httpx.Client()
 
+try:
+    from utils.client import bot
+    app.state.bot = bot
+except ImportError:
+    bot = None
+
 
 @app.middleware("http")
 async def check_bot_instanced(request, call_next):
@@ -34,12 +40,12 @@ async def check_bot_instanced(request, call_next):
 
 @app.get("/ping")
 def ping():
-    bot_started = app.state.bot.started_at - datetime.now(tz=timezone.utc)
+    bot_started = datetime.now(tz=timezone.utc) - app.state.bot.started_at
     return {
         "ping": "pong", 
         "online": app.state.bot.is_ready(), 
-        "latency": app.state.bot.latency,
-        "uptime": bot_started.total_seconds()
+        "latency": max(round(app.state.bot.latency, 2), 0.01),
+        "uptime": max(round(bot_started.total_seconds(), 2), 1)
     }
 
 
