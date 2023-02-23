@@ -100,6 +100,7 @@ if __name__ == "__main__":
             app,
             host=getattr(config, "HTTP_HOST", "127.0.0.1"),
             port=getattr(config, "HTTP_PORT", 3762),
+            loop="asyncio",
             **getattr(config, "UVICORN_CONFIG", {})
         )
         server = uvicorn.Server(http_config)

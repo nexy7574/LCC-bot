@@ -112,7 +112,7 @@ async def authenticate(req: Request, code: str = None, state: str = None):
         
         # Now send a request to https://ip-api.com/json/{ip}?fields=17136
         response = app.state.http.get(
-            f"https://ip-api.com/json/{req.client.host}?fields=17136"
+            f"http://ip-api.com/json/{req.client.host}?fields=17136"
         )
         if response.status_code != 200:
             raise HTTPException(
@@ -123,7 +123,7 @@ async def authenticate(req: Request, code: str = None, state: str = None):
         if data["status"] != "success":
             raise HTTPException(
                 status_code=500,
-                detail="Failed to get IP data."
+                detail=f"Failed to get IP data for {req.client.host}: {data}."
             )
         
         # Now we can update the student entry with this data
