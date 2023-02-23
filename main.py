@@ -68,7 +68,7 @@ async def ping(ctx: discord.ApplicationContext):
 
 @bot.check_once
 async def check_not_banned(ctx: discord.ApplicationContext | commands.Context):
-    if await bot.is_owner(ctx.author):
+    if await bot.is_owner(ctx.author) or ctx.command.name in ("block", "unblock"):
         return True
     user = ctx.author
     ban: JimmyBans = await get_or_none(JimmyBans, user_id=user.id)

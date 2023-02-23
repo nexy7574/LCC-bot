@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from hashlib import sha512
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 from utils import Student, get_or_none, VerifyCode, console, BannedStudentID
 from config import guilds
 
@@ -35,7 +35,10 @@ async def check_bot_instanced(request, call_next):
     if not request.app.state.bot:
         return JSONResponse(
             status_code=503,
-            content={"message": "Not ready."}
+            content={"message": "Not ready."},
+            headers={
+                "Retry-After": "10"
+            }
         )
     return await call_next(request)
 
@@ -55,12 +58,12 @@ def ping():
 async def authenticate(req: Request, code: str = None, state: str = None):
     if not OAUTH_ENABLED:
         raise HTTPException(
-            503,
+            501,
             "OAuth is not enabled."
         )
 
     if not (code and state) or state not in app.state.states:
-        value = os.urandom(3).hex()
+        value = os.urandom(8).hex()
         assert value not in app.state.states, "Generated a state that already exists."
         app.state.states.add(value)
         return RedirectResponse(
@@ -69,7 +72,10 @@ async def authenticate(req: Request, code: str = None, state: str = None):
                 redirect_uri=OAUTH_REDIRECT_URI,
                 scopes=('identify',)
             ) + f"&state={value}&prompt=none",
-            status_code=301
+            status_code=301,
+            headers={
+                "Cache-Control": "no-store, no-cache"
+            }
         )
     else:
         app.state.states.discard(state)
@@ -139,12 +145,31 @@ async def authenticate(req: Request, code: str = None, state: str = None):
         
         # Now we can update the student entry with this data
         await student.update(ip_info=data, access_token_hash=token)
-
+        document = \
+f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecting...</title>
+</head>
+<body>
+    <script>
+        window.location.href = "{GENERAL}";
+    </script>
+    <noscript>
+        <meta http-equiv="refresh" content="0; url={GENERAL}" />
+    </noscript>
+    <p>Redirecting you to the general channel...</p>
+    <i><a href='{GENERAL}' rel='noopener'>Click here if you are not redirected.</a></i>
+</body>
+</html>
+"""
         # And set it as a cookie
-        response = RedirectResponse(
-            GENERAL,
-            status_code=307,
+        response = HTMLResponse(
+            document,
+            status_code=200,
             headers={
+                "Location": GENERAL,
                 "Cache-Control": "max-age=604800"
             }
         )
