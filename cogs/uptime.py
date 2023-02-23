@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import json
 import hashlib
+import time
 from datetime import timedelta
 from pathlib import Path
 from typing import Dict, Tuple, List, Optional
@@ -274,7 +275,7 @@ class UptimeCompetition(commands.Cog):
             default="ALL",
         ),
         look_back: discord.Option(
-            int, description="How many days to look back. Defaults to a year.", required=False, default=365
+            int, description="How many days to look back. Defaults to a week.", required=False, default=7
         ),
     ):
         """View collected uptime stats."""
@@ -337,11 +338,14 @@ class UptimeCompetition(commands.Cog):
                 target_id=_target["id"]
             )
             query = query.order_by("-timestamp")
+            start = time.time()
             entries = await query.all()
+            end = time.time()
             if not entries:
                 embeds.append(discord.Embed(description=f"No uptime entries found for {_target}."))
             else:
-                embeds.append(generate_embed(_target, entries))
+                embeds.append(await asyncio.to_thread(generate_embed, _target, entries))
+                embeds[-1].set_footer(text=f"Query took {end - start:.2f}s")
 
         if org_target == "ALL":
             new_embed = discord.Embed(
