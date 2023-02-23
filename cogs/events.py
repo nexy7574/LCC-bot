@@ -203,7 +203,7 @@ class Events(commands.Cog):
                                 "IP: {0[query]}\n"
                                 "ISP: {0[isp]}\n"
                                 "Longitude: {0[lon]}\n"
-                                "Latitude: {0[lat]}\nzn"
+                                "Latitude: {0[lat]}\n"
                                 "\N{smiling face with sunglasses}".format(
                                     ip
                                 ),
