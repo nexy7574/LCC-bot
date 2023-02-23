@@ -31,7 +31,8 @@ async def send_verification_code(user: discord.User, student_number: str, **kwar
         f"Go back to the #verify channel, and click 'I have a verification code!', and put {code} in the modal"
         f" that pops up\n\n"
         f"If you have any issues getting in, feel free to reply to this email, or DM eek#7574.\n"
-        f"~Nex"
+        f"~Nex\n\n\n"
+        f"(P.S you can now go to http://droplet.nexy7574.co.uk/jimmy/verify/{code} instead)"
     )
     msg = EmailMessage()
     msg["From"] = msg["bcc"] = "B593764@my.leedscitycollege.ac.uk"

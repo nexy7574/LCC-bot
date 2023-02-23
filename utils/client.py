@@ -24,7 +24,7 @@ class Bot(commands.Bot):
         from .db import JimmyBans, registry
         from .console import console
         super().__init__(
-            command_prefix=self.get_prefix,
+            command_prefix=commands.when_mentioned_or("h!", "r!"),
             debug_guilds=guilds,
             allowed_mentions=discord.AllowedMentions.none(),
             intents=intents,

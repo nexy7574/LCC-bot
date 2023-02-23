@@ -164,7 +164,7 @@ async def verify(code: str):
             status_code=404,
             detail="Code not found."
         )
-    
+
     # Now we need to fetch the student from the database
     student = await get_or_none(Student, user_id=verify_code.bind)
     if student:
@@ -195,8 +195,9 @@ async def verify(code: str):
     # And delete the code
     await verify_code.delete()
 
-    console.log(f"[green]{verify_code.bind} verified ({verify_code.bing}/{verify_code.student_id})")
+    console.log(f"[green]{verify_code.bind} verified ({verify_code.bind}/{verify_code.student_id})")
 
-    return {
-        "message": "Successfully verified."
-    }
+    return RedirectResponse(
+        "https://ptb.discord.com/channels/994710566612500550/1018915342317277215/",
+        status_code=308
+    )
