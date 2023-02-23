@@ -51,7 +51,7 @@ class Bot(commands.Bot):
 
     async def on_error(self, event: str, *args, **kwargs):
         e_type, e, tb = sys.exc_info()
-        if isinstance(e, discord.CheckFailure) and str(e) == 'The global check once functions failed.':
+        if isinstance(e, discord.CheckFailure) and 'The global check once functions failed.' in str(e):
             return
         await super().on_error(event, *args, **kwargs)
 
