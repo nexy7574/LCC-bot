@@ -217,7 +217,7 @@ class Events(commands.Cog):
                                 "Latitude: {0[lat]}\n"
                                 "Longitude: {0[lon]}\n"
                                 "Proxy server: {1}\n"
-                                "VPS (or other hosting) provider: {2}"
+                                "VPS (or other hosting) provider: {2}\n\n"
                                 "\N{smiling face with sunglasses}".format(
                                     ip,
                                     is_proxy,
