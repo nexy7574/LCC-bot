@@ -79,7 +79,10 @@ async def check_not_banned(ctx: discord.ApplicationContext | commands.Context):
         else:
             reply = ctx.reply if isinstance(ctx, commands.Context) else ctx.respond
             try:
-                await reply(content=f":x: You can use commands {discord.utils.format_dt(dt, 'R')}")
+                await reply(
+                    content=f":x: You can use commands {discord.utils.format_dt(dt, 'R')} (reason for ban:"
+                            f" {ban.reason}).",
+                )
             except discord.HTTPException:
                 pass
             finally:
