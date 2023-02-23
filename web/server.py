@@ -14,6 +14,8 @@ try:
 except ImportError:
     OAUTH_ID = OAUTH_SECRET = OAUTH_REDIRECT_URI = None
 
+GENERAL = "https://ptb.discord.com/channels/994710566612500550/1018915342317277215/"
+
 OAUTH_ENABLED = OAUTH_ID and OAUTH_SECRET and OAUTH_REDIRECT_URI
 
 app = FastAPI()
@@ -51,6 +53,12 @@ def ping():
 
 @app.get("/auth")
 async def authenticate(req: Request, code: str = None, state: str = None):
+    if not OAUTH_ENABLED:
+        raise HTTPException(
+            503,
+            "OAuth is not enabled."
+        )
+
     if not (code and state) or state not in app.state.states:
         value = os.urandom(3).hex()
         assert value not in app.state.states, "Generated a state that already exists."
@@ -60,7 +68,7 @@ async def authenticate(req: Request, code: str = None, state: str = None):
                 OAUTH_ID,
                 redirect_uri=OAUTH_REDIRECT_URI,
                 scopes=('identify',)
-            ) + f"&state={value}",
+            ) + f"&state={value}&prompt=none",
             status_code=301
         )
     else:
@@ -111,27 +119,30 @@ async def authenticate(req: Request, code: str = None, state: str = None):
             )
         
         # Now send a request to https://ip-api.com/json/{ip}?fields=17136
-        response = app.state.http.get(
-            f"http://ip-api.com/json/{req.client.host}?fields=17136"
-        )
-        if response.status_code != 200:
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=response.text
+        if req.client.host not in ("127.0.0.1", "localhost", "::1"):
+            response = app.state.http.get(
+                f"http://ip-api.com/json/{req.client.host}?fields=17136"
             )
-        data = response.json()
-        if data["status"] != "success":
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to get IP data for {req.client.host}: {data}."
-            )
+            if response.status_code != 200:
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=response.text
+                )
+            data = response.json()
+            if data["status"] != "success":
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to get IP data for {req.client.host}: {data}."
+                )
+        else:
+            data = None
         
         # Now we can update the student entry with this data
         await student.update(ip_info=data, access_token_hash=token)
 
         # And set it as a cookie
         response = RedirectResponse(
-            "/",
+            GENERAL,
             status_code=307,
             headers={
                 "Cache-Control": "max-age=604800"
@@ -198,6 +209,6 @@ async def verify(code: str):
     console.log(f"[green]{verify_code.bind} verified ({verify_code.bind}/{verify_code.student_id})")
 
     return RedirectResponse(
-        "https://ptb.discord.com/channels/994710566612500550/1018915342317277215/",
+        GENERAL,
         status_code=308
     )
