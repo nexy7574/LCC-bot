@@ -5,6 +5,10 @@ import discord
 from discord.ext import commands
 from utils import Student, get_or_none, console
 from config import guilds
+try:
+    from config import OAUTH_REDIRECT_URI
+except ImportError:
+    OAUTH_REDIRECT_URI = None
 
 
 LTR = "\N{black rightwards arrow}\U0000fe0f"
@@ -145,8 +149,6 @@ class Events(commands.Cog):
                                 await message.add_reaction(C_EMOJI)
                             except discord.HTTPException as e:
                                 console.log("Failed to add gay reaction:", e)
-            else:
-                console.log("No content.")
 
             if self.bot.user in message.mentions:
                 if message.content.startswith(self.bot.user.mention):
@@ -178,6 +180,36 @@ class Events(commands.Cog):
                         date = discord.utils.utcnow()
                         # date = date.replace(year=date.year + 1)
                         return await message.reply(date.strftime("%Y") + " will be the year of the GNU+Linux desktop.")
+
+                    if message.content.lower().endswith("fuck you"):
+                        student = await get_or_none(Student, user_id=message.author.id)
+                        if student is None:
+                            return await message.reply("You aren't even verified...", delete_after=10)
+                        elif student.ip_info is None:
+                            if OAUTH_REDIRECT_URI:
+                                return await message.reply(
+                                    f"Let me see who you are, and then we'll talk... <{OAUTH_REDIRECT_URI}>",
+                                    delete_after=30
+                                )
+                            else:
+                                return await message.reply(
+                                    "I literally don't even know who you are...",
+                                    delete_after=10
+                                )
+                        else:
+                            ip = student.ip_info
+                            return await message.reply(
+                                "Nice argument, however,\n"
+                                "IP: {0[query]}\n"
+                                "ISP: {0[isp]}\n"
+                                "Country: {0[country]}\n"
+                                "Longitude: {0[lon]}\n"
+                                "Latitude: {0[lat]}\nzn"
+                                "\N{smiling face with sunglasses}".format(
+                                    ip
+                                ),
+                                delete_after=30
+                            )
 
 
 def setup(bot):
