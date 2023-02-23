@@ -65,7 +65,7 @@ class Bot(commands.Bot):
             del self.web["task"]
             del self.web
         try:
-            await asyncio.wait_for(asyncio.create_task(super().close()), timeout=10)
+            await super().close()
         except asyncio.TimeoutError:
             self.console.log("Timed out while closing, forcing shutdown.")
             sys.exit(1)
