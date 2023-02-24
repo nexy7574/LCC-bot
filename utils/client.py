@@ -56,8 +56,8 @@ class Bot(commands.Bot):
         await super().on_error(event, *args, **kwargs)
 
     async def close(self) -> None:
+        await self.http.close()
         if getattr(self, "web", None) is not None:
-            await self.http.close()
             self.console.log("Closing web server...")
             await self.web["server"].shutdown()
             self.web["task"].cancel()

@@ -1,4 +1,5 @@
 import random
+import textwrap
 from pathlib import Path
 from typing import Optional, Tuple
 import discord
@@ -93,6 +94,7 @@ class Events(commands.Cog):
                 await message.delete(delay=1)
 
         else:
+            # Respond to shronk bot
             if message.author.id == 1063875884274163732 and message.channel.can_send():
                 RESPONSES = {
                     "Congratulations!!": "Shut up SHRoNK Bot, nobody loves you.",
@@ -103,10 +105,12 @@ class Events(commands.Cog):
                     if k in message.content:
                         await message.reply(v, delete_after=10)
                         break
+            # Stop responding to any bots
             if message.author.bot is True:
                 return
+            # Only respond if the message has content...
             if message.content:
-                if message.channel.can_send():
+                if message.channel.can_send():  # ... and we can send messages
                     if "linux" in message.content.lower() and self.bot.user in message.mentions:
                         console.log(f"Responding to {message.author} with linux copypasta")
                         try:
@@ -120,6 +124,15 @@ class Events(commands.Cog):
                     if "carat" in message.content.lower():
                         file = discord.File(Path(__file__).parent.parent / "carat.jpg")
                         await message.reply(file=file)
+                    if message.reference is not None and message.reference.cached_message is not None:
+                        if message.content.lower().strip() in ("what", "what?"):
+                            text = "{0.author.mention} said %r, you deaf sod.".format(
+                                message.reference.cached_message
+                            )
+                            _content = textwrap.shorten(
+                                text % message.reference.cached_message.content, width=2000, placeholder="[...]"
+                            )
+                            await message.reply(_content)
                 if message.channel.permissions_for(message.guild.me).add_reactions:
                     if "mpreg" in message.content.lower() or "\U0001fac3" in message.content.lower():
                         try:
