@@ -263,6 +263,8 @@ class UptimeCompetition(commands.Cog):
     uptime = discord.SlashCommandGroup("uptime", "Commands for the uptime competition.")
 
     @uptime.command(name="stats")
+    @commands.max_concurrency(1, commands.BucketType.user, wait=True)
+    @commands.cooldown(1, 10, commands.BucketType.user)
     async def stats(
         self,
         ctx: discord.ApplicationContext,

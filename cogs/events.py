@@ -151,7 +151,6 @@ class Events(commands.Cog):
                         G_EMOJI = "\U0001f3f3\U0000fe0f\U0000200d\U0001f308"
                         N_EMOJI = "\U0001f922"
                         C_EMOJI = "\U0000271d\U0000fe0f"
-                        # if is_naus or re.match(rf"(trans(gender)?|{T_EMOJI}|femboy)\b", message.content.lower()):
                         if any((x in message.content.lower() for x in ("trans", T_EMOJI, "femboy"))) or is_naus:
                             try:
                                 await message.add_reaction(N_EMOJI)
