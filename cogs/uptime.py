@@ -333,6 +333,8 @@ class UptimeCompetition(commands.Cog):
         targets = [query_target]
         if query_target == "ALL":
             targets = [t["id"] for t in self.cached_targets]
+
+        total_query_time = 0
         embeds = []
         for _target in targets:
             _target = self.get_target(_target, _target)
@@ -343,6 +345,7 @@ class UptimeCompetition(commands.Cog):
             start = time.time()
             entries = await query.all()
             end = time.time()
+            total_query_time += end - start
             if not entries:
                 embeds.append(discord.Embed(description=f"No uptime entries found for {_target}."))
             else:
@@ -357,6 +360,11 @@ class UptimeCompetition(commands.Cog):
             )
             for embed_ in embeds:
                 new_embed.description += f"{embed_.description}\n"
+            if total_query_time > 60:
+                minutes, seconds = divmod(total_query_time, 60)
+                new_embed.set_footer(text=f"Total query time: {minutes:.0f}m {seconds:.2f}s")
+            else:
+                new_embed.set_footer(text=f"Total query time: {total_query_time:.2f}s")
             embeds = [new_embed]
         await ctx.respond(embeds=embeds)
 
