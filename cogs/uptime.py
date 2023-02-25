@@ -334,7 +334,7 @@ class UptimeCompetition(commands.Cog):
         if query_target == "ALL":
             targets = [t["id"] for t in self.cached_targets]
 
-        total_query_time = 0
+        total_query_time = rows = 0
         embeds = []
         for _target in targets:
             _target = self.get_target(_target, _target)
@@ -350,7 +350,7 @@ class UptimeCompetition(commands.Cog):
                 embeds.append(discord.Embed(description=f"No uptime entries found for {_target}."))
             else:
                 embeds.append(await asyncio.to_thread(generate_embed, _target, entries))
-                embeds[-1].set_footer(text=f"Query took {end - start:.2f}s")
+                embeds[-1].set_footer(text=f"Query took {end - start:.2f}s | {len(entries):,} rows")
 
         if org_target == "ALL":
             new_embed = discord.Embed(
@@ -365,6 +365,9 @@ class UptimeCompetition(commands.Cog):
                 new_embed.set_footer(text=f"Total query time: {minutes:.0f}m {seconds:.2f}s")
             else:
                 new_embed.set_footer(text=f"Total query time: {total_query_time:.2f}s")
+            new_embed.set_footer(
+                text=f"{new_embed.footer.text} | {len(entries):,} rows"
+            )
             embeds = [new_embed]
         await ctx.respond(embeds=embeds)
 
