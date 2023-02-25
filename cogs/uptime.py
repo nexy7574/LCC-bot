@@ -392,7 +392,7 @@ class UptimeCompetition(commands.Cog):
             match name:
                 case "all":
                     start = time.time()
-                    e = await UptimeEntry.objects.all().count()
+                    e = await UptimeEntry.objects.all()
                     end = time.time()
                     return (end - start) * 1000, len(e)
                 case "lookback_7_day":
