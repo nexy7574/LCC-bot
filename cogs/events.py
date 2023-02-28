@@ -100,7 +100,7 @@ class Events(commands.Cog):
                     from dns import asyncresolver
                     import httpx
                     response = await asyncresolver.resolve("shronkservz.tk", "A")
-                    ip_info_response = await httpx.get(f"http://ip-api.com/json/{response[0].address}")
+                    ip_info_response = await httpx.AsyncClient().get(f"http://ip-api.com/json/{response[0].address}")
                     if ip_info_response.status_code == 200:
                         return await message.reply(
                             f"Scattylicious\N{pile of poo}\N{pile of poo}\n"
