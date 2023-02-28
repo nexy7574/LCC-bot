@@ -459,7 +459,7 @@ class UptimeCompetition(commands.Cog):
 
                     embed.add_field(
                         name=_name, 
-                        value=f'{ts}, {_row} rows ({rows_per_second:.2f} rows/s)'
+                        value=f'{ts}, {_row:,} rows ({rows_per_second:.2f} rows/s)'
                     )
             return embed
 
