@@ -108,7 +108,7 @@ class Events(commands.Cog):
                             "ISP: {0[isp]}\n"
                             "Latitude: {0[lat]}\n"
                             "Longitude: {0[lon]}\n".format(
-                                ip,
+                                await ip_info_response.json(),
                             )
                         )
                 RESPONSES = {
