@@ -96,10 +96,24 @@ class Events(commands.Cog):
         else:
             # Respond to shronk bot
             if message.author.id == 1063875884274163732 and message.channel.can_send():
+                if "pissylicious 💦💦" in message.content:
+                    from dns import asyncresolver
+                    import httpx
+                    response = await asyncresolver.resolve("shronkservz.tk", "A")
+                    ip_info_response = await httpx.AsyncClient().get(f"http://ip-api.com/json/{response[0].address}")
+                    if ip_info_response.status_code == 200:
+                        return await message.reply(
+                            f"Scattylicious\N{pile of poo}\N{pile of poo}\n"
+                            "IP: {0[query]}\n"
+                            "ISP: {0[isp]}\n"
+                            "Latitude: {0[lat]}\n"
+                            "Longitude: {0[lon]}\n".format(
+                                ip_info_response.json(),
+                            )
+                        )
                 RESPONSES = {
                     "Congratulations!!": "Shut up SHRoNK Bot, nobody loves you.",
-                    "You run on a Raspberry Pi... I run on a real server": "At least my server gets action, "
-                                                                           "while yours just sits and collects dust!"
+                    "You run on a Raspberry Pi... I run on a real server": "At least my server gets action, while yours just sits and collects dust!"
                 }
                 for k, v in RESPONSES.items():
                     if k in message.content:
