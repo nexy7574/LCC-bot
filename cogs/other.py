@@ -612,7 +612,7 @@ class OtherCog(commands.Cog):
 
         async def blacklist_check() -> bool | str:
             async with aiofiles.open("domains.txt") as blacklist:
-                for ln in await blacklist.readlines():
+                for ln in iter(lambda l: l.strip(), await blacklist.readline()):
                     if not ln.strip():
                         continue
                     if re.match(ln.strip(), url.netloc):
@@ -626,8 +626,7 @@ class OtherCog(commands.Cog):
                         return "DNS blacklist"
             except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.resolver.LifetimeTimeout, AttributeError):
                 return "Invalid domain or DNS error"
-            else:
-                return True
+            return True
 
         done, pending = await asyncio.wait(
             [
@@ -642,7 +641,7 @@ class OtherCog(commands.Cog):
         except KeyError:
             return await ctx.respond("Something went wrong. Try again?\n")
         result = await done
-        if result is not True:
+        if not result:
             return await ctx.edit(
                 content="That domain is blacklisted, doesn't exist, or there was no answer from the DNS server."
                 f" ({result!r})"
@@ -651,7 +650,7 @@ class OtherCog(commands.Cog):
         await asyncio.sleep(1)
         await ctx.edit(content=f"Preparing to screenshot <{friendly_url}>... (16%, checking filters)")
         okay = await (pending or done_tasks).pop()
-        if okay is not True:
+        if not okay:
             return await ctx.edit(
                 content="That domain is blacklisted, doesn't exist, or there was no answer from the DNS server."
                 f" ({result!r})"
