@@ -612,7 +612,7 @@ class OtherCog(commands.Cog):
 
         async def blacklist_check() -> bool | str:
             async with aiofiles.open("domains.txt") as blacklist:
-                for ln in iter(lambda l: l.strip(), await blacklist.readline()):
+                for ln in await blacklist.readlines():
                     if not ln.strip():
                         continue
                     if re.match(ln.strip(), url.netloc):
