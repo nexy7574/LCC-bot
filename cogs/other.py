@@ -693,7 +693,12 @@ class OtherCog(commands.Cog):
                 f"\\* Resolution: {window_height}x{window_width} ({window_width*window_height:,} pixels)\n"
                 f"\\* URL: <{friendly_url}>\n"
                 f"\\* Load time: {fetch_time:.2f}ms\n"
-                f"\\* Screenshot render time: {screenshot_time:.2f}ms\n",
+                f"\\* Screenshot render time: {screenshot_time:.2f}ms\n"
+                f"\\* Total time: {(fetch_time + screenshot_time):.2f}ms\n" +
+                (
+                    '* Probability of being scat or something else horrifying: 100%'
+                    if ctx.user.id == 1019233057519177778 else ''
+                ),
                 file=screenshot,
             )
 
