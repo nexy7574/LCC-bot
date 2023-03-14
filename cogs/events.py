@@ -113,11 +113,13 @@ class Events(commands.Cog):
                         )
                 RESPONSES = {
                     "Congratulations!!": "Shut up SHRoNK Bot, nobody loves you.",
-                    "You run on a Raspberry Pi... I run on a real server": "At least my server gets action, while yours just sits and collects dust!"
+                    "You run on a Raspberry Pi... I run on a real server": "At least my server gets action, "
+                                                                           "while yours just sits and collects dust!"
                 }
                 for k, v in RESPONSES.items():
                     if k in message.content:
-                        await message.reply(v, delete_after=10)
+                        await message.reply("shut up", delete_after=3)
+                        await message.delete(delay=3)
                         break
             # Stop responding to any bots
             if message.author.bot is True:
