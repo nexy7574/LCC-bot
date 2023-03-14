@@ -591,6 +591,8 @@ class OtherCog(commands.Cog):
         ),
     ):
         """Takes a screenshot of a URL"""
+        if capture_whole_page and browser != "firefox":
+            return await ctx.respond("The capture-full-page option is only available for firefox.")
         window_width = max(min(1080 * 6, window_width), 1080 // 6)
         window_height = max(min(1920 * 6, window_height), 1920 // 6)
         await ctx.defer()
