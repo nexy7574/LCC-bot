@@ -18,7 +18,7 @@ GENERAL = "https://ptb.discord.com/channels/994710566612500550/10189153423172772
 
 OAUTH_ENABLED = OAUTH_ID and OAUTH_SECRET and OAUTH_REDIRECT_URI
 
-app = FastAPI()
+app = FastAPI(root_path="/jimmy")
 app.state.bot = None
 app.state.states = set()
 app.state.http = httpx.Client()

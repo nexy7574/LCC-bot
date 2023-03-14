@@ -750,7 +750,7 @@ class OtherCog(commands.Cog):
             options = [
                 "--no-colors",
                 "--no-playlist",
-                "--max-filesize", str(MAX_SIZE) + "M",
+                # "--max-filesize", str(MAX_SIZE) + "M",
                 "--no-warnings",
                 "--output", OUTPUT_FILE,
             ]
@@ -795,9 +795,14 @@ class OtherCog(commands.Cog):
                 stderr_log_file
             ] if upload_log else []
             for file_name in Path(tempdir).glob(f"{ctx.user.id}.*"):
+                stat = file_name.stat()
+                size_mb = stat.st_size / 1024 ** 2
+                if size_mb > MAX_SIZE - 0.1:
+                    _x = io.BytesIO(f"File {file_name.name} was too large ({size_mb:,.1f}MB vs {MAX_SIZE:.1f}MB)".encode())
+                    files.append(discord.File(_x, filename=file_name.name + ".txt"))
                 try:
-                    async with aiofiles.open(file_name) as file:
-                        video = discord.File(await file.read(), filename=file_name.name)
+                    with open(file_name) as file:
+                        video = discord.File(file, filename=file_name.name)
                         files.append(video)
                 except FileNotFoundError:
                     continue
