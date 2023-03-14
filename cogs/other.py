@@ -3,6 +3,7 @@ import io
 import os
 import random
 import re
+import tempfile
 import textwrap
 from datetime import timedelta
 
@@ -729,6 +730,81 @@ class OtherCog(commands.Cog):
                 if line.strip() != domain.lower():
                     await blacklist.write(line)
         await ctx.respond("Removed domain from blacklist.")
+
+    # noinspection PyTypeHints
+    @commands.slash_command(name="yt-dl")
+    @commands.max_concurrency(1, commands.BucketType.user)
+    async def yt_dl(
+            self,
+            ctx: discord.ApplicationContext,
+            url: str,
+            proxy: str = None,
+            video_format: str = "",
+            upload_log: bool = True
+    ):
+        """Downloads a video from <URL> using youtube-dl"""
+        with tempfile.TemporaryDirectory(prefix="jimmy-ytdl-") as tempdir:
+            video_format = video_format.lower()
+            OUTPUT_FILE = str(Path(tempdir) / f"{ctx.user.id}.%(ext)s")
+            MAX_SIZE = ctx.guild.filesize_limit / 1024 ** 2
+            options = [
+                "--no-colors",
+                "--no-playlist",
+                "--max-filesize", str(MAX_SIZE) + "M",
+                "--no-warnings",
+                "--output", OUTPUT_FILE,
+            ]
+            if proxy:
+                options.extend(["--proxy", proxy])
+            if video_format:
+                options.extend(["--format", video_format])
+            # if audio_quality:
+            #     options.extend(["--audio-quality", str(audio_quality)])
+            # if extract_audio:
+            #     options.append("--extract-audio")
+
+            await ctx.defer()
+            await ctx.edit(content="Downloading video...")
+            try:
+                process = await asyncio.create_subprocess_exec(
+                    "yt-dlp",
+                    url,
+                    *options,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout, stderr = await process.communicate()
+                stdout_log = io.BytesIO(stdout)
+                stdout_log_file = discord.File(stdout_log, filename="stdout.txt")
+                stderr_log = io.BytesIO(stderr)
+                stderr_log_file = discord.File(stderr_log, filename="stderr.txt")
+                await process.wait()
+            except FileNotFoundError:
+                return await ctx.edit(content="Downloader not found.")
+
+            if process.returncode != 0:
+                files = [
+                    stdout_log_file,
+                    stderr_log_file
+                ]
+                return await ctx.edit(content=f"Download failed:\n```\n{stderr.decode()}\n```", files=files)
+
+            await ctx.edit(content="Uploading video...")
+            files = [
+                stdout_log_file,
+                stderr_log_file
+            ] if upload_log else []
+            for file_name in Path(tempdir).glob(f"{ctx.user.id}.*"):
+                try:
+                    async with aiofiles.open(file_name) as file:
+                        video = discord.File(await file.read(), filename=file_name.name)
+                        files.append(video)
+                except FileNotFoundError:
+                    continue
+
+            if not files:
+                return await ctx.edit(content="No files found.")
+            await ctx.edit(content="Here's your video!", files=files)
 
 
 def setup(bot):
