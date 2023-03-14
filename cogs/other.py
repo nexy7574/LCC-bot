@@ -653,7 +653,7 @@ class OtherCog(commands.Cog):
         if not okay:
             return await ctx.edit(
                 content="That domain is blacklisted, doesn't exist, or there was no answer from the DNS server."
-                f" ({result!r})"
+                f" ({okay!r})"
             )
 
         await asyncio.sleep(1)
