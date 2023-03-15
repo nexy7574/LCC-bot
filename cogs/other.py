@@ -750,6 +750,7 @@ class OtherCog(commands.Cog):
             options = [
                 "--no-colors",
                 "--no-playlist",
+                "--no-check-certificates",
                 # "--max-filesize", str(MAX_SIZE) + "M",
                 "--no-warnings",
                 "--output", OUTPUT_FILE,
