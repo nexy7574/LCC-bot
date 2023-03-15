@@ -799,12 +799,13 @@ class OtherCog(commands.Cog):
                 stat = file_name.stat()
                 size_mb = stat.st_size / 1024 ** 2
                 if size_mb > MAX_SIZE - 0.1:
-                    _x = io.BytesIO(f"File {file_name.name} was too large ({size_mb:,.1f}MB vs {MAX_SIZE:.1f}MB)".encode())
+                    _x = io.BytesIO(
+                        f"File {file_name.name} was too large ({size_mb:,.1f}MB vs {MAX_SIZE:.1f}MB)".encode()
+                    )
                     files.append(discord.File(_x, filename=file_name.name + ".txt"))
                 try:
-                    with open(file_name) as file:
-                        video = discord.File(file, filename=file_name.name)
-                        files.append(video)
+                    video = discord.File(file_name, filename=file_name.name)
+                    files.append(video)
                 except FileNotFoundError:
                     continue
 
