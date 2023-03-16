@@ -832,12 +832,15 @@ class OtherCog(commands.Cog):
             
             async def callback(self, interaction: discord.Interaction):
                 def _convert(text: str) -> BytesIO():
-                    engine = pyttsx3.init()
-                    _io = BytesIO()
-                    engine.save_to_file(text, _io)
-                    engine.runAndWait()
-                    _io.seek(0)
-                    return _io
+                    with tempfile.makestemp(suffix=".mp3") as temp:
+                        engine = pyttsx3.init()
+                        _io = BytesIO()
+                        engine.save_to_file(text, temp)
+                        engine.runAndWait()
+                        with open(temp, "rb") as f:
+                            _io.write(f.read())
+                        _io.seek(0)
+                        return _io
 
                 await interaction.response.defer()
                 _msg = await interaction.followup.send("Converting text to MP3...")
