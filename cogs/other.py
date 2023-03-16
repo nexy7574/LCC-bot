@@ -4,6 +4,7 @@ import os
 import random
 import re
 import tempfile
+import time
 import textwrap
 from datetime import timedelta
 from io import BytesIO
@@ -832,15 +833,18 @@ class OtherCog(commands.Cog):
             
             async def callback(self, interaction: discord.Interaction):
                 def _convert(text: str) -> BytesIO():
-                    with tempfile.NamedTemporaryFile(suffix=".mp3") as temp:
-                        engine = pyttsx3.init()
-                        _io = BytesIO()
-                        engine.save_to_file(text, temp.name)
-                        engine.runAndWait()
-                        with open(temp.name, "rb") as f:
-                            _io.write(f.read())
-                        _io.seek(0)
-                        return _io
+                    target_fn = f"jimmy-tts-{ctx.user.id}-{ctx.interaction.id}.mp3"
+                    engine = pyttsx3.init()
+                    _io = BytesIO()
+                    engine.save_to_file(text, target_fn)
+                    engine.runAndWait()
+                    while not os.path.exists(target_fn):
+                        time.sleep(0.5)
+                    with open(target_fn, "rb") as f:
+                        _io.write(f.read())
+                    os.remove(target_fn)
+                    _io.seek(0)
+                    return _io
 
                 await interaction.response.defer()
                 _msg = await interaction.followup.send("Converting text to MP3...")
