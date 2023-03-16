@@ -835,7 +835,7 @@ class OtherCog(commands.Cog):
                     target_fn = f"/tmp/jimmy-tts-{ctx.user.id}-{ctx.interaction.id}.mp3"
                     _bot.console.log("Starting pyttsx3")
                     engine = pyttsx3.init()
-                    engine.setProperty("voice", "english-north")
+                    # engine.setProperty("voice", "english-north")
                     engine.setProperty("rate", 150)
                     _io = BytesIO()
                     _bot.console.log("Saving to file")
