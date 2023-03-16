@@ -832,7 +832,7 @@ class OtherCog(commands.Cog):
             
             async def callback(self, interaction: discord.Interaction):
                 def _convert(text: str) -> BytesIO():
-                    target_fn = f"jimmy-tts-{ctx.user.id}-{ctx.interaction.id}.mp3"
+                    target_fn = f"/tmp/jimmy-tts-{ctx.user.id}-{ctx.interaction.id}.mp3"
                     engine = pyttsx3.init()
                     engine.setProperty("voice", "english-north")
                     engine.setProperty("rate", 150)
@@ -854,7 +854,7 @@ class OtherCog(commands.Cog):
 
                     while should_loop():
                         if os.path.exists(target_fn):
-                            last_3_sizes.pop(-1)
+                            last_3_sizes.pop(0)
                             last_3_sizes.append(os.stat(target_fn).st_size)
                         sleep(3)
 
