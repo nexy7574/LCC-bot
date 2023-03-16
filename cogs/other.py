@@ -869,7 +869,8 @@ class OtherCog(commands.Cog):
                 try:
                     _io = await _bot.loop.run_in_executor(None, _convert, text_pre)
                 except (Exception, IOError) as e:
-                    return await _msg.edit(content="failed. " + str(e))
+                    await _msg.edit(content="failed. " + str(e))
+                    raise e
                 fn = ""
                 _words = text_pre.split()
                 while len(fn) < 28:
