@@ -4,7 +4,6 @@ import os
 import random
 import re
 import tempfile
-import time
 import textwrap
 from datetime import timedelta
 from io import BytesIO
@@ -13,7 +12,7 @@ import dns.resolver
 from dns import asyncresolver
 import aiofiles
 import pyttsx3
-from time import time, time_ns
+from time import time, time_ns, sleep
 from typing import Literal
 from typing import Tuple, Optional, Dict
 from pathlib import Path
@@ -839,7 +838,7 @@ class OtherCog(commands.Cog):
                     engine.save_to_file(text, target_fn)
                     engine.runAndWait()
                     while not os.path.exists(target_fn):
-                        time.sleep(0.5)
+                        time_sleep(0.5)
                     with open(target_fn, "rb") as f:
                         _io.write(f.read())
                     os.remove(target_fn)
