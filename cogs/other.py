@@ -860,7 +860,7 @@ class OtherCog(commands.Cog):
                         if os.path.exists(target_fn):
                             last_3_sizes.pop(0)
                             last_3_sizes.append(os.stat(target_fn).st_size)
-                            _bot.console.log(f"File {target_fn} size: {last_3_sizes.reverse()}")
+                            _bot.console.log(f"File {target_fn} size: {last_3_sizes}")
                         else:
                             _bot.console.log(f"File {target_fn} does not exist")
                         sleep(3)
