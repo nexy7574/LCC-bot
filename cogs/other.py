@@ -6,6 +6,7 @@ import re
 import tempfile
 import textwrap
 from datetime import timedelta
+from io import BytesIO
 
 import dns.resolver
 from dns import asyncresolver
@@ -27,6 +28,7 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
+from gtts import gTTS, gTTSError
 
 # from selenium.webdriver.ie
 
@@ -759,10 +761,6 @@ class OtherCog(commands.Cog):
                 options.extend(["--proxy", proxy])
             if video_format:
                 options.extend(["--format", video_format])
-            # if audio_quality:
-            #     options.extend(["--audio-quality", str(audio_quality)])
-            # if extract_audio:
-            #     options.append("--extract-audio")
 
             await ctx.defer()
             await ctx.edit(content="Downloading video...")
@@ -812,6 +810,39 @@ class OtherCog(commands.Cog):
             if not files:
                 return await ctx.edit(content="No files found.")
             await ctx.edit(content="Here's your video!", files=files)
+    
+    @commands.slash_command(name="text-to-mp3")
+    @commands.cooldown(5, 600, commands.BucketType.user)
+    async def text_to_mp3(self, ctx: discord.ApplicationContext):
+        """Converts text to MP3. 5 uses per 10 minutes."""
+        _bot = self.bot
+        class TextModal(discord.ui.Modal):
+            def __init__(self):
+                super().__init__(
+                    discord.ui.InputText(
+                        label="Text",
+                        placeholder="Enter text to read",
+                        min_length=1,
+                        max_length=4000,
+                        style=discord.InputTextStyle.long
+                    ),
+                    title="Convert text to an MP3"
+                )
+            
+            async def callback(self, interaction: discord.Interaction):
+                await interaction.response.defer()
+                _msg = await interaction.followup.send("Converting text to MP3...")
+                text = self.children[0].value
+                instance = gTTS(text=text, lang="en")
+                _io = BytesIO()
+                await _bot.loop.run_in_executor(None, instance.write_to_fp, _io)
+                _io.seek(0)
+                await _msg.edit(
+                    content="Here's your MP3!",
+                    file=discord.File(_io, filename="text.mp3")
+                )
+        
+        await ctx.send_modal(TextModal())
 
 
 def setup(bot):
