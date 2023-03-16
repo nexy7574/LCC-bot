@@ -825,7 +825,7 @@ class OtherCog(commands.Cog):
         )
     ):
         """Converts text to MP3. 5 uses per 10 minutes."""
-        speed = min(300, max(100, speed))
+        speed = min(300, max(50, speed))
         _bot = self.bot
         class TextModal(discord.ui.Modal):
             def __init__(self):
