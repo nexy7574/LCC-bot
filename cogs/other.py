@@ -814,8 +814,18 @@ class OtherCog(commands.Cog):
     
     @commands.slash_command(name="text-to-mp3")
     @commands.cooldown(5, 600, commands.BucketType.user)
-    async def text_to_mp3(self, ctx: discord.ApplicationContext):
+    async def text_to_mp3(
+        self, 
+        ctx: discord.ApplicationContext,
+        speed: discord.Option(
+            int,
+            "The speed of the voice. Default is 150.",
+            required=False,
+            default=150
+        )
+    ):
         """Converts text to MP3. 5 uses per 10 minutes."""
+        speed = min(300, max(100, speed))
         _bot = self.bot
         class TextModal(discord.ui.Modal):
             def __init__(self):
@@ -836,7 +846,7 @@ class OtherCog(commands.Cog):
                     _bot.console.log("Starting pyttsx3")
                     engine = pyttsx3.init()
                     # engine.setProperty("voice", "english-north")
-                    engine.setProperty("rate", 150)
+                    engine.setProperty("rate", speed)
                     _io = BytesIO()
                     _bot.console.log("Saving to file")
                     engine.save_to_file(text, target_fn)
