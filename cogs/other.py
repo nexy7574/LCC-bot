@@ -840,7 +840,19 @@ class OtherCog(commands.Cog):
                     engine.save_to_file(text, target_fn)
                     engine.runAndWait()
                     last_3_sizes = [-3, -2, -1]
-                    while not os.path.exists(target_fn) or not all(x == os.stat(target_fn).st_size for x in last_3_sizes):
+
+                    def should_loop():
+                        if not os.path.exists(target_fn):
+                            return True
+                        
+                        stat = os.stat(target_fn)
+                        for _result in last_3_sizes:
+                            if stat.st_size != _result:
+                                return True
+                    
+                        return False
+
+                    while should_loop():
                         last_3_sizes.pop(-1)
                         last_3_sizes.append(os.stat(target_fn).st_size)
                         sleep(3)
