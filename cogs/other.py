@@ -873,7 +873,7 @@ class OtherCog(commands.Cog):
                             _bot.console.log(f"File {target_fn} size: {last_3_sizes}")
                         else:
                             _bot.console.log(f"File {target_fn} does not exist")
-                        sleep(3)
+                        sleep(1)
 
                     with open(target_fn, "rb") as f:
                         _io.write(f.read())
