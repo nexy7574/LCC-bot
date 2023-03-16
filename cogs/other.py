@@ -838,7 +838,7 @@ class OtherCog(commands.Cog):
                     engine.save_to_file(text, target_fn)
                     engine.runAndWait()
                     while not os.path.exists(target_fn):
-                        time_sleep(0.5)
+                        sleep(0.5)
                     with open(target_fn, "rb") as f:
                         _io.write(f.read())
                     os.remove(target_fn)
