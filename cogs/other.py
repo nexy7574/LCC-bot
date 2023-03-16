@@ -832,7 +832,7 @@ class OtherCog(commands.Cog):
             
             async def callback(self, interaction: discord.Interaction):
                 def _convert(text: str) -> BytesIO():
-                    with tempfile.makestemp(suffix=".mp3") as temp:
+                    with tempfile.mkstemp(suffix=".mp3") as temp:
                         engine = pyttsx3.init()
                         _io = BytesIO()
                         engine.save_to_file(text, temp)
