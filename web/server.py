@@ -56,6 +56,7 @@ def ping():
 
 @app.get("/auth")
 async def authenticate(req: Request, code: str = None, state: str = None):
+    """Begins Oauth flow (browser only)"""
     if not OAUTH_ENABLED:
         raise HTTPException(
             501,

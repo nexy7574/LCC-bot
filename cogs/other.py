@@ -11,6 +11,7 @@ from io import BytesIO
 import dns.resolver
 from dns import asyncresolver
 import aiofiles
+import pyttsx3
 from time import time, time_ns
 from typing import Literal
 from typing import Tuple, Optional, Dict
@@ -830,16 +831,31 @@ class OtherCog(commands.Cog):
                 )
             
             async def callback(self, interaction: discord.Interaction):
+                def _convert(text: str) -> BytesIO():
+                    engine = pyttsx3.init()
+                    _io = BytesIO()
+                    engine.save_to_file(text, _io)
+                    engine.runAndWait()
+                    _io.seek(0)
+                    return _io
+
                 await interaction.response.defer()
                 _msg = await interaction.followup.send("Converting text to MP3...")
-                text = self.children[0].value
-                instance = gTTS(text=text, lang="en")
-                _io = BytesIO()
-                await _bot.loop.run_in_executor(None, instance.write_to_fp, _io)
-                _io.seek(0)
+                text_pre = self.children[0].value
+                _io = await _bot.loop.run_in_executor(None, _convert, text_pre)
+                fn = ""
+                _words = text_pre.split()
+                while len(fn) < 28:
+                    try:
+                        word = _words.pop(0)
+                    except IndexError:
+                        break
+                    if len(fn) + len(word) + 1 > 28:
+                        continue
+                    fn += word + "-"
                 await _msg.edit(
                     content="Here's your MP3!",
-                    file=discord.File(_io, filename="text.mp3")
+                    file=discord.File(_io, filename=fn + ".mp3")
                 )
         
         await ctx.send_modal(TextModal())
