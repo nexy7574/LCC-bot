@@ -833,12 +833,16 @@ class OtherCog(commands.Cog):
             async def callback(self, interaction: discord.Interaction):
                 def _convert(text: str) -> BytesIO():
                     target_fn = f"/tmp/jimmy-tts-{ctx.user.id}-{ctx.interaction.id}.mp3"
+                    _bot.console.log("Starting pyttsx3")
                     engine = pyttsx3.init()
                     engine.setProperty("voice", "english-north")
                     engine.setProperty("rate", 150)
                     _io = BytesIO()
+                    _bot.console.log("Saving to file")
                     engine.save_to_file(text, target_fn)
+                    _bot.console.log("Running")
                     engine.runAndWait()
+                    _bot.console.log("Waiting for file to be written")
                     last_3_sizes = [-3, -2, -1]
 
                     def should_loop():
@@ -856,6 +860,9 @@ class OtherCog(commands.Cog):
                         if os.path.exists(target_fn):
                             last_3_sizes.pop(0)
                             last_3_sizes.append(os.stat(target_fn).st_size)
+                            _bot.console.log(f"File {target_fn} size: {last_3_sizes.reverse()}")
+                        else:
+                            _bot.console.log(f"File {target_fn} does not exist")
                         sleep(3)
 
                     with open(target_fn, "rb") as f:
