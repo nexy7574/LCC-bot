@@ -834,11 +834,17 @@ class OtherCog(commands.Cog):
                 def _convert(text: str) -> BytesIO():
                     target_fn = f"jimmy-tts-{ctx.user.id}-{ctx.interaction.id}.mp3"
                     engine = pyttsx3.init()
+                    engine.setProperty("voice", "english-north")
+                    engine.setProperty("rate", 150)
                     _io = BytesIO()
                     engine.save_to_file(text, target_fn)
                     engine.runAndWait()
-                    while not os.path.exists(target_fn) or os.stat(target_fn).st_size == 0:
-                        sleep(2)
+                    last_3_sizes = [-3, -2, -1]
+                    while not os.path.exists(target_fn) or not all(x == os.stat(target_fn).st_size for x in last_3_sizes):
+                        last_3_sizes.pop(-1)
+                        last_3_sizes.append(os.stat(target_fn).st_size)
+                        sleep(3)
+
                     with open(target_fn, "rb") as f:
                         _io.write(f.read())
                     os.remove(target_fn)
