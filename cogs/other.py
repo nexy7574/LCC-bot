@@ -853,8 +853,9 @@ class OtherCog(commands.Cog):
                         return False
 
                     while should_loop():
-                        last_3_sizes.pop(-1)
-                        last_3_sizes.append(os.stat(target_fn).st_size)
+                        if os.path.exists(target_fn):
+                            last_3_sizes.pop(-1)
+                            last_3_sizes.append(os.stat(target_fn).st_size)
                         sleep(3)
 
                     with open(target_fn, "rb") as f:
