@@ -866,7 +866,10 @@ class OtherCog(commands.Cog):
                 await interaction.response.defer()
                 _msg = await interaction.followup.send("Converting text to MP3...")
                 text_pre = self.children[0].value
-                _io = await _bot.loop.run_in_executor(None, _convert, text_pre)
+                try:
+                    _io = await _bot.loop.run_in_executor(None, _convert, text_pre)
+                except (Exception, IOError) as e:
+                    return await _msg.edit(content="failed. " + str(e))
                 fn = ""
                 _words = text_pre.split()
                 while len(fn) < 28:
@@ -877,6 +880,8 @@ class OtherCog(commands.Cog):
                     if len(fn) + len(word) + 1 > 28:
                         continue
                     fn += word + "-"
+                fn = fn[:-1]
+                fn = fn[:28]
                 await _msg.edit(
                     content="Here's your MP3!",
                     file=discord.File(_io, filename=fn + ".mp3")
