@@ -1,3 +1,4 @@
+import io
 import random
 import re
 import textwrap
@@ -123,6 +124,34 @@ class Events(commands.Cog):
                 await paginator2.send(ctx, reference=message.to_reference())
                 if message.channel.permissions_for(message.guild.me).manage_messages:
                     await message.edit(suppress=True)
+        else:
+            RAW_URL = "https://github.com/{repo}/archive/refs/heads/{branch}.zip"
+            _full_re = re.finditer(
+                r"https://github\.com/(?P<repo>[a-zA-Z0-9-]+/[\w.-]+)(/tree/(?P<branch>[^#>]+))?\.(git|zip)",
+                message.content
+            )
+            for _match in _full_re:
+                repo = _match.group("repo")
+                branch = _match.group("branch") or "master"
+                url = RAW_URL.format(
+                    repo=repo,
+                    branch=branch,
+                )
+                if all((GITHUB_PASSWORD, GITHUB_USERNAME)):
+                    auth = (GITHUB_USERNAME, GITHUB_PASSWORD)
+                else:
+                    auth = None
+                async with message.channel.typing():
+                    response = await self.http.get(url, follow_redirects=True, auth=auth)
+                if response.status_code == 200:
+                    content = response.content
+                    if len(content) > message.guild.filesize_limit - 1000:
+                        continue
+                    _io = io.BytesIO(content)
+                    fn = f"{repo.replace('/', '-')}-{branch}.zip"
+                    await message.reply(file=discord.File(_io, filename=fn))
+                    if message.channel.permissions_for(message.guild.me).manage_messages:
+                        await message.edit(suppress=True)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
