@@ -29,8 +29,6 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
-from gtts import gTTS, gTTSError
-
 # from selenium.webdriver.ie
 
 from utils import console
@@ -827,6 +825,7 @@ class OtherCog(commands.Cog):
         """Converts text to MP3. 5 uses per 10 minutes."""
         speed = min(300, max(50, speed))
         _bot = self.bot
+
         class TextModal(discord.ui.Modal):
             def __init__(self):
                 super().__init__(
@@ -885,7 +884,7 @@ class OtherCog(commands.Cog):
                 _msg = await interaction.followup.send("Converting text to MP3...")
                 text_pre = self.children[0].value
                 try:
-                    _io = await _bot.loop.run_in_executor(None, _convert, text_pre)
+                    mp3 = await _bot.loop.run_in_executor(None, _convert, text_pre)
                 except (Exception, IOError) as e:
                     await _msg.edit(content="failed. " + str(e))
                     raise e
@@ -903,7 +902,7 @@ class OtherCog(commands.Cog):
                 fn = fn[:28]
                 await _msg.edit(
                     content="Here's your MP3!",
-                    file=discord.File(_io, filename=fn + ".mp3")
+                    file=discord.File(mp3, filename=fn + ".mp3")
                 )
         
         await ctx.send_modal(TextModal())
