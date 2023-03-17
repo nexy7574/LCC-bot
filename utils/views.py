@@ -130,7 +130,7 @@ class VerifyView(View):
                     return await interaction.followup.send(f"\N{cross mark} Failed to send email - {e}. Try again?")
                 console.log(f"Sending verification email to {interaction.user} ({interaction.user.id}/{st})...")
                 name = self.children[1].value
-                __code = await VerifyCode.objects.create(code=_code, bind=interaction.id, student_id=st, name=name)
+                __code = await VerifyCode.objects.create(code=_code, bind=interaction.user.id, student_id=st, name=name)
                 console.log(
                     f"[green]Sent verification email to {interaction.user} ({interaction.user.id}/{st}): " f"{_code!r}"
                 )

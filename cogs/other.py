@@ -3,13 +3,16 @@ import io
 import os
 import random
 import re
+import tempfile
 import textwrap
 from datetime import timedelta
+from io import BytesIO
 
 import dns.resolver
 from dns import asyncresolver
 import aiofiles
-from time import time, time_ns
+import pyttsx3
+from time import time, time_ns, sleep
 from typing import Literal
 from typing import Tuple, Optional, Dict
 from pathlib import Path
@@ -26,7 +29,6 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
-
 # from selenium.webdriver.ie
 
 from utils import console
@@ -591,6 +593,8 @@ class OtherCog(commands.Cog):
         ),
     ):
         """Takes a screenshot of a URL"""
+        if capture_whole_page and browser != "firefox":
+            return await ctx.respond("The capture-full-page option is only available for firefox.")
         window_width = max(min(1080 * 6, window_width), 1080 // 6)
         window_height = max(min(1920 * 6, window_height), 1920 // 6)
         await ctx.defer()
@@ -626,8 +630,7 @@ class OtherCog(commands.Cog):
                         return "DNS blacklist"
             except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.resolver.LifetimeTimeout, AttributeError):
                 return "Invalid domain or DNS error"
-            else:
-                return True
+            return True
 
         done, pending = await asyncio.wait(
             [
@@ -642,7 +645,7 @@ class OtherCog(commands.Cog):
         except KeyError:
             return await ctx.respond("Something went wrong. Try again?\n")
         result = await done
-        if result is not True:
+        if not result:
             return await ctx.edit(
                 content="That domain is blacklisted, doesn't exist, or there was no answer from the DNS server."
                 f" ({result!r})"
@@ -651,10 +654,10 @@ class OtherCog(commands.Cog):
         await asyncio.sleep(1)
         await ctx.edit(content=f"Preparing to screenshot <{friendly_url}>... (16%, checking filters)")
         okay = await (pending or done_tasks).pop()
-        if okay is not True:
+        if not okay:
             return await ctx.edit(
                 content="That domain is blacklisted, doesn't exist, or there was no answer from the DNS server."
-                f" ({result!r})"
+                f" ({okay!r})"
             )
 
         await asyncio.sleep(1)
@@ -694,7 +697,12 @@ class OtherCog(commands.Cog):
                 f"\\* Resolution: {window_height}x{window_width} ({window_width*window_height:,} pixels)\n"
                 f"\\* URL: <{friendly_url}>\n"
                 f"\\* Load time: {fetch_time:.2f}ms\n"
-                f"\\* Screenshot render time: {screenshot_time:.2f}ms\n",
+                f"\\* Screenshot render time: {screenshot_time:.2f}ms\n"
+                f"\\* Total time: {(fetch_time + screenshot_time):.2f}ms\n" +
+                (
+                    '* Probability of being scat or something else horrifying: 100%'
+                    if ctx.user.id == 1019233057519177778 else ''
+                ),
                 file=screenshot,
             )
 
@@ -723,6 +731,181 @@ class OtherCog(commands.Cog):
                 if line.strip() != domain.lower():
                     await blacklist.write(line)
         await ctx.respond("Removed domain from blacklist.")
+
+    # noinspection PyTypeHints
+    @commands.slash_command(name="yt-dl")
+    @commands.max_concurrency(1, commands.BucketType.user)
+    async def yt_dl(
+            self,
+            ctx: discord.ApplicationContext,
+            url: str,
+            proxy: str = None,
+            video_format: str = "",
+            upload_log: bool = True
+    ):
+        """Downloads a video from <URL> using youtube-dl"""
+        with tempfile.TemporaryDirectory(prefix="jimmy-ytdl-") as tempdir:
+            video_format = video_format.lower()
+            OUTPUT_FILE = str(Path(tempdir) / f"{ctx.user.id}.%(ext)s")
+            MAX_SIZE = ctx.guild.filesize_limit / 1024 ** 2
+            options = [
+                "--no-colors",
+                "--no-playlist",
+                "--no-check-certificates",
+                # "--max-filesize", str(MAX_SIZE) + "M",
+                "--no-warnings",
+                "--output", OUTPUT_FILE,
+            ]
+            if proxy:
+                options.extend(["--proxy", proxy])
+            if video_format:
+                options.extend(["--format", video_format])
+
+            await ctx.defer()
+            await ctx.edit(content="Downloading video...")
+            try:
+                process = await asyncio.create_subprocess_exec(
+                    "yt-dlp",
+                    url,
+                    *options,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout, stderr = await process.communicate()
+                stdout_log = io.BytesIO(stdout)
+                stdout_log_file = discord.File(stdout_log, filename="stdout.txt")
+                stderr_log = io.BytesIO(stderr)
+                stderr_log_file = discord.File(stderr_log, filename="stderr.txt")
+                await process.wait()
+            except FileNotFoundError:
+                return await ctx.edit(content="Downloader not found.")
+
+            if process.returncode != 0:
+                files = [
+                    stdout_log_file,
+                    stderr_log_file
+                ]
+                return await ctx.edit(content=f"Download failed:\n```\n{stderr.decode()}\n```", files=files)
+
+            await ctx.edit(content="Uploading video...")
+            files = [
+                stdout_log_file,
+                stderr_log_file
+            ] if upload_log else []
+            for file_name in Path(tempdir).glob(f"{ctx.user.id}.*"):
+                stat = file_name.stat()
+                size_mb = stat.st_size / 1024 ** 2
+                if size_mb > MAX_SIZE - 0.1:
+                    _x = io.BytesIO(
+                        f"File {file_name.name} was too large ({size_mb:,.1f}MB vs {MAX_SIZE:.1f}MB)".encode()
+                    )
+                    files.append(discord.File(_x, filename=file_name.name + ".txt"))
+                try:
+                    video = discord.File(file_name, filename=file_name.name)
+                    files.append(video)
+                except FileNotFoundError:
+                    continue
+
+            if not files:
+                return await ctx.edit(content="No files found.")
+            await ctx.edit(content="Here's your video!", files=files)
+    
+    @commands.slash_command(name="text-to-mp3")
+    @commands.cooldown(5, 600, commands.BucketType.user)
+    async def text_to_mp3(
+        self, 
+        ctx: discord.ApplicationContext,
+        speed: discord.Option(
+            int,
+            "The speed of the voice. Default is 150.",
+            required=False,
+            default=150
+        )
+    ):
+        """Converts text to MP3. 5 uses per 10 minutes."""
+        speed = min(300, max(50, speed))
+        _bot = self.bot
+
+        class TextModal(discord.ui.Modal):
+            def __init__(self):
+                super().__init__(
+                    discord.ui.InputText(
+                        label="Text",
+                        placeholder="Enter text to read",
+                        min_length=1,
+                        max_length=4000,
+                        style=discord.InputTextStyle.long
+                    ),
+                    title="Convert text to an MP3"
+                )
+            
+            async def callback(self, interaction: discord.Interaction):
+                def _convert(text: str) -> BytesIO():
+                    target_fn = f"/tmp/jimmy-tts-{ctx.user.id}-{ctx.interaction.id}.mp3"
+                    _bot.console.log("Starting pyttsx3")
+                    engine = pyttsx3.init()
+                    # engine.setProperty("voice", "english-north")
+                    engine.setProperty("rate", speed)
+                    _io = BytesIO()
+                    _bot.console.log("Saving to file")
+                    engine.save_to_file(text, target_fn)
+                    _bot.console.log("Running")
+                    engine.runAndWait()
+                    _bot.console.log("Waiting for file to be written")
+                    last_3_sizes = [-3, -2, -1]
+
+                    def should_loop():
+                        if not os.path.exists(target_fn):
+                            return True
+                        
+                        stat = os.stat(target_fn)
+                        for _result in last_3_sizes:
+                            if stat.st_size != _result:
+                                return True
+                    
+                        return False
+
+                    while should_loop():
+                        if os.path.exists(target_fn):
+                            last_3_sizes.pop(0)
+                            last_3_sizes.append(os.stat(target_fn).st_size)
+                            _bot.console.log(f"File {target_fn} size: {last_3_sizes}")
+                        else:
+                            _bot.console.log(f"File {target_fn} does not exist")
+                        sleep(1)
+
+                    with open(target_fn, "rb") as f:
+                        _io.write(f.read())
+                    os.remove(target_fn)
+                    _io.seek(0)
+                    return _io
+
+                await interaction.response.defer()
+                _msg = await interaction.followup.send("Converting text to MP3...")
+                text_pre = self.children[0].value
+                try:
+                    mp3 = await _bot.loop.run_in_executor(None, _convert, text_pre)
+                except (Exception, IOError) as e:
+                    await _msg.edit(content="failed. " + str(e))
+                    raise e
+                fn = ""
+                _words = text_pre.split()
+                while len(fn) < 28:
+                    try:
+                        word = _words.pop(0)
+                    except IndexError:
+                        break
+                    if len(fn) + len(word) + 1 > 28:
+                        continue
+                    fn += word + "-"
+                fn = fn[:-1]
+                fn = fn[:28]
+                await _msg.edit(
+                    content="Here's your MP3!",
+                    file=discord.File(mp3, filename=fn + ".mp3")
+                )
+        
+        await ctx.send_modal(TextModal())
 
 
 def setup(bot):

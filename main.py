@@ -1,45 +1,12 @@
+import asyncio
+import sys
+
 import discord
 from discord.ext import commands
-from asyncio import Lock
 import config
 from datetime import datetime, timezone, timedelta
-from utils import registry, console, get_or_none, JimmyBans
-
-
-intents = discord.Intents.default()
-intents += discord.Intents.messages
-intents += discord.Intents.message_content
-intents += discord.Intents.members
-intents += discord.Intents.presences
-
-
-bot = commands.Bot(
-    commands.when_mentioned_or("h!"),
-    debug_guilds=config.guilds,
-    allowed_mentions=discord.AllowedMentions.none(),
-    intents=intents,
-)
-bot.training_lock = Lock()
-
-extensions = [
-    "jishaku",
-    "cogs.verify",
-    "cogs.mod",
-    "cogs.events",
-    "cogs.assignments",
-    "cogs.timetable",
-    "cogs.other",
-    "cogs.starboard",
-    "cogs.uptime",
-]
-for ext in extensions:
-    try:
-        bot.load_extension(ext)
-    except discord.ExtensionFailed as e:
-        console.log(f"[red]Failed to load extension {ext}: {e}")
-    else:
-        console.log(f"Loaded extension [green]{ext}")
-bot.loop.run_until_complete(registry.create_all())
+from utils import console, get_or_none, JimmyBans, JimmyBanException
+from utils.client import bot
 
 
 @bot.listen()
@@ -62,6 +29,8 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
             f"\N{warning sign} This command is already running. Please wait for it to finish.",
             ephemeral=True,
         )
+    elif isinstance(error, JimmyBanException):
+        return await ctx.respond(str(error))
     await ctx.respond("Application Command Error: `%r`" % error)
     raise error
 
@@ -70,6 +39,8 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
 async def on_command_error(ctx: commands.Context, error: Exception):
     if isinstance(error, commands.CommandNotFound):
         return
+    elif isinstance(error, JimmyBanException):
+        return await ctx.reply(str(error))
     await ctx.reply("Command Error: `%r`" % error)
     raise error
 
@@ -85,6 +56,10 @@ async def on_application_command(ctx: discord.ApplicationContext):
 @bot.event
 async def on_ready():
     console.log("Logged in as", bot.user)
+    if getattr(config, "CONNECT_MODE", None) == 1:
+        console.log("Bot is now ready and exit target 1 is set, shutting down.")
+        await bot.close()
+        sys.exit(0)
 
 
 @bot.slash_command()
@@ -97,7 +72,7 @@ async def ping(ctx: discord.ApplicationContext):
 
 @bot.check_once
 async def check_not_banned(ctx: discord.ApplicationContext | commands.Context):
-    if await bot.is_owner(ctx.author):
+    if await bot.is_owner(ctx.author) or ctx.command.name in ("block", "unblock", "timetable", "verify", "kys"):
         return True
     user = ctx.author
     ban: JimmyBans = await get_or_none(JimmyBans, user_id=user.id)
@@ -106,16 +81,34 @@ async def check_not_banned(ctx: discord.ApplicationContext | commands.Context):
         if dt < discord.utils.utcnow():
             await ban.delete()
         else:
-            reply = ctx.reply if isinstance(ctx, commands.Context) else ctx.respond
-            try:
-                await reply(content=f":x: You can use commands {discord.utils.format_dt(dt, 'R')}")
-            except discord.HTTPException:
-                pass
-            finally:
-                return False
+            raise JimmyBanException(dt, ban.reason)
     return True
 
 
 if __name__ == "__main__":
     console.log("Starting...")
+    bot.started_at = discord.utils.utcnow()
+
+    if getattr(config, "WEB_SERVER", True):
+        from web.server import app
+        import uvicorn
+        app.state.bot = bot
+
+        http_config = uvicorn.Config(
+            app,
+            host=getattr(config, "HTTP_HOST", "127.0.0.1"),
+            port=getattr(config, "HTTP_PORT", 3762),
+            loop="asyncio",
+            **getattr(config, "UVICORN_CONFIG", {})
+        )
+        server = uvicorn.Server(http_config)
+        console.log("Starting web server...")
+        loop = bot.loop
+        http_server_task = loop.create_task(server.serve())
+        bot.web = {
+            "server": server,
+            "config": http_config,
+            "task": http_server_task,
+        }
+
     bot.run(config.token)

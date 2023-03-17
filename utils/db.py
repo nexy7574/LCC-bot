@@ -74,12 +74,18 @@ class Student(orm.Model):
         "id": orm.String(min_length=7, max_length=7, unique=True),
         "user_id": orm.BigInteger(unique=True),
         "name": orm.String(min_length=2, max_length=32),
+        "access_token": orm.String(min_length=6, max_length=128, default=None, allow_null=True),
+        "ip_info": orm.JSON(default=None, allow_null=True),
+        "access_token_hash": orm.String(min_length=128, max_length=128, default=None, allow_null=True), 
     }
     if TYPE_CHECKING:
         entry_id: uuid.UUID
         id: str
         user_id: int
         name: str
+        access_token: str | None
+        ip_info: dict | None
+        access_token_hash: str | None
 
 
 class BannedStudentID(orm.Model):

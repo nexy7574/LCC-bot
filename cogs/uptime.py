@@ -1,7 +1,9 @@
 import asyncio
 import datetime
 import json
+import random
 import hashlib
+import time
 from datetime import timedelta
 from pathlib import Path
 from typing import Dict, Tuple, List, Optional
@@ -262,6 +264,8 @@ class UptimeCompetition(commands.Cog):
     uptime = discord.SlashCommandGroup("uptime", "Commands for the uptime competition.")
 
     @uptime.command(name="stats")
+    @commands.max_concurrency(1, commands.BucketType.user, wait=True)
+    @commands.cooldown(1, 10, commands.BucketType.user)
     async def stats(
         self,
         ctx: discord.ApplicationContext,
@@ -274,7 +278,7 @@ class UptimeCompetition(commands.Cog):
             default="ALL",
         ),
         look_back: discord.Option(
-            int, description="How many days to look back. Defaults to a year.", required=False, default=365
+            int, description="How many days to look back. Defaults to a week.", required=False, default=7
         ),
     ):
         """View collected uptime stats."""
@@ -330,6 +334,8 @@ class UptimeCompetition(commands.Cog):
         targets = [query_target]
         if query_target == "ALL":
             targets = [t["id"] for t in self.cached_targets]
+
+        total_query_time = rows = 0
         embeds = []
         for _target in targets:
             _target = self.get_target(_target, _target)
@@ -337,11 +343,15 @@ class UptimeCompetition(commands.Cog):
                 target_id=_target["id"]
             )
             query = query.order_by("-timestamp")
+            start = time.time()
             entries = await query.all()
+            end = time.time()
+            total_query_time += end - start
             if not entries:
                 embeds.append(discord.Embed(description=f"No uptime entries found for {_target}."))
             else:
-                embeds.append(generate_embed(_target, entries))
+                embeds.append(await asyncio.to_thread(generate_embed, _target, entries))
+                embeds[-1].set_footer(text=f"Query took {end - start:.2f}s | {len(entries):,} rows")
 
         if org_target == "ALL":
             new_embed = discord.Embed(
@@ -351,8 +361,118 @@ class UptimeCompetition(commands.Cog):
             )
             for embed_ in embeds:
                 new_embed.description += f"{embed_.description}\n"
+            if total_query_time > 60:
+                minutes, seconds = divmod(total_query_time, 60)
+                new_embed.set_footer(text=f"Total query time: {minutes:.0f}m {seconds:.2f}s")
+            else:
+                new_embed.set_footer(text=f"Total query time: {total_query_time:.2f}s")
+            new_embed.set_footer(
+                text=f"{new_embed.footer.text} | {len(entries):,} rows"
+            )
             embeds = [new_embed]
         await ctx.respond(embeds=embeds)
+    
+    @uptime.command(name="speedtest")
+    @commands.is_owner()
+    async def stats_speedtest(self, ctx: discord.ApplicationContext):
+        """Tests the database's speed"""
+        await ctx.defer()
+
+        tests = {
+            "all": None,
+            "lookback_7_day": None,
+            "lookback_30_day": None,
+            "lookback_90_day": None,
+            "lookback_365_day": None,
+            "first": None,
+            "random": None,
+        }
+
+        async def run_test(name):
+            match name:
+                case "all":
+                    start = time.time()
+                    e = await UptimeEntry.objects.all()
+                    end = time.time()
+                    return (end - start) * 1000, len(e)
+                case "lookback_7_day":
+                    start = time.time()
+                    e = await UptimeEntry.objects.filter(
+                        UptimeEntry.columns.timestamp >= (discord.utils.utcnow() - timedelta(days=7)).timestamp()
+                    ).all()
+                    end = time.time()
+                    return (end - start) * 1000, len(e)
+                case "lookback_30_day":
+                    start = time.time()
+                    e = await UptimeEntry.objects.filter(
+                        UptimeEntry.columns.timestamp >= (discord.utils.utcnow() - timedelta(days=30)).timestamp()
+                    ).all()
+                    end = time.time()
+                    return (end - start) * 1000, len(e)
+                case "lookback_90_day":
+                    start = time.time()
+                    e = await UptimeEntry.objects.filter(
+                        UptimeEntry.columns.timestamp >= (discord.utils.utcnow() - timedelta(days=90)).timestamp()
+                    ).all()
+                    end = time.time()
+                    return (end - start) * 1000, len(e)
+                case "lookback_365_day":
+                    start = time.time()
+                    e = await UptimeEntry.objects.filter(
+                        UptimeEntry.columns.timestamp >= (discord.utils.utcnow() - timedelta(days=365)).timestamp()
+                    ).all()
+                    end = time.time()
+                    return (end - start) * 1000, len(e)
+                case "first":
+                    start = time.time()
+                    e = await UptimeEntry.objects.first()
+                    end = time.time()
+                    return (end - start) * 1000, 1
+                case "random":
+                    start = time.time()
+                    e = await UptimeEntry.objects.offset(
+                        random.randint(0, 1000)
+                    ).first()
+                    end = time.time()
+                    return (end - start) * 1000, 1
+                case _:
+                    raise ValueError(f"Unknown test name: {name}")
+
+        def gen_embed(_copy):
+            embed = discord.Embed(
+                title='\N{HOURGLASS} Speedtest Results',
+                colour=discord.Colour.red()
+            )
+            for _name in _copy.keys():
+                if _copy[_name] is None:
+                    embed.add_field(name=_name, value='Waiting...')
+                else:
+                    _time, _row = _copy[_name]
+                    _time /= 1000
+                    rows_per_second = _row / _time
+
+                    if _time >= 60:
+                        minutes, seconds = divmod(_time, 60)
+                        ts = f'{minutes:.0f}m {seconds:.2f}s'
+                    else:
+                        ts = f'{_time:.2f}s'
+
+                    embed.add_field(
+                        name=_name, 
+                        value=f'{ts}, {_row:,} rows ({rows_per_second:.2f} rows/s)'
+                    )
+            return embed
+
+        embed = gen_embed(tests)
+        ctx = await ctx.respond(embed=embed)
+
+        for test_key in tests.keys():
+            tests[test_key] = await run_test(test_key)
+            embed = gen_embed(tests)
+            await ctx.edit(embed=embed)
+        
+        embed.colour = discord.Colour.green()
+        await ctx.edit(embed=embed)
 
     @uptime.command(name="view-next-run")
     async def view_next_run(self, ctx: discord.ApplicationContext):
