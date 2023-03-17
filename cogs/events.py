@@ -94,6 +94,7 @@ class Events(commands.Cog):
         )
         if _re:
             branch, path = _re.group("path").split("/", 1)
+            _p = Path(path).suffix
             url = RAW_URL.format(
                 repo=_re.group("repo"),
                 branch=branch,
@@ -112,7 +113,7 @@ class Events(commands.Cog):
                     end_line = int(_re.group("end_line")) if _re.group("end_line") else start_line + 1
                     lines = lines[start_line:end_line]
 
-                paginator = commands.Paginator(prefix="```py", suffix="```", max_size=1000)
+                paginator = commands.Paginator(prefix="```" + _p[1:], suffix="```", max_size=1000)
                 for line in lines:
                     paginator.add_line(line)
 
