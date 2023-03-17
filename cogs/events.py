@@ -1,15 +1,23 @@
 import random
+import re
 import textwrap
 from pathlib import Path
 from typing import Optional, Tuple
 import discord
-from discord.ext import commands
+import httpx
+from discord.ext import commands, pages
 from utils import Student, get_or_none, console
 from config import guilds
 try:
     from config import OAUTH_REDIRECT_URI
 except ImportError:
     OAUTH_REDIRECT_URI = None
+try:
+    from config import GITHUB_USERNAME
+    from config import GITHUB_PASSWORD
+except ImportError:
+    GITHUB_USERNAME = None
+    GITHUB_PASSWORD = None
 
 
 LTR = "\N{black rightwards arrow}\U0000fe0f"
@@ -19,6 +27,7 @@ RTL = "\N{leftwards black arrow}\U0000fe0f"
 class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.http = httpx.AsyncClient()
 
     # noinspection DuplicatedCode
     async def analyse_text(self, text: str) -> Optional[Tuple[float, float, float, float]]:
@@ -75,6 +84,44 @@ class Events(commands.Cog):
             await channel.send(
                 f"{RTL} {member.mention} (`{member}`, {f'{student.id}' if student else 'pending verification'})"
             )
+
+    async def process_message_for_github_links(self, message: discord.Message):
+        RAW_URL = "https://github.com/{repo}/raw/{branch}/{path}"
+        _re = re.match(
+            r"https://github\.com/(?P<repo>[a-zA-Z0-9-]+/[\w.-]+)/blob/(?P<path>[^#>]+)(\?[^#>]+)?"
+            r"(#L(?P<start_line>\d+)(([-~:]|(\.\.))L(?P<end_line>\d+))?)",
+            message.content
+        )
+        if _re:
+            branch, path = _re.group("path").split("/", 1)
+            url = RAW_URL.format(
+                repo=_re.group("repo"),
+                branch=branch,
+                path=path
+            )
+            if all((GITHUB_PASSWORD, GITHUB_USERNAME)):
+                auth = (GITHUB_USERNAME, GITHUB_PASSWORD)
+            else:
+                auth = None
+            response = await self.http.get(url, follow_redirects=True, auth=auth)
+            if response.status_code == 200:
+                ctx = await self.bot.get_context(message)
+                lines = response.text.splitlines()
+                if _re.group("start_line"):
+                    start_line = int(_re.group("start_line")) - 1
+                    end_line = int(_re.group("end_line")) if _re.group("end_line") else start_line + 1
+                    lines = lines[start_line:end_line]
+
+                paginator = commands.Paginator(prefix="```py", suffix="```", max_size=1000)
+                for line in lines:
+                    paginator.add_line(line)
+
+                _pages = paginator.pages
+                paginator2 = pages.Paginator(_pages, timeout=300)
+                # noinspection PyTypeChecker
+                await paginator2.send(ctx, reference=message.to_reference())
+                if message.channel.permissions_for(message.guild.me).manage_messages:
+                    await message.edit(suppress=True)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -141,7 +188,7 @@ class Events(commands.Cog):
                         file = discord.File(Path(__file__).parent.parent / "carat.jpg")
                         await message.reply(file=file)
                     if message.reference is not None and message.reference.cached_message is not None:
-                        if message.content.lower().strip() in ("what", "what?"):
+                        if message.content.lower().strip() in ("what", "what?", "huh", "huh?"):
                             text = "{0.author.mention} said %r, you deaf sod.".format(
                                 message.reference.cached_message
                             )
@@ -149,6 +196,7 @@ class Events(commands.Cog):
                                 text % message.reference.cached_message.content, width=2000, placeholder="[...]"
                             )
                             await message.reply(_content)
+                    await self.process_message_for_github_links(message)
                 if message.channel.permissions_for(message.guild.me).add_reactions:
                     if "mpreg" in message.content.lower() or "\U0001fac3" in message.content.lower():
                         try:
