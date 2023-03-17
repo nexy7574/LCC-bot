@@ -1,12 +1,33 @@
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from urllib.parse import urlparse
 
+import discord
 from discord.ext import commands
 
 from ._email import *
 from .db import *
 from .console import *
 from .views import *
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+
+class JimmyBanException(discord.CheckFailure):
+    def __init__(self, until: "datetime", reason: str):
+        super().__init__(reason)
+        self.until = until
+        self.reason = reason
+
+    def __str__(self):
+        ok = discord.utils.format_dt(self.until, "R")
+        return (
+            f"\N{cross mark} You are not allowed to use commands right now. You will be unbanned {ok}.\n"
+            f"Ban reason:\n>>> {self.reason}"
+        )
+
+    def __repr__(self):
+        return f"<JimmyBanException until={self.until!r} reason={self.reason!r}>"
 
 
 def simple_embed_paginator(

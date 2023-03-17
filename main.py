@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 import config
 from datetime import datetime, timezone, timedelta
-from utils import console, get_or_none, JimmyBans
+from utils import console, get_or_none, JimmyBans, JimmyBanException
 from utils.client import bot
 
 
@@ -29,6 +29,8 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
             f"\N{warning sign} This command is already running. Please wait for it to finish.",
             ephemeral=True,
         )
+    elif isinstance(error, JimmyBanException):
+        return await ctx.respond(str(error))
     await ctx.respond("Application Command Error: `%r`" % error)
     raise error
 
@@ -37,6 +39,8 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
 async def on_command_error(ctx: commands.Context, error: Exception):
     if isinstance(error, commands.CommandNotFound):
         return
+    elif isinstance(error, JimmyBanException):
+        return await ctx.respond(str(error))
     await ctx.reply("Command Error: `%r`" % error)
     raise error
 
@@ -68,7 +72,7 @@ async def ping(ctx: discord.ApplicationContext):
 
 @bot.check_once
 async def check_not_banned(ctx: discord.ApplicationContext | commands.Context):
-    if await bot.is_owner(ctx.author) or ctx.command.name in ("block", "unblock"):
+    if await bot.is_owner(ctx.author) or ctx.command.name in ("block", "unblock", "timetable", "verify", "kys"):
         return True
     user = ctx.author
     ban: JimmyBans = await get_or_none(JimmyBans, user_id=user.id)
@@ -77,16 +81,7 @@ async def check_not_banned(ctx: discord.ApplicationContext | commands.Context):
         if dt < discord.utils.utcnow():
             await ban.delete()
         else:
-            reply = ctx.reply if isinstance(ctx, commands.Context) else ctx.respond
-            try:
-                await reply(
-                    content=f":x: You can use commands {discord.utils.format_dt(dt, 'R')} (reason for ban:"
-                            f" {ban.reason}).",
-                )
-            except discord.HTTPException:
-                pass
-            finally:
-                return False
+            raise JimmyBanException(dt, ban.reason)
     return True
 
 
