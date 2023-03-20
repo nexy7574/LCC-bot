@@ -39,16 +39,15 @@ T_co = TypeVar("T_co", covariant=True)
 
 if Path("/data").exists():
     _pth = "/data/main.db"
+    try:
+        Path(_pth).touch()
+    except PermissionError as e:
+        print("Failed to create database:", e, file=sys.stderr)
+        sys.exit(1)
 else:
-    _pth = "/./main.db"
+    _pth = "/main.db"
 
-try:
-    Path(_pth).touch()
-except PermissionError as e:
-    print("Failed to create database:", e, file=sys.stderr)
-    sys.exit(1)
-
-registry = orm.ModelRegistry(Database("sqlite:///main.db"))
+registry = orm.ModelRegistry(Database("sqlite://" + _pth))
 
 
 async def get_or_none(model: T, **kw) -> Optional[T_co]:
