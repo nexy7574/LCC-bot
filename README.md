@@ -1,18 +1,9 @@
 # LCC Bot
 Yeah
 
-## Installing
+## Installing (docker)
 
-```shell
-git clone https://github.com/EEKIM10/LCC-Bot.git
-cd LCC-Bot
-# Now you need to edit your config file
-mv config.example.py config.py
-$EDITOR config.py
-docker build -t lcc-bot:latest .
-docker run -d --name lcc-bot lcc-bot:latest
-```
-The bot will now be running.
+see [INSTALL.md](INSTALL.md)
 
 ### Without docker
 
