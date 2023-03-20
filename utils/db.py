@@ -37,7 +37,7 @@ __all__ = [
 T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
 
-_pth = "/main.db"
+_pth = "main.db"
 if Path("/data").exists():
     _pth = "/data/main.db"
 try:
