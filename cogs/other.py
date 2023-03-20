@@ -34,6 +34,11 @@ from selenium.webdriver.firefox.service import Service as FirefoxService
 
 from utils import console
 
+_engine = pyttsx3.init()
+# noinspection PyTypeChecker
+VOICES = [x.id for x in _engine.getProperty("voices")]
+del _engine
+
 
 # noinspection DuplicatedCode
 class OtherCog(commands.Cog):
@@ -822,6 +827,12 @@ class OtherCog(commands.Cog):
             "The speed of the voice. Default is 150.",
             required=False,
             default=150
+        ),
+        voice: discord.Option(
+            str,
+            "The voice to use. Some may cause timeout.",
+            choices=VOICES,
+            default="default"
         )
     ):
         """Converts text to MP3. 5 uses per 10 minutes."""
@@ -841,14 +852,14 @@ class OtherCog(commands.Cog):
                     ),
                     title="Convert text to an MP3"
                 )
-            
+
             async def callback(self, interaction: discord.Interaction):
                 def _convert(text: str) -> Tuple[BytesIO, int]:
                     tmp_dir = tempfile.gettempdir()
                     target_fn = Path(tmp_dir) / f"jimmy-tts-{ctx.user.id}-{ctx.interaction.id}.mp3"
                     target_fn = str(target_fn)
                     engine = pyttsx3.init()
-                    # engine.setProperty("voice", "english-north")
+                    engine.setProperty("voice", voice)
                     engine.setProperty("rate", speed)
                     _io = BytesIO()
                     engine.save_to_file(text, target_fn)
