@@ -9,6 +9,7 @@ from datetime import timedelta
 from io import BytesIO
 
 import dns.resolver
+import httpx
 from dns import asyncresolver
 import aiofiles
 import pyttsx3
@@ -39,6 +40,7 @@ class OtherCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.lock = asyncio.Lock()
+        self.http = httpx.AsyncClient()
 
     class AbortScreenshotTask(discord.ui.View):
         def __init__(self, task: asyncio.Task):
@@ -824,6 +826,7 @@ class OtherCog(commands.Cog):
     ):
         """Converts text to MP3. 5 uses per 10 minutes."""
         speed = min(300, max(50, speed))
+        _self = self
         _bot = self.bot
 
         class TextModal(discord.ui.Modal):
@@ -840,22 +843,24 @@ class OtherCog(commands.Cog):
                 )
             
             async def callback(self, interaction: discord.Interaction):
-                def _convert(text: str) -> BytesIO():
-                    target_fn = f"/tmp/jimmy-tts-{ctx.user.id}-{ctx.interaction.id}.mp3"
-                    _bot.console.log("Starting pyttsx3")
+                def _convert(text: str) -> Tuple[BytesIO, int]:
+                    tmp_dir = tempfile.gettempdir()
+                    target_fn = Path(tmp_dir) / f"jimmy-tts-{ctx.user.id}-{ctx.interaction.id}.mp3"
+                    target_fn = str(target_fn)
                     engine = pyttsx3.init()
                     # engine.setProperty("voice", "english-north")
                     engine.setProperty("rate", speed)
                     _io = BytesIO()
-                    _bot.console.log("Saving to file")
                     engine.save_to_file(text, target_fn)
-                    _bot.console.log("Running")
                     engine.runAndWait()
-                    _bot.console.log("Waiting for file to be written")
                     last_3_sizes = [-3, -2, -1]
+                    no_exists = 0
 
                     def should_loop():
                         if not os.path.exists(target_fn):
+                            nonlocal no_exists
+                            assert no_exists < 300, "File does not exist for 5 minutes."
+                            no_exists += 1
                             return True
                         
                         stat = os.stat(target_fn)
@@ -869,25 +874,49 @@ class OtherCog(commands.Cog):
                         if os.path.exists(target_fn):
                             last_3_sizes.pop(0)
                             last_3_sizes.append(os.stat(target_fn).st_size)
-                            _bot.console.log(f"File {target_fn} size: {last_3_sizes}")
-                        else:
-                            _bot.console.log(f"File {target_fn} does not exist")
                         sleep(1)
 
                     with open(target_fn, "rb") as f:
-                        _io.write(f.read())
+                        x = f.read()
+                        _io.write(x)
                     os.remove(target_fn)
                     _io.seek(0)
-                    return _io
+                    return _io, len(x)
 
                 await interaction.response.defer()
-                _msg = await interaction.followup.send("Converting text to MP3...")
                 text_pre = self.children[0].value
+                if text_pre.startswith("url:"):
+                    _url = text_pre[4:].strip()
+                    _msg = await interaction.followup.send("Downloading text...")
+                    try:
+                        response = await _self.http.get(_url, headers={"User-Agent": "Mozilla/5.0"})
+                        if response.status_code != 200:
+                            await _msg.edit(content=f"Failed to download text. Status code: {response.status_code}")
+                            return
+
+                        ct = response.headers.get("Content-Type", "application/octet-stream")
+                        if not ct.startswith("text/plain"):
+                            await _msg.edit(content=f"Failed to download text. Content-Type is {ct!r}, not text/plain")
+                            return
+                        text_pre = response.text
+                    except (ConnectionError, httpx.HTTPError, httpx.NetworkError) as e:
+                        await _msg.edit(content="Failed to download text. " + str(e))
+                        return
+                    else:
+                        await _msg.edit(content="Text downloaded; Converting to MP3...")
+                else:
+                    _msg = await interaction.followup.send("Converting text to MP3...")
                 try:
-                    mp3 = await _bot.loop.run_in_executor(None, _convert, text_pre)
+                    mp3, size = await _bot.loop.run_in_executor(None, _convert, text_pre)
                 except (Exception, IOError) as e:
                     await _msg.edit(content="failed. " + str(e))
                     raise e
+                if size >= ctx.guild.filesize_limit - 1500:
+                    await _msg.edit(
+                        content=f"MP3 is too large ({size / 1024 ** 2}Mb vs "
+                                f"{ctx.guild.filesize_limit / 1024 ** 2}Mb)"
+                    )
+                    return
                 fn = ""
                 _words = text_pre.split()
                 while len(fn) < 28:
