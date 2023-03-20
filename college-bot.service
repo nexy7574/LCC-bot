@@ -1,0 +1,26 @@
+[Unit]
+Description=LCC Bot
+StartLimitBurst=10
+# If we're still failing after 10 attempts, something is wrong.
+Wants=network-online.target
+After=network.target network-online.target
+
+[Service]
+Type=simple
+RemainAfterExit=no
+ExecStart=/home/nex/jimmy/venv/bin/python3 /home/nex/jimmy/main.py
+Restart=always
+RestartSec=5
+# Wait 5 seconds before restarts
+User=nex
+MemoryMax=1024M
+CPUQuota=50%
+
+# Security so that people like @Mcharlsto can't delete my system "by accident"
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=true
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
