@@ -1,4 +1,5 @@
 import datetime
+import sys
 import uuid
 from typing import TYPE_CHECKING, Optional, TypeVar
 from enum import IntEnum, auto
@@ -39,6 +40,12 @@ T_co = TypeVar("T_co", covariant=True)
 _pth = "/main.db"
 if Path("/data").exists():
     _pth = "/data/main.db"
+try:
+    Path(_pth).touch()
+except PermissionError as e:
+    print("Failed to create database:", e, file=sys.stderr)
+    sys.exit(1)
+
 registry = orm.ModelRegistry(Database("sqlite://" + _pth))
 
 

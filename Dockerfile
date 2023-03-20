@@ -1,6 +1,6 @@
 FROM python:3.11-bullseye
 
-COPY config.py /
+COPY config_docker.py /
 
 RUN wget -O- https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google-chrome.gpg
 
@@ -17,7 +17,9 @@ RUN apt-get install -y \
     python3-wheel \
     firefox-esr \
     google-chrome-stable \
-    espeak
+    espeak \
+    sqlite3 \
+    libsqlite3-dev
 
 COPY requirements.txt /
 
@@ -25,6 +27,6 @@ RUN pip install -U pip wheel setuptools
 
 RUN pip install -r requirements.txt
 
-COPY ../ /
+COPY ./ /src
 
-CMD ["main.py"]
+CMD ["python3", "/src/main.py"]

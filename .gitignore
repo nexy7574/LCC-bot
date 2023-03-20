@@ -6,3 +6,4 @@ domains.txt
 geckodriver.log
 targets.json
 *.kdev4
+.env

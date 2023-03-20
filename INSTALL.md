@@ -30,5 +30,5 @@ Jimmy by default runs a tiny API on port 3762. In order to make this accessible,
 $ docker build -t lcc-bot:latest .
 ...
 
-$ docker run -d --name lcc-bot -v /path/to/host/dir:/data -p 3762:3762 lcc-bot:latest
+$ docker run -d --name lcc-bot -v /path/to/host/dir:/data -p 3762:3762 --env-file .env lcc-bot:latest
 ```
