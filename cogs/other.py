@@ -831,11 +831,13 @@ class OtherCog(commands.Cog):
         voice: discord.Option(
             str,
             "The voice to use. Some may cause timeout.",
-            choices=VOICES,
+            autocomplete=discord.utils.basic_autocomplete(VOICES),
             default="default"
         )
     ):
         """Converts text to MP3. 5 uses per 10 minutes."""
+        if voice not in VOICES:
+            return await ctx.respond("Invalid voice.")
         speed = min(300, max(50, speed))
         _self = self
         _bot = self.bot
