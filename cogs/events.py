@@ -198,6 +198,8 @@ class Events(commands.Cog):
                         await message.reply("shut up", delete_after=3)
                         await message.delete(delay=3)
                         break
+            if message.channel.can_send() and "ferdi" in message.content.lower():
+                await message.reply("https://ferdi-is.gay/")
             # Stop responding to any bots
             if message.author.bot is True:
                 return
