@@ -48,7 +48,7 @@ except PermissionError as e:
     print("Failed to create database:", e, file=sys.stderr)
     sys.exit(1)
 
-registry = orm.ModelRegistry(Database("sqlite://" + _pth))
+registry = orm.ModelRegistry(Database("sqlite:///main.db"))
 
 
 async def get_or_none(model: T, **kw) -> Optional[T_co]:
