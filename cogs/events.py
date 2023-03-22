@@ -226,8 +226,8 @@ class Events(commands.Cog):
                     if "it just works" in message.content.lower():
                         file = Path.cwd() / "assets" / "it-just-works.ogg"
                         if message.author.voice is not None and message.author.voice.channel is not None:
-                            if message.guild.me.voice is not None:
-                                await message.guild.me.voice.disconnect()
+                            if message.guild.me.voice is not None and message.guild.me.voice.channel != message.author.voice.channel:
+                                await message.guild.voice_state.disconnect()
                             voice = await message.author.voice.channel.connect()
                             if message.guild.me.voice.self_mute or message.guild.me.voice.mute:
                                 await voice.disconnect()
