@@ -229,7 +229,7 @@ class Events(commands.Cog):
                             if message.guild.me.voice is not None:
                                 await message.guild.me.voice.disconnect()
                             voice = await message.author.voice.channel.connect()
-                            if voice.self_mute or voice.mute:
+                            if message.guild.me.voice.self_mute or message.guild.me.voice.mute:
                                 await voice.disconnect()
                                 await message.channel.trigger_typing()
                                 await message.reply("Unmute me >:(", file=discord.File(file))
