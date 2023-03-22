@@ -234,9 +234,18 @@ class Events(commands.Cog):
                                 await message.channel.trigger_typing()
                                 await message.reply("Unmute me >:(", file=discord.File(file))
                             else:
+                                def after(e):
+                                    asyncio.run_coroutine_threadsafe(
+                                        voice.disconnect(),
+                                        self.bot.loop
+                                    )
+                                    if e is not None:
+                                        console.log(f"Error playing audio: {e}")
+
+                                src = discord.FFmpegPCMAudio(str(file.absolute()), stderr=subprocess.DEVNULL)
                                 voice.play(
-                                    discord.FFmpegPCMAudio(str(file), stderr=subprocess.DEVNULL),
-                                    after=lambda _: asyncio.run_coroutine_threadsafe(
+                                    src,
+                                    after=lambda e: asyncio.run_coroutine_threadsafe(
                                         voice.disconnect(), 
                                         self.bot.loop
                                     )
@@ -246,7 +255,6 @@ class Events(commands.Cog):
                             await message.reply(file=discord.File(file))
                         
                     if "linux" in message.content.lower() and self.bot.user in message.mentions:
-                        console.log(f"Responding to {message.author} with linux copypasta")
                         try:
                             with open("./assets/copypasta.txt", "r") as f:
                                 await message.reply(f.read())
