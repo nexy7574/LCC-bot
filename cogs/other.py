@@ -771,7 +771,7 @@ class OtherCog(commands.Cog):
             await ctx.defer()
             await ctx.edit(content="Downloading video...")
             try:
-                venv = Path.cwd() / "venv"
+                venv = Path.cwd() / "venv" / ("Scripts" if os.name == "nt" else "bin")
                 if venv:
                     venv = venv.absolute().resolve()
                     if str(venv) not in os.environ["PATH"]:
