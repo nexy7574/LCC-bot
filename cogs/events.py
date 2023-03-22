@@ -235,22 +235,28 @@ class Events(commands.Cog):
                         if message.author.voice is not None and message.author.voice.channel is not None:
                             voice: discord.VoiceClient = None
                             if message.guild.voice_client is not None:
-                                console.log("Disconnecting")
                                 try:
                                     await _dc(message.guild.voice_client)
                                 except discord.HTTPException:
                                     pass
-                            console.log("connecting")
-                            voice = await message.author.voice.channel.connect(timeout=10, reconnect=False)
-                            console.log("connected")
+                            try:
+                                voice = await message.author.voice.channel.connect(timeout=10, reconnect=False)
+                            except asyncio.TimeoutError:
+                                region = message.author.voice.channel.rtc_region
+                                console.log(
+                                    "Timed out connecting to voice channel: {0.name} in {0.guild.name} "
+                                    "(region {1})".format(
+                                        message.author.voice.channel,
+                                        region.name if region else "auto (unknown)"
+                                    )
+                                )
+                                return
                             
                             if voice.channel != message.author.voice.channel:
-                                console.log("moving")
                                 await voice.move_to(message.author.voice.channel)
                             
                             if message.guild.me.voice.self_mute or message.guild.me.voice.mute:
                                 await _dc(voice)
-                                console.log("disconnecting bad")
                                 await message.channel.trigger_typing()
                                 await message.reply("Unmute me >:(", file=discord.File(file))
                             else:
@@ -263,9 +269,8 @@ class Events(commands.Cog):
                                     if e is not None:
                                         console.log(f"Error playing audio: {e}")
 
-                                console.log("sourcing")
                                 src = discord.FFmpegPCMAudio(str(file.absolute()), stderr=subprocess.DEVNULL)
-                                console.log("Playing audio")
+                                src = discord.PCMVolumeTransformer(src, volume=0.5)
                                 voice.play(
                                     src,
                                     after=after
