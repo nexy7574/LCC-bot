@@ -27,6 +27,13 @@ LTR = "\N{black rightwards arrow}\U0000fe0f"
 RTL = "\N{leftwards black arrow}\U0000fe0f"
 
 
+async def _dc(client: discord.VoiceProtocol):
+    try:
+        await client.disconnect()
+    finally:
+        client.cleanup()
+
+
 class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -168,7 +175,7 @@ class Events(commands.Cog):
         channel = me_voice.channel
         if len(channel.members) - 1 == 0:
             # We are the only one in the channel
-            await member.guild.voice_client.disconnect()
+            await _dc(member.guild.voice_client)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -229,20 +236,21 @@ class Events(commands.Cog):
                             voice: discord.VoiceClient = None
                             if message.guild.me.voice is not None:
                                 voice = message.guild.voice_client
-                            else:
+                            if voice is None:
                                 voice = await message.author.voice.channel.connect()
                             
                             if voice.channel != message.author.voice.channel:
                                 await voice.move_to(message.author.voice.channel)
                             
                             if message.guild.me.voice.self_mute or message.guild.me.voice.mute:
-                                await voice.disconnect()
+                                await _dc(voice)
                                 await message.channel.trigger_typing()
                                 await message.reply("Unmute me >:(", file=discord.File(file))
                             else:
+                                
                                 def after(e):
                                     asyncio.run_coroutine_threadsafe(
-                                        voice.disconnect(),
+                                        _dc(voice),
                                         self.bot.loop
                                     )
                                     if e is not None:
