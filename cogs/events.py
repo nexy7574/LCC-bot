@@ -235,9 +235,11 @@ class Events(commands.Cog):
                         if message.author.voice is not None and message.author.voice.channel is not None:
                             voice: discord.VoiceClient = None
                             if message.guild.me.voice is not None:
-                                voice = message.guild.voice_client
-                            if voice is None:
-                                voice = await message.author.voice.channel.connect()
+                                try:
+                                    await _dc(message.guild.voice_client)
+                                except discord.HTTPException:
+                                    pass
+                            voice = await message.author.voice.channel.connect()
                             
                             if voice.channel != message.author.voice.channel:
                                 await voice.move_to(message.author.voice.channel)
