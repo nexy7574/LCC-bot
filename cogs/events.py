@@ -242,6 +242,11 @@ class Events(commands.Cog):
                             try:
                                 voice = await message.author.voice.channel.connect(timeout=10, reconnect=False)
                             except asyncio.TimeoutError:
+                                await message.channel.trigger_typing()
+                                await message.reply(
+                                    "I'd play the song but discord's voice servers are shit.", 
+                                    file=discord.File(file)
+                                )
                                 region = message.author.voice.channel.rtc_region
                                 console.log(
                                     "Timed out connecting to voice channel: {0.name} in {0.guild.name} "
