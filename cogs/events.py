@@ -28,10 +28,13 @@ RTL = "\N{leftwards black arrow}\U0000fe0f"
 
 
 async def _dc(client: discord.VoiceProtocol):
+    if client.is_playing():
+        client.stop()
     try:
-        await client.disconnect()
+        await client.disconnect(force=True)
     finally:
-        client.cleanup()
+        # client.cleanup()
+        pass
 
 
 class Events(commands.Cog):
