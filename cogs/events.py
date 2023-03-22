@@ -235,6 +235,8 @@ class Events(commands.Cog):
                         if message.author.voice is not None and message.author.voice.channel is not None:
                             voice: discord.VoiceClient = None
                             if message.guild.voice_client is not None:
+                                if message.guild.voice_client.is_playing():
+                                    return
                                 try:
                                     await _dc(message.guild.voice_client)
                                 except discord.HTTPException:
