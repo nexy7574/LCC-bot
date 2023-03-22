@@ -234,18 +234,23 @@ class Events(commands.Cog):
                         file = Path.cwd() / "assets" / "it-just-works.ogg"
                         if message.author.voice is not None and message.author.voice.channel is not None:
                             voice: discord.VoiceClient = None
-                            if message.guild.me.voice is not None:
+                            if message.guild.voice_client is not None:
+                                console.log("Disconnecting")
                                 try:
                                     await _dc(message.guild.voice_client)
                                 except discord.HTTPException:
                                     pass
-                            voice = await message.author.voice.channel.connect()
+                            console.log("connecting")
+                            voice = await message.author.voice.channel.connect(timeout=10, reconnect=False)
+                            console.log("connected")
                             
                             if voice.channel != message.author.voice.channel:
+                                console.log("moving")
                                 await voice.move_to(message.author.voice.channel)
                             
                             if message.guild.me.voice.self_mute or message.guild.me.voice.mute:
                                 await _dc(voice)
+                                console.log("disconnecting bad")
                                 await message.channel.trigger_typing()
                                 await message.reply("Unmute me >:(", file=discord.File(file))
                             else:
@@ -258,7 +263,9 @@ class Events(commands.Cog):
                                     if e is not None:
                                         console.log(f"Error playing audio: {e}")
 
+                                console.log("sourcing")
                                 src = discord.FFmpegPCMAudio(str(file.absolute()), stderr=subprocess.DEVNULL)
+                                console.log("Playing audio")
                                 voice.play(
                                     src,
                                     after=after

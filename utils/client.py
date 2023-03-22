@@ -60,16 +60,17 @@ class Bot(commands.Bot):
         if getattr(self, "web", None) is not None:
             self.console.log("Closing web server...")
             await self.web["server"].shutdown()
-            self.web["task"].cancel()
-            self.console.log("Web server closed.")
-            try:
-                await self.web["task"]
-            except asyncio.CancelledError:
-                pass
-            del self.web["server"]
-            del self.web["config"]
-            del self.web["task"]
-            del self.web
+            if hasattr(self, "web"):
+                self.web["task"].cancel()
+                self.console.log("Web server closed.")
+                try:
+                    await self.web["task"]
+                except asyncio.CancelledError:
+                    pass
+                del self.web["server"]
+                del self.web["config"]
+                del self.web["task"]
+                del self.web
         try:
             await super().close()
         except asyncio.TimeoutError:
