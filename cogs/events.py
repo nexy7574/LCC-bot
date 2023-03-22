@@ -231,6 +231,7 @@ class Events(commands.Cog):
                             voice = await message.author.voice.channel.connect()
                             if voice.self_mute or voice.mute:
                                 await voice.disconnect()
+                                await message.channel.trigger_typing()
                                 await message.reply("Unmute me >:(", file=discord.File(file))
                             else:
                                 voice.play(
@@ -241,6 +242,7 @@ class Events(commands.Cog):
                                     )
                                 )
                         else:
+                            await message.channel.trigger_typing()
                             await message.reply(file=discord.File(file))
                         
                     if "linux" in message.content.lower() and self.bot.user in message.mentions:
