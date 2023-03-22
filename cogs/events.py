@@ -168,7 +168,7 @@ class Events(commands.Cog):
         channel = me_voice.channel
         if len(channel.members) - 1 == 0:
             # We are the only one in the channel
-            await me_voice.disconnect()
+            await member.guild.voice_client.disconnect()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
