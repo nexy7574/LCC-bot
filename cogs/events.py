@@ -161,7 +161,7 @@ class Events(commands.Cog):
         member: discord.Member, 
         *_
     ):
-        me_voice = member.guild.voice_state
+        me_voice = member.guild.me.voice
         if me_voice is None or me_voice.channel is None:
             return
 
@@ -225,18 +225,21 @@ class Events(commands.Cog):
                 if message.channel.can_send():  # ... and we can send messages
                     if "it just works" in message.content.lower():
                         file = Path.cwd() / "assets" / "it-just-works.ogg"
-                        if message.author.voice is not None:
-                            if message.guild.voice is not None:
-                                await message.guild.voice.disconnect()
-                            my_voice = await message.author.voice.channel.connect()
+                        if message.author.voice is not None and message.author.voice.channel is not None:
+                            if message.guild.me.voice is not None:
+                                await message.guild.me.voice.disconnect()
                             voice = await message.author.voice.channel.connect()
-                            voice.play(
-                                discord.FFmpegPCMAudio(str(file), stderr=subprocess.DEVNULL),
-                                after=lambda _: asyncio.run_coroutine_threadsafe(
-                                    voice.disconnect(), 
-                                    self.bot.loop
+                            if voice.self_mute or voice.mute:
+                                await voice.disconnect()
+                                await message.reply("Unmute me >:(", file=discord.File(file))
+                            else:
+                                voice.play(
+                                    discord.FFmpegPCMAudio(str(file), stderr=subprocess.DEVNULL),
+                                    after=lambda _: asyncio.run_coroutine_threadsafe(
+                                        voice.disconnect(), 
+                                        self.bot.loop
+                                    )
                                 )
-                            )
                         else:
                             await message.reply(file=discord.File(file))
                         
