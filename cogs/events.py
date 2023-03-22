@@ -1,7 +1,9 @@
 import io
 import random
 import re
+import asyncio
 import textwrap
+import subprocess
 from pathlib import Path
 from typing import Optional, Tuple
 import discord
@@ -154,6 +156,21 @@ class Events(commands.Cog):
                         await message.edit(suppress=True)
 
     @commands.Cog.listener()
+    async def on_voice_state_update(
+        self, 
+        member: discord.Member, 
+        *_
+    ):
+        me_voice = member.guild.voice_state
+        if me_voice is None or me_voice.channel is None:
+            return
+
+        channel = me_voice.channel
+        if len(channel.members) - 1 == 0:
+            # We are the only one in the channel
+            await me_voice.disconnect()
+
+    @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if not message.guild:
             return
@@ -206,6 +223,23 @@ class Events(commands.Cog):
             # Only respond if the message has content...
             if message.content:
                 if message.channel.can_send():  # ... and we can send messages
+                    if "it just works" in message.content.lower():
+                        file = Path.cwd() / "assets" / "it-just-works.ogg"
+                        if message.author.voice is not None:
+                            if message.guild.voice is not None:
+                                await message.guild.voice.disconnect()
+                            my_voice = await message.author.voice.channel.connect()
+                            voice = await message.author.voice.channel.connect()
+                            voice.play(
+                                discord.FFmpegPCMAudio(str(file), stderr=subprocess.DEVNULL),
+                                after=lambda _: asyncio.run_coroutine_threadsafe(
+                                    voice.disconnect(), 
+                                    self.bot.loop
+                                )
+                            )
+                        else:
+                            await message.reply(file=discord.File(file))
+                        
                     if "linux" in message.content.lower() and self.bot.user in message.mentions:
                         console.log(f"Responding to {message.author} with linux copypasta")
                         try:
