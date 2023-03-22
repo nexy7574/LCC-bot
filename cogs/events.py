@@ -228,7 +228,7 @@ class Events(commands.Cog):
                         if message.author.voice is not None and message.author.voice.channel is not None:
                             voice: discord.VoiceClient = None
                             if message.guild.me.voice is not None:
-                                voice = message.guild.me.voice
+                                voice = message.guild.voice_client
                             else:
                                 voice = await message.author.voice.channel.connect()
                             
@@ -251,10 +251,7 @@ class Events(commands.Cog):
                                 src = discord.FFmpegPCMAudio(str(file.absolute()), stderr=subprocess.DEVNULL)
                                 voice.play(
                                     src,
-                                    after=lambda e: asyncio.run_coroutine_threadsafe(
-                                        voice.disconnect(), 
-                                        self.bot.loop
-                                    )
+                                    after=after
                                 )
                         else:
                             await message.channel.trigger_typing()
