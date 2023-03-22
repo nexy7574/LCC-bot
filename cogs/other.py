@@ -771,6 +771,12 @@ class OtherCog(commands.Cog):
             await ctx.defer()
             await ctx.edit(content="Downloading video...")
             try:
+                venv = Path.cwd() / "venv"
+                if venv:
+                    venv = venv.absolute().resolve()
+                    if str(venv) not in os.environ["PATH"]:
+                        os.environ["PATH"] += os.pathsep + str(venv)
+
                 process = await asyncio.create_subprocess_exec(
                     "yt-dlp",
                     url,
@@ -802,7 +808,7 @@ class OtherCog(commands.Cog):
             for file_name in Path(tempdir).glob(f"{ctx.user.id}.*"):
                 stat = file_name.stat()
                 size_mb = stat.st_size / 1024 ** 2
-                if size_mb > MAX_SIZE - 0.1:
+                if size_mb > MAX_SIZE - 0.5:
                     _x = io.BytesIO(
                         f"File {file_name.name} was too large ({size_mb:,.1f}MB vs {MAX_SIZE:.1f}MB)".encode()
                     )
