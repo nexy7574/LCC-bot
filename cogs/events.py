@@ -169,7 +169,7 @@ class Events(commands.Cog):
         *_
     ):
         me_voice = member.guild.me.voice
-        if me_voice is None or me_voice.channel is None:
+        if me_voice is None or me_voice.channel is None or member.guild.voice_client is None:
             return
 
         channel = me_voice.channel
