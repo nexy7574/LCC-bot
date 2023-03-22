@@ -622,7 +622,7 @@ class OtherCog(commands.Cog):
         await ctx.edit(content=f"Preparing to screenshot <{friendly_url}>... (0%, checking filters)")
 
         async def blacklist_check() -> bool | str:
-            async with aiofiles.open("domains.txt") as blacklist:
+            async with aiofiles.open("./assets/domains.txt") as blacklist:
                 for ln in await blacklist.readlines():
                     if not ln.strip():
                         continue
@@ -721,7 +721,7 @@ class OtherCog(commands.Cog):
         await ctx.defer()
         if not await self.bot.is_owner(ctx.user):
             return await ctx.respond("You are not allowed to do that.")
-        async with aiofiles.open("domains.txt", "a") as blacklist:
+        async with aiofiles.open("./assets/domains.txt", "a") as blacklist:
             await blacklist.write(domain.lower() + "\n")
         await ctx.respond("Added domain to blacklist.")
 
@@ -731,9 +731,9 @@ class OtherCog(commands.Cog):
         await ctx.defer()
         if not await self.bot.is_owner(ctx.user):
             return await ctx.respond("You are not allowed to do that.")
-        async with aiofiles.open("domains.txt") as blacklist:
+        async with aiofiles.open("./assets/domains.txt") as blacklist:
             lines = await blacklist.readlines()
-        async with aiofiles.open("domains.txt", "w") as blacklist:
+        async with aiofiles.open("./assets/domains.txt", "w") as blacklist:
             for line in lines:
                 if line.strip() != domain.lower():
                     await blacklist.write(line)

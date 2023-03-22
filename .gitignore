@@ -2,8 +2,9 @@ main.db
 config.py
 __pycache__
 venv
-domains.txt
+assets/domains.txt
 geckodriver.log
 targets.json
 *.kdev4
 .env
+*.pyc

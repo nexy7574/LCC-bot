@@ -209,7 +209,7 @@ class Events(commands.Cog):
                     if "linux" in message.content.lower() and self.bot.user in message.mentions:
                         console.log(f"Responding to {message.author} with linux copypasta")
                         try:
-                            with open("./copypasta.txt", "r") as f:
+                            with open("./assets/copypasta.txt", "r") as f:
                                 await message.reply(f.read())
                         except FileNotFoundError:
                             await message.reply(
@@ -217,10 +217,10 @@ class Events(commands.Cog):
                                 "is in fact, uh... I don't know, I forgot."
                             )
                     if "carat" in message.content.lower():
-                        file = discord.File(Path(__file__).parent.parent / "carat.jpg")
+                        file = discord.File(Path.cwd() / "assets" / "carat.png", filename="carat.png")
                         await message.reply(file=file)
                     if message.reference is not None and message.reference.cached_message is not None:
-                        if message.content.lower().strip() in ("what", "what?", "huh", "huh?"):
+                        if message.content.lower().strip() in ("what", "what?", "huh", "huh?", "?"):
                             text = "{0.author.mention} said %r, you deaf sod.".format(
                                 message.reference.cached_message
                             )
