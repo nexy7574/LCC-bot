@@ -954,6 +954,30 @@ class OtherCog(commands.Cog):
                 )
         
         await ctx.send_modal(TextModal())
+    
+    @commands.slash_command()
+    @commands.cooldown(5, 10, commands.BucketType.user)
+    @commands.max_concurrency(1, commands.BucketType.user)
+    async def quote(self, ctx: discord.ApplicationContext):
+        """Generates a random quote"""
+        await ctx.defer()
+        try:
+            response = await self.http.get("https://inspirobot.me/api?generate=true")
+        except (ConnectionError, httpx.HTTPError, httpx.NetworkError) as e:
+            return await ctx.respond("Failed to get quote. " + str(e))
+        if response.status_code != 200:
+            return await ctx.respond(f"Failed to get quote. Status code: {response.status_code}")
+        url = response.text
+        try:
+            response = await self.http.get(url)
+        except (ConnectionError, httpx.HTTPError, httpx.NetworkError) as e:
+            return await ctx.respond(url)
+        else:
+            if response.status_code != 200:
+                return await ctx.respond(url)
+            x = io.BytesIO(response.content)
+            x.seek(0)
+            await ctx.respond(file=discord.File(x, filename="quote.jpg"))
 
 
 def setup(bot):
