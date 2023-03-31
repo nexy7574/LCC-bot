@@ -81,7 +81,7 @@ class Events(commands.Cog):
                                 if member.guild_permissions.manage_messages:
                                     mod_reactions += 1
                                 reactions += 1
-                    if reactions >= 2 or mod_reactions >= 1:
+                    if reactions >= 3 or mod_reactions >= 1:
                         await message.delete(delay=0.1)
 
     @commands.Cog.listener()
