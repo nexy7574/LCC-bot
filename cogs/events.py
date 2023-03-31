@@ -27,7 +27,9 @@ LTR = "\N{black rightwards arrow}\U0000fe0f"
 RTL = "\N{leftwards black arrow}\U0000fe0f"
 
 
-async def _dc(client: discord.VoiceProtocol):
+async def _dc(client: discord.VoiceClient | None):
+    if client is None:
+        return
     if client.is_playing():
         client.stop()
     try:
@@ -65,9 +67,22 @@ class Events(commands.Cog):
                 message: discord.Message = await channel.fetch_message(payload.message_id)
             except discord.HTTPException:
                 return
-            if message.author.id == self.bot.user.id:
-                if payload.emoji.name == "\N{wastebasket}\U0000fe0f":
-                    await message.delete(delay=0.5)
+            if payload.emoji.name == "\N{wastebasket}\U0000fe0f":
+                if message.author.id == self.bot.user.id:
+                    await message.delete(delay=0.25)
+                else:
+                    reactions = 0
+                    mod_reactions = 0
+                    for reaction in message.reactions:
+                        if reaction.emoji == payload.emoji:
+                            async for member in reaction.users():
+                                if member.id == self.bot.user.id:
+                                    continue
+                                if member.guild_permissions.manage_messages:
+                                    mod_reactions += 1
+                                reactions += 1
+                    if reactions >= 2 or mod_reactions >= 1:
+                        await message.delete(delay=0.1)
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
@@ -236,8 +251,9 @@ class Events(commands.Cog):
                     if "it just works" in message.content.lower():
                         file = Path.cwd() / "assets" / "it-just-works.ogg"
                         if message.author.voice is not None and message.author.voice.channel is not None:
-                            voice: discord.VoiceClient = None
+                            voice: discord.VoiceClient | None = None
                             if message.guild.voice_client is not None:
+                                # noinspection PyUnresolvedReferences
                                 if message.guild.voice_client.is_playing():
                                     return
                                 try:
@@ -253,6 +269,7 @@ class Events(commands.Cog):
                                     file=discord.File(file)
                                 )
                                 region = message.author.voice.channel.rtc_region
+                                # noinspection PyUnresolvedReferences
                                 console.log(
                                     "Timed out connecting to voice channel: {0.name} in {0.guild.name} "
                                     "(region {1})".format(
@@ -279,6 +296,7 @@ class Events(commands.Cog):
                                     if e is not None:
                                         console.log(f"Error playing audio: {e}")
 
+                                # noinspection PyTypeChecker
                                 src = discord.FFmpegPCMAudio(str(file.absolute()), stderr=subprocess.DEVNULL)
                                 src = discord.PCMVolumeTransformer(src, volume=0.5)
                                 voice.play(
