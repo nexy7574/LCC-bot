@@ -70,7 +70,7 @@ class Events(commands.Cog):
             if payload.emoji.name == "\N{wastebasket}\U0000fe0f":
                 if message.author.id == self.bot.user.id:
                     await message.delete(delay=0.25)
-                else:
+                elif message.channel.permissions_for(message.guild.me).manage_messages:
                     reactions = 0
                     mod_reactions = 0
                     for reaction in message.reactions:
