@@ -1,16 +1,26 @@
+import hashlib
 import io
+import json
+import os
 import random
 import re
 import asyncio
 import textwrap
 import subprocess
+import warnings
+from datetime import datetime, timezone, timedelta
+from bs4 import BeautifulSoup
 from pathlib import Path
 from typing import Optional, Tuple
 import discord
 import httpx
-from discord.ext import commands, pages
+from discord.ext import commands, pages, tasks
 from utils import Student, get_or_none, console
 from config import guilds
+try:
+    from config import dev
+except ImportError:
+    dev = False
 try:
     from config import OAUTH_REDIRECT_URI
 except ImportError:
@@ -21,6 +31,11 @@ try:
 except ImportError:
     GITHUB_USERNAME = None
     GITHUB_PASSWORD = None
+
+try:
+    from config import SPAM_CHANNEL
+except ImportError:
+    SPAM_CHANNEL = None
 
 
 LTR = "\N{black rightwards arrow}\U0000fe0f"
@@ -43,6 +58,10 @@ class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.http = httpx.AsyncClient()
+        self.fetch_discord_atom_feed.start()
+
+    def cog_unload(self):
+        self.fetch_discord_atom_feed.cancel()
 
     # noinspection DuplicatedCode
     async def analyse_text(self, text: str) -> Optional[Tuple[float, float, float, float]]:
@@ -433,6 +452,137 @@ class Events(commands.Cog):
                                 ),
                                 delete_after=30
                             )
+
+    @tasks.loop(minutes=10)
+    async def fetch_discord_atom_feed(self):
+        if not SPAM_CHANNEL:
+            return
+        if not self.bot.is_ready():
+            await self.bot.wait_until_ready()
+
+        channel = self.bot.get_channel(SPAM_CHANNEL)
+        if channel is None or not channel.can_send(discord.Embed()):
+            warnings.warn("Cannot send to spam channel, disabling feed fetcher")
+            return
+        headers = {
+            "User-Agent": f"python-httpx/{httpx.__version__} (Like Akregator/5.22.3); syndication"
+        }
+
+        file = Path.home() / ".cache" / "lcc-bot" / "discord.atom"
+        if not file.exists():
+            file.parent.mkdir(parents=True, exist_ok=True)
+            last_modified = discord.utils.utcnow()
+            if dev:
+                last_modified = last_modified.replace(day=1, month=last_modified.month - 1)
+        else:
+            # calculate the sha256 hash of the file, returning the first 32 characters
+            # this is used to check if the file has changed
+            _hash = hashlib.sha256()
+            with file.open("rb") as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    _hash.update(chunk)
+            _hash = _hash.hexdigest()[:32]
+            headers["If-None-Match"] = f'W/"{_hash}"'
+            last_modified = datetime.fromtimestamp(file.stat().st_mtime, tz=timezone.utc)
+
+        try:
+            response = await self.http.get("https://discordstatus.com/history.atom", headers=headers)
+        except httpx.HTTPError as e:
+            console.log("Failed to fetch discord atom feed:", e)
+            return
+
+        if response.status_code == 304:
+            return
+
+        if response.status_code != 200:
+            console.log("Failed to fetch discord atom feed:", response.status_code)
+            return
+
+        with file.open("wb") as f:
+            f.write(response.content)
+
+        incidents_file = Path.home() / ".cache" / "lcc-bot" / "history.json"
+        if not incidents_file.exists():
+            incidents_file.parent.mkdir(parents=True, exist_ok=True)
+            incidents = {}
+        else:
+            with incidents_file.open("r") as f:
+                incidents = json.load(f)
+
+        soup = BeautifulSoup(response.content, "lxml-xml")
+        for entry in soup.find_all("entry"):
+            published_tag = entry.find("published")
+            updated_tag = entry.find("updated") or published_tag
+            published = datetime.fromisoformat(published_tag.text)
+            updated = datetime.fromisoformat(updated_tag.text)
+            if updated > last_modified:
+                title = entry.title.text
+                content = ""
+                soup2 = BeautifulSoup(entry.content.text, "html.parser")
+                sep = os.urandom(16).hex()
+                for br in soup2.find_all("br"):
+                    br.replace_with(sep)
+                for _tag in soup2.find_all("p"):
+                    text = _tag.get_text()
+                    date, _content = text.split(sep, 1)
+                    _content = _content.replace(sep, "\n")
+                    date = re.sub(r"\s{2,}", " ", date)
+                    try:
+                        date = datetime.strptime(date, "%b %d, %H:%M PDT")
+                        offset = -7
+                    except ValueError:
+                        date = datetime.strptime(date, "%b %d, %H:%M PST")
+                        offset = -8
+                    date = date.replace(year=updated.year, tzinfo=timezone(timedelta(hours=offset)))
+                    content += f"[{discord.utils.format_dt(date)}]\n> "
+                    content += "\n> ".join(_content.splitlines())
+                    content += "\n\n"
+
+                _status = {
+                    "Resolved": discord.Color.green(),
+                    "Investigating": discord.Color.dark_orange(),
+                    "Identified": discord.Color.orange(),
+                    "Monitoring": discord.Color.blurple(),
+                }
+
+                colour = _status.get(content.splitlines()[1].split(" - ")[0], discord.Color.greyple())
+
+                if len(content) > 4096:
+                    content = f"[open on discordstatus.com (too large to display)]({entry.link['href']})"
+
+                embed = discord.Embed(
+                    title=title,
+                    description=content,
+                    color=colour,
+                    url=entry.link["href"],
+                    timestamp=updated
+                )
+                embed.set_author(
+                    name="Discord Status",
+                    url="https://discordstatus.com/",
+                    icon_url="https://raw.githubusercontent.com/EEKIM10/LCC-bot/"
+                             "fe0cb6dd932f9fc2cb0a26433aff8e4cce19279a/assets/discord.png"
+                )
+                embed.set_footer(
+                    text="Published: {} | Updated: {}".format(
+                        datetime.fromisoformat(entry.find("published").text).strftime("%Y-%m-%d %H:%M:%S"),
+                        updated.strftime("%Y-%m-%d %H:%M:%S")
+                    )
+                )
+
+                if entry.id.text not in incidents:
+                    msg = await channel.send(embed=embed)
+                    incidents[entry.id.text] = msg.id
+                else:
+                    try:
+                        msg = await channel.fetch_message(incidents[entry.id.text])
+                        await msg.edit(embed=embed)
+                    except discord.HTTPException:
+                        msg = await channel.send(embed=embed)
+                        incidents[entry.id.text] = msg.id
+
+        with incidents_file.open("w") as f:
+            json.dump(incidents, f, separators=(",", ":"))
 
 
 def setup(bot):

@@ -21,7 +21,7 @@ class Bot(commands.Bot):
         web: Optional[Dict[str, Union[Server, Config, Task]]]
 
     def __init__(self, intents: discord.Intents, guilds: list[int], extensions: list[str]):
-        from .db import JimmyBans, registry
+        from .db import registry
         from .console import console
         super().__init__(
             command_prefix=commands.when_mentioned_or("h!", "r!"),
@@ -32,8 +32,8 @@ class Bot(commands.Bot):
         self.loop.run_until_complete(registry.create_all())
         self.training_lock = Lock()
         self.started_at = datetime.now(tz=timezone.utc)
-        self.bans = JimmyBans()
         self.console = console
+        self.incidents = {}
         for ext in extensions:
             try:
                 self.load_extension(ext)
