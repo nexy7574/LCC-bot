@@ -64,6 +64,11 @@ UVICORN_CONFIG = {
 # * 2: Exit before making the websocket connection to discord
 CONNECT_MODE = 0
 
+# The channel ID of the channel to send the spam message to.
+# "Spam" is usually just automated, non-interactive messages.
+# If this is set to None, the bot will not send spam messages.
+SPAM_CHANNEL = None
+
 # Toggles dev mode based on the environment variable `DEV`. You can set this to anything here, as long as it
 # can evaluate to a boolean.
 dev = bool(int(os.getenv("DEV", "0")))
