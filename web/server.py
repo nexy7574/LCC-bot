@@ -1,4 +1,5 @@
 import ipaddress
+import sys
 
 import discord
 import os
@@ -8,6 +9,7 @@ from hashlib import sha512
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
+from http import HTTPStatus
 from utils import Student, get_or_none, VerifyCode, console, BannedStudentID
 from config import guilds
 
@@ -68,6 +70,7 @@ async def authenticate(req: Request, code: str = None, state: str = None):
     if not (code and state) or state not in app.state.states:
         value = os.urandom(4).hex()
         if value in app.state.states:
+            print("Generated a state that already exists. Cleaning up", file=sys.stderr)
             # remove any states older than 5 minutes
             for _value in list(app.state.states):
                 if (datetime.now() - app.state.states[_value]).total_seconds() > 300:
@@ -82,7 +85,7 @@ async def authenticate(req: Request, code: str = None, state: str = None):
                 redirect_uri=OAUTH_REDIRECT_URI,
                 scopes=('identify',)
             ) + f"&state={value}&prompt=none",
-            status_code=301,
+            status_code=HTTPStatus.TEMPORARY_REDIRECT,
             headers={
                 "Cache-Control": "no-store, no-cache"
             }
@@ -130,7 +133,7 @@ async def authenticate(req: Request, code: str = None, state: str = None):
         student = await get_or_none(Student, user_id=user["id"])
         if not student:
             raise HTTPException(
-                status_code=404,
+                status_code=HTTPStatus.NOT_FOUND,
                 detail="Student not found. Please run /verify first."
             )
         
@@ -148,7 +151,7 @@ async def authenticate(req: Request, code: str = None, state: str = None):
             data = response.json()
             if data["status"] != "success":
                 raise HTTPException(
-                    status_code=500,
+                    status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
                     detail=f"Failed to get IP data for {req.client.host}: {data}."
                 )
         else:
