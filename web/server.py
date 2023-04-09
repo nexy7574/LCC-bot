@@ -20,7 +20,7 @@ OAUTH_ENABLED = OAUTH_ID and OAUTH_SECRET and OAUTH_REDIRECT_URI
 
 app = FastAPI(root_path="/jimmy")
 app.state.bot = None
-app.state.states = set()
+app.state.states = {}
 app.state.http = httpx.Client()
 
 try:
@@ -64,9 +64,16 @@ async def authenticate(req: Request, code: str = None, state: str = None):
         )
 
     if not (code and state) or state not in app.state.states:
-        value = os.urandom(8).hex()
-        assert value not in app.state.states, "Generated a state that already exists."
-        app.state.states.add(value)
+        value = os.urandom(4).hex()
+        if value in app.state.states:
+            # remove any states older than 5 minutes
+            for _value in list(app.state.states):
+                if (datetime.now() - app.state.states[_value]).total_seconds() > 300:
+                    del app.state.states[_value]
+
+        if value in app.state.states:
+            assert value not in app.state.states, "Generated a state that already exists and could not free any slots."
+        app.state.states[value] = datetime.now()
         return RedirectResponse(
             discord.utils.oauth_url(
                 OAUTH_ID,
@@ -79,7 +86,7 @@ async def authenticate(req: Request, code: str = None, state: str = None):
             }
         )
     else:
-        app.state.states.discard(state)
+        app.state.states.pop(state)
         # First, we need to do the auth code flow
         response = app.state.http.post(
             "https://discord.com/api/oauth2/token",
