@@ -77,6 +77,7 @@ async def authenticate(req: Request, code: str = None, state: str = None):
                 if (datetime.now() - app.state.states[_value]).total_seconds() > 300:
                     del app.state.states[_value]
                     removed += 1
+            value = os.urandom(4).hex()
             print(f"Removed {removed} states.", file=sys.stderr)
 
         if value in app.state.states:
