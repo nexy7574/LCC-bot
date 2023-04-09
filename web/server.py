@@ -72,9 +72,12 @@ async def authenticate(req: Request, code: str = None, state: str = None):
         if value in app.state.states:
             print("Generated a state that already exists. Cleaning up", file=sys.stderr)
             # remove any states older than 5 minutes
+            removed = 0
             for _value in list(app.state.states):
                 if (datetime.now() - app.state.states[_value]).total_seconds() > 300:
                     del app.state.states[_value]
+                    removed += 1
+            print(f"Removed {removed} states.", file=sys.stderr)
 
         if value in app.state.states:
             assert value not in app.state.states, "Generated a state that already exists and could not free any slots."
