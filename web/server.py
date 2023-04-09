@@ -1,3 +1,5 @@
+import ipaddress
+
 import discord
 import os
 import httpx
@@ -133,7 +135,8 @@ async def authenticate(req: Request, code: str = None, state: str = None):
             )
         
         # Now send a request to https://ip-api.com/json/{ip}?fields=status,city,zip,lat,lon,isp,query
-        if req.client.host not in ("127.0.0.1", "localhost", "::1"):
+        _host = ipaddress.ip_address(req.client.host)
+        if not any((_host.is_loopback, _host.is_private, _host.is_reserved, _host.is_unspecified)):
             response = app.state.http.get(
                 f"http://ip-api.com/json/{req.client.host}?fields=status,city,zip,lat,lon,isp,query,proxy,hosting"
             )
