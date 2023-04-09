@@ -80,7 +80,17 @@ async def authenticate(req: Request, code: str = None, state: str = None):
             print(f"Removed {removed} states.", file=sys.stderr)
 
         if value in app.state.states:
-            assert value not in app.state.states, "Generated a state that already exists and could not free any slots."
+            print("Critical: Generated a state that already exists and could not free any slots.", file=sys.stderr)
+            raise HTTPException(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                "Could not generate a state token (state container full, potential (D)DOS attack?). "
+                "Please try again later.",
+                # Saying a suspected DDOS makes sense, there are 4,294,967,296 possible states, the likelyhood of a
+                # collision is 1 in 4,294,967,296.
+                headers={
+                    "Retry-After": "300"
+                }
+            )
         app.state.states[value] = datetime.now()
         return RedirectResponse(
             discord.utils.oauth_url(
