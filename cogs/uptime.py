@@ -118,7 +118,7 @@ class UptimeCompetition(commands.Cog):
 
     @staticmethod
     def assert_uptime_server_response(response: Response, expected_hash: str = None):
-        assert response.status_code == 200
+        assert response.status_code in range(200, 400), f"Status code {response.status_code} is not in range 200-400"
         if expected_hash:
             md5 = hashlib.md5()
             md5.update(response.content)
@@ -136,7 +136,7 @@ class UptimeCompetition(commands.Cog):
         err = RuntimeError("Unknown Error")
         while attempts < max_retries:
             try:
-                response = await self.http.get(url, timeout=timeout)
+                response = await self.http.get(url, timeout=timeout, follow_redirects=True)
                 response.raise_for_status()
             except (httpx.TimeoutException, httpx.HTTPStatusError, ConnectionError, TimeoutError) as err2:
                 attempts += 1
@@ -152,7 +152,7 @@ class UptimeCompetition(commands.Cog):
         # First we need to check that we are online.
         # If we aren't online, this isn't very fair.
         try:
-            await self.http.get("https://discord.com/")
+            await self.http.get("https://google.co.uk/")
         except (httpx.HTTPError, Exception):
             return  # Offline :pensive:
 
