@@ -336,7 +336,7 @@ class UptimeCompetition(commands.Cog):
             targets = [t["id"] for t in self.cached_targets]
 
         total_query_time = rows = 0
-        embeds = []
+        embeds = entries = []
         for _target in targets:
             _target = self.get_target(_target, _target)
             query = UptimeEntry.objects.filter(UptimeEntry.columns.timestamp >= look_back_timestamp).filter(
@@ -650,6 +650,14 @@ class UptimeCompetition(commands.Cog):
                 self.write_targets(targets)
                 return await ctx.respond("Monitor removed.")
         await ctx.respond("Monitor not found.")
+
+    @monitors.command(name="reload")
+    @commands.is_owner()
+    async def reload_monitors(self, ctx: discord.ApplicationContext):
+        """Reloads monitors data file from disk, overriding cache."""
+        await ctx.defer()
+        self.read_targets()
+        await ctx.respond("Monitors reloaded.")
 
 
 def setup(bot):
