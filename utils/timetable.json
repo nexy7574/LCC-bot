@@ -1,153 +1,266 @@
 {
-  "monday": [
-    {
-      "name": "Unit 1, 2 & 3 (PCE)",
-      "start": [9, 0],
-      "end": [10, 15],
-      "tutor": "Jay",
-      "room": "A145"
-    },
-    {
-      "name": "Unit 10 & 11",
-      "start": [10, 30],
-      "end": [11, 45],
-      "tutor": "Zach",
-      "room": "A145"
+    "monday": [
+        {
+            "name": "Unit 1, 2 & 3 (PCE)",
+            "start": [
+                9,
+                0
+            ],
+            "end": [
+                10,
+                15
+            ],
+            "tutor": "Jay",
+            "room": "A145"
+        },
+        {
+            "name": "Unit 10 & 11",
+            "start": [
+                10,
+                30
+            ],
+            "end": [
+                11,
+                45
+            ],
+            "tutor": "Zach",
+            "room": "A145"
+        }
+    ],
+    "tuesday": [
+        {
+            "name": "1:1",
+            "start": [
+                9,
+                0
+            ],
+            "end": [
+                10,
+                15
+            ],
+            "tutor": "Other",
+            "room": "A144"
+        },
+        {
+            "name": "Unit 5",
+            "start": [
+                10,
+                30
+            ],
+            "end": [
+                11,
+                45
+            ],
+            "tutor": "Zach",
+            "room": "A047"
+        },
+        {
+            "name": "Unit 7, 9 & 12",
+            "start": [
+                11,
+                45
+            ],
+            "end": [
+                13,
+                0
+            ],
+            "tutor": "Ian",
+            "room": "A145"
+        },
+        {
+            "name": "Unit 1, 2, 6 & 8",
+            "start": [
+                14,
+                0
+            ],
+            "end": [
+                15,
+                15
+            ],
+            "tutor": "Rebecca",
+            "room": "A047"
+        },
+        {
+            "name": "Unit 1, 2, & 3 (PCE)",
+            "start": [
+                15,
+                30
+            ],
+            "end": [
+                16,
+                45
+            ],
+            "tutor": "Jay",
+            "room": "A047"
+        }
+    ],
+    "wednesday": [],
+    "thursday": [
+        {
+            "name": "Employer Set Project",
+            "start": [
+                9,
+                0
+            ],
+            "end": [
+                10,
+                15
+            ],
+            "tutor": "Zach",
+            "room": "A145"
+        },
+        {
+            "name": "Unit 3 & 4",
+            "start": [
+                10,
+                30
+            ],
+            "end": [
+                11,
+                45
+            ],
+            "tutor": "Other",
+            "room": "A145"
+        },
+        {
+            "name": "Unit 1, 2, 6 & 8",
+            "start": [
+                11,
+                45
+            ],
+            "end": [
+                13,
+                0
+            ],
+            "tutor": "Rebecca",
+            "room": "A145"
+        },
+        {
+            "name": "Unit 3 & 4",
+            "start": [
+                14,
+                0
+            ],
+            "end": [
+                15,
+                15
+            ],
+            "tutor": "Other",
+            "room": "A145"
+        },
+        {
+            "name": "Employer Readiness",
+            "start": [
+                15,
+                30
+            ],
+            "end": [
+                16,
+                45
+            ],
+            "tutor": "Other",
+            "room": "A227"
+        }
+    ],
+    "friday": [
+        {
+            "name": "Unit 5",
+            "start": [
+                9,
+                0
+            ],
+            "end": [
+                10,
+                15
+            ],
+            "tutor": "Zach",
+            "room": "A145"
+        },
+        {
+            "name": "IBM Badges",
+            "start": [
+                10,
+                30
+            ],
+            "end": [
+                11,
+                45
+            ],
+            "tutor": "Other",
+            "room": "A049"
+        },
+        {
+            "name": "1, 2, 6 & 8",
+            "start": [
+                11,
+                45
+            ],
+            "end": [
+                13,
+                0
+            ],
+            "tutor": "Rebecca",
+            "room": "A145"
+        },
+        {
+            "name": "Group Tutorial",
+            "start": [
+                14,
+                0
+            ],
+            "end": [
+                15,
+                15
+            ],
+            "tutor": "Other",
+            "room": "Oracle"
+        },
+        {
+            "name": "Unit 1, 2 & 3 (PCE)",
+            "start": [
+                15,
+                30
+            ],
+            "end": [
+                16,
+                45
+            ],
+            "tutor": "Jay",
+            "room": "A047"
+        }
+    ],
+    "breaks": {
+        "autumn half term": {
+            "start": "24/10/2022",
+            "end": "30/10/2022"
+        },
+        "christmas": {
+            "start": "17/12/2022",
+            "end": "02/01/2023"
+        },
+        "spring half term": {
+            "start": "11/02/2023",
+            "end": "19/02/2023"
+        },
+        "easter holiday": {
+            "start": "01/04/2023",
+            "end": "17/04/2023"
+        },
+        "may bank holiday": {
+            "start": "01/05/2023",
+            "end": "02/05/2023"
+        },
+        "Coronation of King Charles III": {
+            "start": "08/05/2023",
+            "end": "09/05/2023"
+        },
+        "summer half term": {
+            "start": "27/05/2023",
+            "end": "04/06/2023"
+        },
+        "end of year": {
+            "start": "13/07/2023",
+            "end": "30/12/9998"
+        }
     }
-  ],
-  "tuesday": [
-    {
-      "name": "1:1",
-      "start": [9, 0],
-      "end": [10, 15],
-      "tutor": "Other",
-      "room": "A144"
-    },
-    {
-      "name": "Unit 5",
-      "start": [10, 30],
-      "end": [11, 45],
-      "tutor": "Zach",
-      "room": "A047"
-    },
-    {
-      "name": "Unit 7, 9 & 12",
-      "start": [11, 45],
-      "end": [13, 0],
-      "tutor": "Ian",
-      "room": "A145"
-    },
-    {
-      "name": "Unit 1, 2, 6 & 8",
-      "start": [14, 0],
-      "end": [15, 15],
-      "tutor": "Rebecca",
-      "room": "A047"
-    },
-    {
-      "name": "Unit 1, 2, & 3 (PCE)",
-      "start": [15, 30],
-      "end": [16, 45],
-      "tutor": "Jay",
-      "room": "A047"
-    }
-  ],
-  "wednesday": [],
-  "thursday": [
-    {
-      "name": "Employer Set Project",
-      "start": [9, 0],
-      "end": [10, 15],
-      "tutor": "Zach",
-      "room": "A145"
-    },
-    {
-      "name": "Unit 3 & 4",
-      "start": [10, 30],
-      "end": [11, 45],
-      "tutor": "Other",
-      "room": "A145"
-    },
-    {
-      "name": "Unit 1, 2, 6 & 8",
-      "start": [11, 45],
-      "end": [13, 0],
-      "tutor": "Rebecca",
-      "room": "A145"
-    },
-    {
-      "name": "Unit 3 & 4",
-      "start": [14, 0],
-      "end": [15, 15],
-      "tutor": "Other",
-      "room": "A145"
-    },
-    {
-      "name": "Employer Readiness",
-      "start": [15, 30],
-      "end": [16, 45],
-      "tutor": "Other",
-      "room": "A227"
-    }
-  ],
-  "friday": [
-    {
-      "name": "Unit 5",
-      "start": [9, 0],
-      "end": [10, 15],
-      "tutor": "Zach",
-      "room": "A145"
-    },
-    {
-      "name": "IBM Badges",
-      "start": [10, 30],
-      "end": [11, 45],
-      "tutor": "Other",
-      "room": "A049"
-    },
-    {
-      "name": "1, 2, 6 & 8",
-      "start": [11, 45],
-      "end": [13, 0],
-      "tutor": "Rebecca",
-      "room": "A145"
-    },
-    {
-      "name": "Group Tutorial",
-      "start": [14, 0],
-      "end": [15, 15],
-      "tutor": "Other",
-      "room": "Oracle"
-    }
-  ],
-  "breaks": {
-    "autumn half term": {
-      "start": "24/10/2022",
-      "end": "30/10/2022"
-    },
-    "christmas": {
-      "start": "17/12/2022",
-      "end": "02/01/2023"
-    },
-    "spring half term": {
-      "start": "11/02/2023",
-      "end": "19/02/2023"
-    },
-    "easter holiday": {
-      "start": "01/04/2023",
-      "end": "16/04/2023"
-    },
-    "may bank holiday": {
-      "start": "2/04/2023",
-      "end": "01/05/2023"
-    },
-    "summer half term": {
-      "start": "27/05/2023",
-      "end": "04/06/2023"
-    },
-    "end of year": {
-      "start": "13/07/2023",
-      "end": "30/12/9998"
-    }
-  }
 }
