@@ -38,7 +38,7 @@
                 10,
                 15
             ],
-            "tutor": "Other",
+            "tutor": "Zach",
             "room": "A144"
         },
         {
@@ -79,19 +79,6 @@
             ],
             "tutor": "Rebecca",
             "room": "A047"
-        },
-        {
-            "name": "Unit 1, 2, & 3 (PCE)",
-            "start": [
-                15,
-                30
-            ],
-            "end": [
-                16,
-                45
-            ],
-            "tutor": "Jay",
-            "room": "A047"
         }
     ],
     "wednesday": [],
@@ -119,7 +106,7 @@
                 11,
                 45
             ],
-            "tutor": "Other",
+            "tutor": "Richard",
             "room": "A145"
         },
         {
@@ -145,7 +132,7 @@
                 15,
                 15
             ],
-            "tutor": "Other",
+            "tutor": "Richard",
             "room": "A145"
         },
         {
@@ -212,7 +199,7 @@
                 15,
                 15
             ],
-            "tutor": "Other",
+            "tutor": "Steven",
             "room": "Oracle"
         },
         {
