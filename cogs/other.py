@@ -632,6 +632,7 @@ class OtherCog(commands.Cog):
 
         async def dns_check() -> Optional[bool | str]:
             try:
+                # noinspection PyTypeChecker
                 for response in await asyncio.to_thread(dns.resolver.resolve, url.hostname, "A"):
                     if response.address == "0.0.0.0":
                         return "DNS blacklist"

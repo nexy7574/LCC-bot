@@ -4,17 +4,26 @@ StartLimitBurst=10
 # If we're still failing after 10 attempts, something is wrong.
 Wants=network-online.target
 After=network.target network-online.target
+# Wait until a network connection is established
 
 [Service]
 Type=simple
 RemainAfterExit=no
 ExecStart=/home/nex/jimmy/venv/bin/python3 /home/nex/jimmy/main.py
+# Change the path to where your binaries are
+
 Restart=always
 RestartSec=5
-# Wait 5 seconds before restarts
+# Wait 5 seconds before restarts.
+
 User=nex
+# Change `nex` to whatever user to run as (NOT root, for the love of god don't run my software as root unless
+# the program specifically asks for it)
+
 MemoryMax=1024M
 CPUQuota=50%
+# Realistically, the bot will never need more than a gigabyte of RAM and half a CPU core.
+# However, some features (namely /screenshot) can use an uncontrollable amount of resources (e.g. a browser).
 
 # Security so that people like @Mcharlsto can't delete my system "by accident"
 PrivateTmp=true
