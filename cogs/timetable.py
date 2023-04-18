@@ -112,7 +112,7 @@ class TimeTableCog(commands.Cog):
         lesson = self.next_lesson(date)
         # If there's another lesson, great, return that
         # Otherwise, we need to start looking ahead.
-        if lesson is None:
+        if lesson is None or lesson["start_datetime"] < datetime.now():
             # Loop until we find the next day when it isn't the weekend, and we aren't on break.
             next_available_date = date.replace(hour=0, minute=0, second=0)
             while self.are_on_break(next_available_date) or not self.timetable.get(
