@@ -94,6 +94,45 @@ class Mod(commands.Cog):
         await entry.delete()
         await ctx.respond(f"\N{white heavy check mark} Unblocked {user.mention}.")
 
+    @commands.command()
+    async def undelete(self, ctx: commands.Context, user: discord.User, *, query: str = None):
+        """Searches through the message cache to see if there's any deleted messages."""
+        for message in self.bot.cached_messages:
+            message: discord.Message
+            if message.author == user:
+                query_ = query.lower() if query else None
+                content_ = str(message.clean_content).lower()
+                if query_ is not None and query_ in content_ or content_ in query_:
+                    break
+        else:
+            return await ctx.reply("\N{cross mark} No matches in cache.")
+
+        embeds = [
+            discord.Embed(title="Message found!"),
+            discord.Embed(
+                description=message.content,
+                colour=message.author.colour,
+                timestamp=message.created_at,
+                fields=[
+                    discord.EmbedField(
+                        "Attachment count",
+                        str(len(message.attachments)),
+                        False
+                    ),
+                    discord.EmbedField(
+                        "Location",
+                        str(message.channel.mention)
+                    ),
+                    discord.EmbedField(
+                        "Times",
+                        f"Created: {discord.utils.format_dt(message.created_at, 'R')} | Edited: "
+                        f"{'None' if message.edited_at is None else discord.utils.format_dt(message.edited_at, 'R')}"
+                    )
+                ]
+            ).set_author(name=message.author.display_name, icon_url=message.author.display_avatar.url)
+        ]
+        await ctx.reply(embeds=embeds)
+
 
 def setup(bot):
     bot.add_cog(Mod(bot))
