@@ -3,11 +3,41 @@ from datetime import datetime
 import discord
 from discord.ext import commands
 from utils import Student, get_or_none, BannedStudentID, owner_or_admin, JimmyBans
+from typing import Sized
+
+
+class LimitedList(list):
+    """FIFO Limited list"""
+    def __init__(self, iterable: Sized = None, size: int = 5000):
+        if iterable:
+            assert len(iterable) <= size, "Initial iterable too big."
+        super().__init__(iterable or [])
+        self._max_size = size
+
+    def append(self, __object) -> None:
+        if len(self) + 1 >= self._max_size:
+            self.pop(0)
+        super().append(__object)
+
+    def __add__(self, other):
+        if len(other) > self._max_size:
+            raise ValueError("Other is too large")
+        elif len(other) == self._max_size:
+            self.clear()
+            super().__add__(other)
+        else:
+            for item in other:
+                self.append(item)
 
 
 class Mod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.cache = LimitedList()
+
+    @commands.Cog.listener()
+    async def on_message_delete(self, message: discord.Message):
+        self.cache.append(message)
 
     @commands.user_command(name="Ban Account's B Number")
     @discord.default_permissions(ban_members=True)
@@ -97,7 +127,7 @@ class Mod(commands.Cog):
     @commands.command()
     async def undelete(self, ctx: commands.Context, user: discord.User, *, query: str = None):
         """Searches through the message cache to see if there's any deleted messages."""
-        for message in self.bot.cached_messages:
+        for message in self.cache:
             message: discord.Message
             if message.author == user:
                 query_ = query.lower() if query else None
