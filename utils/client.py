@@ -28,7 +28,7 @@ class Bot(commands.Bot):
             debug_guilds=guilds,
             allowed_mentions=discord.AllowedMentions.none(),
             intents=intents,
-            max_messages=100
+            max_messages=5000
         )
         self.loop.run_until_complete(registry.create_all())
         self.training_lock = Lock()
