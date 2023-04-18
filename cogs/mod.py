@@ -101,8 +101,8 @@ class Mod(commands.Cog):
             message: discord.Message
             if message.author == user:
                 query_ = query.lower() if query else None
-                content_ = str(message.clean_content).lower()
-                if query_ is not None and query_ in content_ or content_ in query_:
+                content_ = str(message.clean_content or '').lower()
+                if query_ is not None and (query_ in content_ or content_ in query_):
                     break
         else:
             return await ctx.reply("\N{cross mark} No matches in cache.")
