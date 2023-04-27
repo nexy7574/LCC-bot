@@ -818,7 +818,8 @@ class OtherCog(commands.Cog):
                             "\t- Encoding: {0[vcodec]} + {0[acodec]}\n"
                             "\t- Extension: {0[ext]}\n"
                             "\t- Protocol: {0[protocol]}\n"
-                            "\t- Resolution: {0[resolution]}\n".format(fmt)
+                            "\t- Resolution: {0[resolution]}\n"
+                            "\t- Size: {1}MB".format(fmt, fmt["filesize"] / 1024 ** 2)
                         )
                     await ctx.edit(content="Invalid format. Available formats:")
                     for page in paginator.pages:
