@@ -813,7 +813,7 @@ class OtherCog(commands.Cog):
                     formats = data["formats"]
                     paginator = commands.Paginator()
                     for fmt in formats:
-                        fs = round(fmt.get("filesize", fmt.get("fragments", [1])) / 1024 ** 2, 1)
+                        fs = round(fmt.get("filesize", len(fmt.get("fragments", [1]))) / 1024 ** 2, 1)
                         paginator.add_line(
                             "* {0[format_id]}:\n"
                             "\t- Encoding: {0[vcodec]} + {0[acodec]}\n"
