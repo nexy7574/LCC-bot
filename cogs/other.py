@@ -1,5 +1,6 @@
 import asyncio
 import io
+import json
 import os
 import random
 import re
@@ -799,6 +800,30 @@ class OtherCog(commands.Cog):
                     stdout_log_file,
                     stderr_log_file
                 ]
+                if b"format is not available" in stderr:
+                    process = await asyncio.create_subprocess_exec(
+                        "yt-dlp",
+                        "-J",
+                        url,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
+                    )
+                    stdout, stderr = await process.communicate()
+                    data = json.loads(stdout.decode())
+                    formats = data["formats"]
+                    paginator = commands.Paginator()
+                    for fmt in formats:
+                        paginator.add_line(
+                            "* {0[format_id]}:\n"
+                            "\t- Encoding: {0[vcodec]} + {0[acodec]}\n"
+                            "\t- Extension: {0[ext]}\n"
+                            "\t- Protocol: {0[protocol]}\n"
+                            "\t- Resolution: {0[resolution]}\n"
+                        )
+                    await ctx.edit(content="Invalid format. Available formats:")
+                    for page in paginator.pages:
+                        await ctx.send(page)
+                    return await ctx.send(files=files)
                 return await ctx.edit(content=f"Download failed:\n```\n{stderr.decode()}\n```", files=files)
 
             await ctx.edit(content="Uploading video...")
