@@ -756,7 +756,7 @@ class OtherCog(commands.Cog):
         with tempfile.TemporaryDirectory(prefix="jimmy-ytdl-") as tempdir:
             video_format = video_format.lower()
             OUTPUT_FILE = str(Path(tempdir) / f"{ctx.user.id}.%(ext)s")
-            MAX_SIZE = ctx.guild.filesize_limit / 1024 ** 2
+            MAX_SIZE = ctx.guild.filesize_limit / 1024 / 1024
             options = [
                 "--no-colors",
                 "--no-playlist",
@@ -813,7 +813,7 @@ class OtherCog(commands.Cog):
                     formats = data["formats"]
                     paginator = commands.Paginator()
                     for fmt in formats:
-                        fs = round(fmt.get("filesize", len(fmt.get("fragments", [1]))) / 1024 ** 2, 1)
+                        fs = round((fmt.get("filesize") or len(fmt.get("fragments", [b'\0'])) * 10) / 1024 / 1024, 1)
                         paginator.add_line(
                             "* {0[format_id]}:\n"
                             "\t- Encoding: {0[vcodec]} + {0[acodec]}\n"
@@ -835,7 +835,7 @@ class OtherCog(commands.Cog):
             ] if upload_log else []
             for file_name in Path(tempdir).glob(f"{ctx.user.id}.*"):
                 stat = file_name.stat()
-                size_mb = stat.st_size / 1024 ** 2
+                size_mb = stat.st_size / 1024 / 1024
                 if size_mb > MAX_SIZE - 0.5:
                     _x = io.BytesIO(
                         f"File {file_name.name} was too large ({size_mb:,.1f}MB vs {MAX_SIZE:.1f}MB)".encode()
@@ -960,8 +960,8 @@ class OtherCog(commands.Cog):
                     raise e
                 if size >= ctx.guild.filesize_limit - 1500:
                     await _msg.edit(
-                        content=f"MP3 is too large ({size / 1024 ** 2}Mb vs "
-                                f"{ctx.guild.filesize_limit / 1024 ** 2}Mb)"
+                        content=f"MP3 is too large ({size / 1024 / 1024}Mb vs "
+                                f"{ctx.guild.filesize_limit / 1024 / 1024}Mb)"
                     )
                     return
                 fn = ""
