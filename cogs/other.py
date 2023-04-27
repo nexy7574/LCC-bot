@@ -748,7 +748,6 @@ class OtherCog(commands.Cog):
             self,
             ctx: discord.ApplicationContext,
             url: str,
-            proxy: str = None,
             video_format: str = "",
             upload_log: bool = True
     ):
@@ -756,7 +755,7 @@ class OtherCog(commands.Cog):
         with tempfile.TemporaryDirectory(prefix="jimmy-ytdl-") as tempdir:
             video_format = video_format.lower()
             OUTPUT_FILE = str(Path(tempdir) / f"{ctx.user.id}.%(ext)s")
-            MAX_SIZE = ctx.guild.filesize_limit / 1024 / 1024
+            MAX_SIZE = round(ctx.guild.filesize_limit / 1024 / 1024)
             options = [
                 "--no-colors",
                 "--no-playlist",
@@ -764,11 +763,12 @@ class OtherCog(commands.Cog):
                 # "--max-filesize", str(MAX_SIZE) + "M",
                 "--no-warnings",
                 "--output", OUTPUT_FILE,
+                "--newline"
             ]
-            if proxy:
-                options.extend(["--proxy", proxy])
             if video_format:
-                options.extend(["--format", video_format])
+                options.extend(["--format", f"({video_format})[filesize<={MAX_SIZE}M]"])
+            else:
+                options.extend(["--format", f"(bv*+ba/b/ba)[filesize<={MAX_SIZE}M]"])
 
             await ctx.defer()
             await ctx.edit(content="Downloading video...")
