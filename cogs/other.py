@@ -813,13 +813,14 @@ class OtherCog(commands.Cog):
                     formats = data["formats"]
                     paginator = commands.Paginator()
                     for fmt in formats:
+                        fs = round(fmt.get("filesize", fmt.get("fragments", [1])) / 1024 ** 2, 1)
                         paginator.add_line(
                             "* {0[format_id]}:\n"
                             "\t- Encoding: {0[vcodec]} + {0[acodec]}\n"
                             "\t- Extension: {0[ext]}\n"
                             "\t- Protocol: {0[protocol]}\n"
                             "\t- Resolution: {0[resolution]}\n"
-                            "\t- Size: {1}MB".format(fmt, round(fmt["filesize"] / 1024 ** 2, 1))
+                            "\t- Size: {1!s}MB".format(fmt, fs)
                         )
                     await ctx.edit(content="Invalid format. Available formats:")
                     for page in paginator.pages:
