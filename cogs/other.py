@@ -6,6 +6,7 @@ import random
 import re
 import tempfile
 import textwrap
+import gzip
 from datetime import timedelta
 from io import BytesIO
 
@@ -23,7 +24,7 @@ from urllib.parse import urlparse
 import aiohttp
 import discord
 import psutil
-from discord.ext import commands
+from discord.ext import commands, pages
 from rich.tree import Tree
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
@@ -35,10 +36,38 @@ from selenium.webdriver.firefox.service import Service as FirefoxService
 
 from utils import console
 
+try:
+    from config import proxy
+except ImportError:
+    proxy = None
+try:
+    from config import proxies
+except ImportError:
+    if proxy:
+        proxies = [proxy] * 2
+    else:
+        proxies = []
+
 _engine = pyttsx3.init()
 # noinspection PyTypeChecker
 VOICES = [x.id for x in _engine.getProperty("voices")]
 del _engine
+
+
+def format_autocomplete(ctx: discord.AutocompleteContext):
+    url = ctx.options.get("url", os.urandom(6).hex())
+    self: "OtherCog" = ctx.bot.cogs["OtherCog"]  # type: ignore
+    if url in self._fmt_cache:
+        return [x for x in self._fmt_cache[url].keys() if ctx.value.lower() in x.lower()]
+
+    try:
+        parsed = urlparse(url, allow_fragments=True)
+    except ValueError:
+        pass
+    else:
+        if parsed.scheme in ("http", "https") and parsed.netloc:
+            self._fmt_queue.put_nowait(url)
+    return ["no formats cached (yet)."]
 
 
 # noinspection DuplicatedCode
@@ -47,6 +76,58 @@ class OtherCog(commands.Cog):
         self.bot = bot
         self.lock = asyncio.Lock()
         self.http = httpx.AsyncClient()
+        self._fmt_cache = {}
+        self._fmt_queue = asyncio.Queue()
+        self._worker_task = self.bot.loop.create_task(self.cache_population_job())
+
+    def cog_unload(self):
+        self._worker_task.cancel()
+
+    async def cache_population_job(self):
+        while True:
+            url = await self._fmt_queue.get()
+            if url not in self._fmt_cache:
+                await self.list_formats(url, use_proxy=1)
+            self._fmt_queue.task_done()
+
+    async def list_formats(self, url: str, *, use_proxy: int = 0) -> dict:
+        if url in self._fmt_cache:
+            return self._fmt_cache[url]
+
+        args = [
+            "yt-dlp",
+            "-J",
+            url
+        ]
+        if use_proxy == 1 and proxy:
+            args.append("--proxy")
+            args.append(proxy)
+            console.log("list_formats using proxy: %r" % args[-1])
+        elif use_proxy == 2 and proxies:
+            args.append("--proxy")
+            args.append(random.choice(proxies))
+            console.log("list_formats using random proxy: %r" % args[-1])
+        process = await asyncio.create_subprocess_exec(
+            *args,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await process.communicate()
+        data = json.loads(stdout.decode())
+        formats = data["formats"]
+        new = {}
+        for fmt in formats:
+            new[fmt["format_id"]] = {
+                "id": fmt["format_id"],
+                "ext": fmt["ext"],
+                "protocol": fmt["protocol"],
+                "acodec": fmt["acodec"],
+                "vcodec": fmt["vcodec"],
+                "resolution": fmt["resolution"],
+                "filesize": fmt.get("filesize", float('inf')),
+            }
+        self._fmt_cache[url] = new
+        return new
 
     class AbortScreenshotTask(discord.ui.View):
         def __init__(self, task: asyncio.Task):
@@ -748,37 +829,116 @@ class OtherCog(commands.Cog):
             self,
             ctx: discord.ApplicationContext,
             url: str,
-            video_format: str = "",
-            upload_log: bool = True
+            video_format: discord.Option(
+                description="The format to download the video in.",
+                autocomplete=format_autocomplete,
+                default=""
+            ) = "",
+            upload_log: bool = True,
+            list_formats: bool = False,
+            proxy_mode: discord.Option(
+                str,
+                choices=[
+                    "No Proxy",
+                    "Dedicated Proxy",
+                    "Random Public Proxy"
+                ],
+                description="Only use if a download was blocked or 403'd.",
+                default="No Proxy",
+            ) = "No Proxy",
     ):
         """Downloads a video from <URL> using youtube-dl"""
+        use_proxy = ["No Proxy", "Dedicated Proxy", "Random Public Proxy"].index(proxy_mode)
+        embed = discord.Embed(
+            description="Loading..."
+        )
+        embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1101463077586735174.gif?v=1")
         await ctx.defer()
+
+        await ctx.respond(embed=embed)
+        if list_formats:
+            # Nothing actually downloads here
+            try:
+                formats = await self.list_formats(url, use_proxy=use_proxy)
+            except FileNotFoundError:
+                _embed = embed.copy()
+                _embed.description = "yt-dlp not found."
+                _embed.colour = discord.Colour.red()
+                _embed.set_thumbnail(url=discord.Embed.Empty)
+                return await ctx.edit(embed=_embed)
+            except json.JSONDecodeError:
+                _embed = embed.copy()
+                _embed.description = "Unable to find formats. You're on your own. Wing it."
+                _embed.colour = discord.Colour.red()
+                _embed.set_thumbnail(url=discord.Embed.Empty)
+                return await ctx.edit(embed=_embed)
+            else:
+                embeds = []
+                for fmt in formats.keys():
+                    fs = formats[fmt]["filesize"] or 0.1
+                    if fs == float("inf"):
+                        fs = 0
+                        units = ["B"]
+                    else:
+                        units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
+                        while fs > 1024:
+                            fs /= 1024
+                            units.pop(0)
+                    embeds.append(
+                        discord.Embed(
+                            title=fmt,
+                            description="- Encoding: {0[vcodec]} + {0[acodec]}\n"
+                                        "- Extension: `.{0[ext]}`\n"
+                                        "- Resolution: {0[resolution]}\n"
+                                        "- Filesize: {1}\n"
+                                        "- Protocol: {0[protocol]}\n".format(formats[fmt], f"{round(fs, 2)}{units[0]}"),
+                            colour=discord.Colour.blurple()
+                        ).add_field(
+                            name="Download:",
+                            value="{} url:{} video_format:{}".format(
+                                self.bot.get_application_command("yt-dl").mention,
+                                url,
+                                fmt
+                            )
+                        )
+                    )
+                _paginator = pages.Paginator(embeds, loop_pages=True)
+                await ctx.delete(delay=0.1)
+                return await _paginator.respond(ctx.interaction)
+
         with tempfile.TemporaryDirectory(prefix="jimmy-ytdl-") as tempdir:
             video_format = video_format.lower()
-            OUTPUT_FILE = str(Path(tempdir) / f"{ctx.user.id}.%(ext)s")
             MAX_SIZE = round(ctx.guild.filesize_limit / 1024 / 1024)
+            if MAX_SIZE == 8:
+                MAX_SIZE = 25
             options = [
                 "--no-colors",
                 "--no-playlist",
                 "--no-check-certificates",
-                # "--max-filesize", str(MAX_SIZE) + "M",
                 "--no-warnings",
-                "--output", OUTPUT_FILE,
-                "--newline"
+                "--newline",
+                "--output",
+                f"{ctx.user.id}.%(title)s.%(ext)s",
             ]
             if video_format:
                 options.extend(["--format", f"({video_format})[filesize<={MAX_SIZE}M]"])
             else:
                 options.extend(["--format", f"(bv*+ba/b/ba)[filesize<={MAX_SIZE}M]"])
 
+            if use_proxy == 1 and proxy:
+                options.append("--proxy")
+                options.append(proxy)
+                console.log("yt-dlp using proxy: %r", proxy)
+            elif use_proxy == 2 and proxies:
+                options.append("--proxy")
+                options.append(random.choice(proxies))
+                console.log("yt-dlp using random proxy: %r", options[-1])
+
+            _embed = embed.copy()
+            _embed.description = "Downloading..."
+            _embed.colour = discord.Colour.blurple()
             await ctx.edit(
-                embed=discord.Embed(
-                    description="\u200b"
-                ).set_author(
-                    name="Downloading...",
-                    icon_url="https://cdn.discordapp.com/emojis/1101463077586735174.gif?v=1",
-                    url=url
-                )
+                embed=_embed,
             )
             try:
                 venv = Path.cwd() / "venv" / ("Scripts" if os.name == "nt" else "bin")
@@ -815,51 +975,56 @@ class OtherCog(commands.Cog):
                     stderr_log_file
                 ]
                 if b"format is not available" in stderr:
-                    process = await asyncio.create_subprocess_exec(
-                        "yt-dlp",
-                        "-J",
-                        url,
-                        stdout=asyncio.subprocess.PIPE,
-                        stderr=asyncio.subprocess.PIPE,
-                    )
-                    stdout, stderr = await process.communicate()
-                    data = json.loads(stdout.decode())
-                    formats = data["formats"]
-                    paginator = commands.Paginator()
-                    for fmt in formats:
-                        fs = round((fmt.get("filesize") or len(fmt.get("fragments", [b'\0'])) * 10) / 1024 / 1024, 1)
-                        paginator.add_line(
-                            "* {0[format_id]}:\n"
-                            "\t- Encoding: {0[vcodec]} + {0[acodec]}\n"
-                            "\t- Extension: {0[ext]}\n"
-                            "\t- Protocol: {0[protocol]}\n"
-                            "\t- Resolution: {0[resolution]}\n"
-                            "\t- Size: {1!s}MB".format(fmt, fs)
-                        )
-                    await ctx.edit(content="Invalid format. Available formats:", embed=None)
-                    for page in paginator.pages:
-                        await ctx.send(page)
-                    return await ctx.send(files=files)
+                    formats = await self.list_formats(url)
                 return await ctx.edit(content=f"Download failed:\n```\n{stderr.decode()}\n```", files=files)
 
-            await ctx.edit(content="Uploading video...")
+            _embed = embed.copy()
+            _embed.description = "Download complete."
+            _embed.colour = discord.Colour.green()
+            _embed.set_thumbnail(url=discord.Embed.Empty)
+            await ctx.edit(embed=_embed)
             files = [
                 stdout_log_file,
                 stderr_log_file
             ] if upload_log else []
+            cum_size = 0
+            for file in files:
+                n_b = len(file.fp.read())
+                file.fp.seek(0)
+                if n_b == 0:
+                    files.remove(file)
+                    continue
+                elif n_b >= 1024 * 1024 * 256:
+                    data = file.fp.read()
+                    compressed = await self.bot.loop.run_in_executor(
+                        gzip.compress, data, 9
+                    )
+                    file.fp.close()
+                    file.fp = io.BytesIO(compressed)
+                    file.fp.seek(0)
+                    file.filename += ".gz"
+                    cum_size += len(compressed)
+                else:
+                    cum_size += n_b
+
             for file_name in Path(tempdir).glob(f"{ctx.user.id}.*"):
                 stat = file_name.stat()
                 size_mb = stat.st_size / 1024 / 1024
-                if size_mb > MAX_SIZE - 0.5:
+                if (size_mb * 1024 * 1024 + cum_size) >= (MAX_SIZE - 0.256) * 1024 * 1024:
+                    warning = f"File {file_name.name} was too large ({size_mb:,.1f}MB vs {MAX_SIZE:.1f}MB)".encode()
                     _x = io.BytesIO(
-                        f"File {file_name.name} was too large ({size_mb:,.1f}MB vs {MAX_SIZE:.1f}MB)".encode()
+                        warning
                     )
+                    _x.seek(0)
+                    cum_size += len(warning)
                     files.append(discord.File(_x, filename=file_name.name + ".txt"))
                 try:
                     video = discord.File(file_name, filename=file_name.name)
                     files.append(video)
                 except FileNotFoundError:
                     continue
+                else:
+                    cum_size += size_mb * 1024 * 1024
 
             if not files:
                 return await ctx.edit(embed=discord.Embed(description="No files found.", color=discord.Colour.red()))
@@ -1009,6 +1174,7 @@ class OtherCog(commands.Cog):
     async def quote(self, ctx: discord.ApplicationContext):
         """Generates a random quote"""
         emoji = discord.PartialEmoji(name='loading', animated=True, id=1101463077586735174)
+
         async def get_quote() -> str | discord.File:
             try:
                 response = await self.http.get("https://inspirobot.me/api?generate=true")
