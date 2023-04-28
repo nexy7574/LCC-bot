@@ -1029,6 +1029,12 @@ class OtherCog(commands.Cog):
                 return discord.File(x, filename="quote.jpg")
 
         class GenerateNewView(discord.ui.View):
+            def __init__(self):
+                super().__init__(
+                    timeout=300,
+                    disable_on_timeout=True
+                )
+
             async def __aenter__(self):
                 self.disable_all_items()
                 if self.message:
