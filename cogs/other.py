@@ -1078,6 +1078,16 @@ class OtherCog(commands.Cog):
                     else:
                         return await interaction.edit_original_response(content=new_result)
 
+            @discord.ui.button(
+                label="Delete",
+                style=discord.ButtonStyle.red,
+                emoji="\N{wastebasket}\U0000fe0f"
+            )
+            async def delete(self, _, interaction: discord.Interaction):
+                await interaction.response.defer()
+                await interaction.delete_original_response()
+                self.stop()
+
         await ctx.defer()
         result = await get_quote()
         if isinstance(result, discord.File):
