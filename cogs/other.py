@@ -1061,7 +1061,7 @@ class OtherCog(commands.Cog):
                     followup = await interaction.followup.send(f"{emoji} Generating quote")
                     new_result = await get_quote()
                     if isinstance(new_result, discord.File):
-                        return await followup.edit(file=new_result, view=GenerateNewView())
+                        return await followup.edit(content=None, file=new_result, view=GenerateNewView())
                     else:
                         return await followup.edit(content=new_result, view=GenerateNewView())
 
