@@ -1040,6 +1040,9 @@ class OtherCog(commands.Cog):
                     await self.message.edit(view=self)
                 return self
 
+            async def interaction_check(self, interaction: discord.Interaction) -> bool:
+                return interaction.user == ctx.user and interaction.channel == ctx.channel
+
             @discord.ui.button(
                 label="New Quote",
                 style=discord.ButtonStyle.green,
@@ -1062,6 +1065,13 @@ class OtherCog(commands.Cog):
             async def regenerate(self, _, interaction: discord.Interaction):
                 await interaction.response.defer()
                 async with self:
+                    message = await interaction.original_response()
+                    if "\U00002b50" in [x.emoji for x in message.reactions]:
+                        return await interaction.followup.send(
+                            "\N{cross mark} Message is starred and cannot be regenerated. You can press "
+                            "'New Quote' to generate a new quote instead.",
+                            ephemeral=True
+                        )
                     new_result = await get_quote()
                     if isinstance(new_result, discord.File):
                         return await interaction.edit_original_response(file=new_result)
