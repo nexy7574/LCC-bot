@@ -918,8 +918,8 @@ class OtherCog(commands.Cog):
                 "--no-check-certificates",
                 "--no-warnings",
                 "--newline",
-                "--output",
                 "--restrict-filenames",
+                "--output",
                 f"{ctx.user.id}.%(title)s.%(ext)s",
             ]
             if video_format:
