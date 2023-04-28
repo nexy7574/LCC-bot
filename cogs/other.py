@@ -1008,24 +1008,72 @@ class OtherCog(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.user)
     async def quote(self, ctx: discord.ApplicationContext):
         """Generates a random quote"""
-        await ctx.defer()
-        try:
-            response = await self.http.get("https://inspirobot.me/api?generate=true")
-        except (ConnectionError, httpx.HTTPError, httpx.NetworkError) as e:
-            return await ctx.respond("Failed to get quote. " + str(e))
-        if response.status_code != 200:
-            return await ctx.respond(f"Failed to get quote. Status code: {response.status_code}")
-        url = response.text
-        try:
-            response = await self.http.get(url)
-        except (ConnectionError, httpx.HTTPError, httpx.NetworkError) as e:
-            return await ctx.respond(url)
-        else:
+        async def get_quote() -> str | discord.File:
+            try:
+                response = await self.http.get("https://inspirobot.me/api?generate=true")
+            except (ConnectionError, httpx.HTTPError, httpx.NetworkError) as e:
+                return "Failed to get quote. " + str(e)
             if response.status_code != 200:
-                return await ctx.respond(url)
-            x = io.BytesIO(response.content)
-            x.seek(0)
-            await ctx.respond(file=discord.File(x, filename="quote.jpg"))
+                return f"Failed to get quote. Status code: {response.status_code}"
+            url = response.text
+            try:
+                response = await self.http.get(url)
+            except (ConnectionError, httpx.HTTPError, httpx.NetworkError) as e:
+                return url
+            else:
+                if response.status_code != 200:
+                    return url
+                x = io.BytesIO(response.content)
+                x.seek(0)
+                return discord.File(x, filename="quote.jpg")
+
+        class GenerateNewView(discord.ui.View):
+            async def __aenter__(self):
+                self.disable_all_items()
+                if self.message:
+                    await self.message.edit(view=self)
+                return self
+
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                self.enable_all_items()
+                if self.message:
+                    await self.message.edit(view=self)
+                return self
+
+            @discord.ui.button(
+                label="New Quote",
+                style=discord.ButtonStyle.green,
+                emoji=discord.PartialEmoji.from_str("\U000023ed\U0000fe0f")
+            )
+            async def new_quote(self, _, interaction: discord.Interaction):
+                await interaction.response.defer()
+                async with self:
+                    new_result = await get_quote()
+                    if isinstance(new_result, discord.File):
+                        return await interaction.followup.send(file=new_result, view=GenerateNewView())
+                    else:
+                        return await interaction.followup.send(content=new_result, view=GenerateNewView())
+
+            @discord.ui.button(
+                label="Regenerate",
+                style=discord.ButtonStyle.blurple,
+                emoji=discord.PartialEmoji.from_str("\U0001f504")
+            )
+            async def regenerate(self, _, interaction: discord.Interaction):
+                await interaction.response.defer()
+                async with self:
+                    new_result = await get_quote()
+                    if isinstance(new_result, discord.File):
+                        return await interaction.edit_original_response(file=new_result)
+                    else:
+                        return await interaction.edit_original_response(content=new_result)
+
+        await ctx.defer()
+        result = await get_quote()
+        if isinstance(result, discord.File):
+            return await ctx.respond(file=result, view=GenerateNewView())
+        else:
+            return await ctx.respond(result, view=GenerateNewView())
 
 
 def setup(bot):
