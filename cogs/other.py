@@ -752,6 +752,7 @@ class OtherCog(commands.Cog):
             upload_log: bool = True
     ):
         """Downloads a video from <URL> using youtube-dl"""
+        await ctx.defer()
         with tempfile.TemporaryDirectory(prefix="jimmy-ytdl-") as tempdir:
             video_format = video_format.lower()
             OUTPUT_FILE = str(Path(tempdir) / f"{ctx.user.id}.%(ext)s")
@@ -770,8 +771,15 @@ class OtherCog(commands.Cog):
             else:
                 options.extend(["--format", f"(bv*+ba/b/ba)[filesize<={MAX_SIZE}M]"])
 
-            await ctx.defer()
-            await ctx.edit(content="Downloading video...")
+            await ctx.edit(
+                embed=discord.Embed(
+                    description="\u200b"
+                ).set_author(
+                    name="Downloading...",
+                    icon_url="https://cdn.discordapp.com/emojis/1101463077586735174.gif?v=1",
+                    url=url
+                )
+            )
             try:
                 venv = Path.cwd() / "venv" / ("Scripts" if os.name == "nt" else "bin")
                 if venv:
@@ -786,14 +794,20 @@ class OtherCog(commands.Cog):
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                 )
-                stdout, stderr = await process.communicate()
-                stdout_log = io.BytesIO(stdout)
-                stdout_log_file = discord.File(stdout_log, filename="stdout.txt")
-                stderr_log = io.BytesIO(stderr)
-                stderr_log_file = discord.File(stderr_log, filename="stderr.txt")
-                await process.wait()
+                async with ctx.channel.typing():
+                    stdout, stderr = await process.communicate()
+                    stdout_log = io.BytesIO(stdout)
+                    stdout_log_file = discord.File(stdout_log, filename="stdout.txt")
+                    stderr_log = io.BytesIO(stderr)
+                    stderr_log_file = discord.File(stderr_log, filename="stderr.txt")
+                    await process.wait()
             except FileNotFoundError:
-                return await ctx.edit(content="Downloader not found.")
+                return await ctx.edit(
+                    embed=discord.Embed(
+                        description="Downloader not found.",
+                        color=discord.Color.red()
+                    )
+                )
 
             if process.returncode != 0:
                 files = [
@@ -822,7 +836,7 @@ class OtherCog(commands.Cog):
                             "\t- Resolution: {0[resolution]}\n"
                             "\t- Size: {1!s}MB".format(fmt, fs)
                         )
-                    await ctx.edit(content="Invalid format. Available formats:")
+                    await ctx.edit(content="Invalid format. Available formats:", embed=None)
                     for page in paginator.pages:
                         await ctx.send(page)
                     return await ctx.send(files=files)
@@ -848,8 +862,14 @@ class OtherCog(commands.Cog):
                     continue
 
             if not files:
-                return await ctx.edit(content="No files found.")
-            await ctx.edit(content="Here's your video!", files=files)
+                return await ctx.edit(embed=discord.Embed(description="No files found.", color=discord.Colour.red()))
+            await ctx.edit(
+                embed=discord.Embed(
+                    title="Here's your video!",
+                    color=discord.Colour.green()
+                ),
+                files=files
+            )
     
     @commands.slash_command(name="text-to-mp3")
     @commands.cooldown(5, 600, commands.BucketType.user)
