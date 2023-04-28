@@ -1008,6 +1008,7 @@ class OtherCog(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.user)
     async def quote(self, ctx: discord.ApplicationContext):
         """Generates a random quote"""
+        emoji = discord.PartialEmoji(name='loading', animated=True, id=1101463077586735174)
         async def get_quote() -> str | discord.File:
             try:
                 response = await self.http.get("https://inspirobot.me/api?generate=true")
@@ -1051,11 +1052,12 @@ class OtherCog(commands.Cog):
             async def new_quote(self, _, interaction: discord.Interaction):
                 await interaction.response.defer(invisible=True)
                 async with self:
+                    followup = await interaction.followup.send(f"{emoji} Generating quote")
                     new_result = await get_quote()
                     if isinstance(new_result, discord.File):
-                        return await interaction.followup.send(file=new_result, view=GenerateNewView())
+                        return await followup.edit(file=new_result, view=GenerateNewView())
                     else:
-                        return await interaction.followup.send(content=new_result, view=GenerateNewView())
+                        return await followup.edit(content=new_result, view=GenerateNewView())
 
             @discord.ui.button(
                 label="Regenerate",
@@ -1066,7 +1068,7 @@ class OtherCog(commands.Cog):
                 await interaction.response.defer(invisible=True)
                 async with self:
                     message = await interaction.original_response()
-                    if "\U00002b50" in [x.emoji for x in message.reactions]:
+                    if "\U00002b50" in [_reaction.emoji for _reaction in message.reactions]:
                         return await interaction.followup.send(
                             "\N{cross mark} Message is starred and cannot be regenerated. You can press "
                             "'New Quote' to generate a new quote instead.",
