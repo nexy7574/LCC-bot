@@ -908,6 +908,7 @@ class OtherCog(commands.Cog):
 
         with tempfile.TemporaryDirectory(prefix="jimmy-ytdl-") as tempdir:
             video_format = video_format.lower()
+            td = Path(tempdir)
             MAX_SIZE = round(ctx.guild.filesize_limit / 1024 / 1024)
             if MAX_SIZE == 8:
                 MAX_SIZE = 25
@@ -918,6 +919,7 @@ class OtherCog(commands.Cog):
                 "--no-warnings",
                 "--newline",
                 "--output",
+                "--restrict-filenames",
                 f"{ctx.user.id}.%(title)s.%(ext)s",
             ]
             if video_format:
@@ -953,6 +955,7 @@ class OtherCog(commands.Cog):
                     *options,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
+                    cwd=Path(tempdir).resolve()
                 )
                 async with ctx.channel.typing():
                     stdout, stderr = await process.communicate()
@@ -976,6 +979,39 @@ class OtherCog(commands.Cog):
                 ]
                 if b"format is not available" in stderr:
                     formats = await self.list_formats(url)
+                    embeds = []
+                    for fmt in formats.keys():
+                        fs = formats[fmt]["filesize"] or 0.1
+                        if fs == float("inf"):
+                            fs = 0
+                            units = ["B"]
+                        else:
+                            units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
+                            while fs > 1024:
+                                fs /= 1024
+                                units.pop(0)
+                        embeds.append(
+                            discord.Embed(
+                                title=fmt,
+                                description="- Encoding: {0[vcodec]} + {0[acodec]}\n"
+                                            "- Extension: `.{0[ext]}`\n"
+                                            "- Resolution: {0[resolution]}\n"
+                                            "- Filesize: {1}\n"
+                                            "- Protocol: {0[protocol]}\n".format(formats[fmt],
+                                                                                 f"{round(fs, 2)}{units[0]}"),
+                                colour=discord.Colour.blurple()
+                            ).add_field(
+                                name="Download:",
+                                value="{} url:{} video_format:{}".format(
+                                    self.bot.get_application_command("yt-dl").mention,
+                                    url,
+                                    fmt
+                                )
+                            )
+                        )
+                    _paginator = pages.Paginator(embeds, loop_pages=True)
+                    await ctx.delete(delay=0.1)
+                    return await _paginator.respond(ctx.interaction)
                 return await ctx.edit(content=f"Download failed:\n```\n{stderr.decode()}\n```", files=files)
 
             _embed = embed.copy()
