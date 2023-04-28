@@ -1049,7 +1049,7 @@ class OtherCog(commands.Cog):
                 emoji=discord.PartialEmoji.from_str("\U000023ed\U0000fe0f")
             )
             async def new_quote(self, _, interaction: discord.Interaction):
-                await interaction.response.defer()
+                await interaction.response.defer(invisible=True)
                 async with self:
                     new_result = await get_quote()
                     if isinstance(new_result, discord.File):
@@ -1063,7 +1063,7 @@ class OtherCog(commands.Cog):
                 emoji=discord.PartialEmoji.from_str("\U0001f504")
             )
             async def regenerate(self, _, interaction: discord.Interaction):
-                await interaction.response.defer()
+                await interaction.response.defer(invisible=True)
                 async with self:
                     message = await interaction.original_response()
                     if "\U00002b50" in [x.emoji for x in message.reactions]:
@@ -1084,7 +1084,7 @@ class OtherCog(commands.Cog):
                 emoji="\N{wastebasket}\U0000fe0f"
             )
             async def delete(self, _, interaction: discord.Interaction):
-                await interaction.response.defer()
+                await interaction.response.defer(invisible=True)
                 await interaction.delete_original_response()
                 self.stop()
 
