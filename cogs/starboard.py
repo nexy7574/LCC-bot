@@ -117,16 +117,18 @@ class StarBoardCog(commands.Cog):
                     return
             else:
                 channel = discord.utils.get(message.guild.text_channels, name="starboard")
+                embed = await self.generate_starboard_embed(message)
+                embeds = [embed, *tuple(filter(lambda x: x.type == "rich", message.embeds))][:10]
                 if channel and channel.can_send() and entry.starboard_message:
                     try:
                         msg = await channel.fetch_message(entry.starboard_message)
                     except discord.NotFound:
-                        msg = await channel.send(embed=await self.generate_starboard_embed(message))
+                        msg = await channel.send(embeds=embeds)
                         await entry.update(starboard_message=msg.id)
                     except discord.HTTPException:
                         pass
                     else:
-                        await msg.edit(embed=await self.generate_starboard_embed(message))
+                        await msg.edit(embeds=embeds)
 
     @commands.message_command(name="Starboard Info")
     @discord.guild_only()
