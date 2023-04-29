@@ -68,7 +68,7 @@ def format_autocomplete(ctx: discord.AutocompleteContext):
     else:
         if parsed.scheme in ("http", "https") and parsed.netloc:
             self._fmt_queue.put_nowait(url)
-    return ["no formats cached (yet)."]
+    return []
 
 
 # noinspection DuplicatedCode
