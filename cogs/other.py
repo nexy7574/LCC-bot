@@ -59,7 +59,13 @@ def format_autocomplete(ctx: discord.AutocompleteContext):
     url = ctx.options.get("url", os.urandom(6).hex())
     self: "OtherCog" = ctx.bot.cogs["OtherCog"]  # type: ignore
     if url in self._fmt_cache:
-        return [x for x in self._fmt_cache[url].keys() if ctx.value.lower() in x.lower()]
+        suitable = []
+        for _format_key in self._fmt_cache[url]:
+            _format = self._fmt_cache[url][_format_key]
+            _format_nice = _format["format"]
+            if ctx.value.lower() in _format_nice.lower():
+                suitable.append(_format_nice)
+        return suitable
 
     try:
         parsed = urlparse(url, allow_fragments=True)
@@ -95,38 +101,55 @@ class OtherCog(commands.Cog):
         if url in self._fmt_cache:
             return self._fmt_cache[url]
 
-        args = [
-            "yt-dlp",
-            "-J",
-            url
-        ]
-        if use_proxy == 1 and proxy:
-            args.append("--proxy")
-            args.append(proxy)
-            console.log("list_formats using proxy: %r" % args[-1])
-        elif use_proxy == 2 and proxies:
-            args.append("--proxy")
-            args.append(random.choice(proxies))
-            console.log("list_formats using random proxy: %r" % args[-1])
-        process = await asyncio.create_subprocess_exec(
-            *args,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        stdout, stderr = await process.communicate()
-        data = json.loads(stdout.decode())
-        formats = data["formats"]
-        new = {}
-        for fmt in formats:
-            new[fmt["format_id"]] = {
-                "id": fmt["format_id"],
-                "ext": fmt["ext"],
-                "protocol": fmt["protocol"],
-                "acodec": fmt["acodec"],
-                "vcodec": fmt["vcodec"],
-                "resolution": fmt["resolution"],
-                "filesize": fmt.get("filesize", float('inf')),
-            }
+        import yt_dlp
+
+        class NullLogger:
+            def debug(self, *args, **kwargs):
+                pass
+
+            def info(self, *args, **kwargs):
+                pass
+
+            def warning(self, *args, **kwargs):
+                pass
+
+            def error(self, *args, **kwargs):
+                pass
+
+        with tempfile.TemporaryDirectory(prefix="jimmy-ytdl", suffix="-info") as tempdir:
+            with yt_dlp.YoutubeDL(
+                    {
+                        "windowsfilenames": True,
+                        "restrictfilenames": True,
+                        "noplaylist": True,
+                        "nocheckcertificate": True,
+                        "no_color": True,
+                        "noprogress": True,
+                        "logger": NullLogger(),
+                        "paths": {"home": tempdir, "temp": tempdir},
+                    }
+            ) as downloader:
+                try:
+                    info = await self.bot.loop.run_in_executor(
+                        None,
+                        partial(downloader.extract_info, url, download=False)
+                    )
+                except yt_dlp.utils.DownloadError:
+                    return {}
+                info = downloader.sanitize_info(info)
+                new = {
+                    fmt["format_id"]: {
+                        "id": fmt["format_id"],
+                        "ext": fmt["ext"],
+                        "protocol": fmt["protocol"],
+                        "acodec": fmt["acodec"],
+                        "vcodec": fmt["vcodec"],
+                        "resolution": fmt["resolution"],
+                        "filesize": fmt.get("filesize", float('inf')),
+                        "format": fmt["format"],
+                    }
+                    for fmt in info["formats"]
+                }
         self._fmt_cache[url] = new
         return new
 
@@ -909,7 +932,6 @@ class OtherCog(commands.Cog):
 
         with tempfile.TemporaryDirectory(prefix="jimmy-ytdl-") as tempdir:
             video_format = video_format.lower()
-            td = Path(tempdir)
             MAX_SIZE = round(ctx.guild.filesize_limit / 1024 / 1024)
             if MAX_SIZE == 8:
                 MAX_SIZE = 25
@@ -1082,41 +1104,73 @@ class OtherCog(commands.Cog):
                 description="The URL to download.",
                 type=str
             ),
-            list_formats: discord.Option(
-                name="list-formats",
-                description="Whether to list the formats.",
-                type=discord.SlashCommandOptionType.boolean,
-                default=False,
-            ),
+            list_formats: bool = False,
             _format: discord.Option(
                 name="format",
                 description="The format to download.",
                 type=str,
                 autocomplete=format_autocomplete,
                 default=""
-            ),
-            upload_log: discord.Option(
-                name="upload-log",
-                description="Whether to upload the log files.",
-                type=discord.SlashCommandOptionType.boolean,
-                default=False,
-            ),
+            ) = "",
+            upload_log: bool = False,
     ):
         """Downloads a video using youtube-dl"""
         await ctx.defer()
+        formats = await self.list_formats(url)
+        if list_formats:
+            embeds = []
+            for fmt in formats.keys():
+                fs = formats[fmt].get("filesize", 0.1) or 0.1
+                if fs == float("inf"):
+                    fs = 0
+                    units = ["B"]
+                else:
+                    units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
+                    while fs > 1024:
+                        fs /= 1024
+                        units.pop(0)
+                embeds.append(
+                    discord.Embed(
+                        title=fmt,
+                        description="- Encoding: {0[vcodec]} + {0[acodec]}\n"
+                                    "- Extension: `.{0[ext]}`\n"
+                                    "- Resolution: {0[resolution]}\n"
+                                    "- Filesize: {1}\n"
+                                    "- Protocol: {0[protocol]}\n".format(formats[fmt],
+                                                                         f"{round(fs, 2)}{units[0]}"),
+                        colour=discord.Colour.blurple()
+                    ).add_field(
+                        name="Download:",
+                        value="{} url:{} video_format:{}".format(
+                            self.bot.get_application_command("yt-dl").mention,
+                            url,
+                            fmt
+                        )
+                    )
+                )
+            _paginator = pages.Paginator(embeds, loop_pages=True)
+            await ctx.delete(delay=0.1)
+            return await _paginator.respond(ctx.interaction)
+
+        if _format:
+            _fmt = _format
+            for fmt in formats.keys():
+                if formats[fmt]["format"] == _format:
+                    _format = fmt
+                    break
+            else:
+                return await ctx.edit(
+                    embed=discord.Embed(
+                        title="Error",
+                        description="Invalid format %r. pass `list-formats:True` to see a list of formats." % _fmt,
+                        colour=discord.Colour.red()
+                    )
+                )
+
         MAX_SIZE_MB = ctx.guild.filesize_limit / 1024 / 1024
         if MAX_SIZE_MB == 8.0:
             MAX_SIZE_MB = 25.0
-        try:
-            import yt_dlp
-        except ImportError:
-            return await ctx.respond(
-                embed=discord.Embed(
-                    title="Error",
-                    description="`yt_dlp` is not installed.",
-                    colour=discord.Colour.red()
-                )
-            )
+        import yt_dlp
 
         with tempfile.TemporaryDirectory(prefix="jimmy-ytdl-wat") as tempdir_str:
             tempdir = Path(tempdir_str).resolve()
@@ -1172,78 +1226,6 @@ class OtherCog(commands.Cog):
                         "outtmpl": f"{ctx.user.id}-%(title)s.%(ext)s"
                     }
             ) as downloader:
-                await ctx.respond(
-                    embed=discord.Embed(
-                        title="Downloading metadata...",
-                        colour=discord.Colour.greyple()
-                    )
-                )
-                try:
-                    info = await self.bot.loop.run_in_executor(
-                        None,
-                        partial(downloader.extract_info, url, download=False)
-                    )
-                except yt_dlp.utils.DownloadError as e:
-                    return await ctx.respond(
-                        embed=discord.Embed(
-                            title="Error",
-                            description=f"Download failed:\n```\n{e}\n```",
-                            colour=discord.Colour.red()
-                        )
-                    )
-
-                info = downloader.sanitize_info(info)
-
-                if list_formats:
-                    formats = info["formats"]
-                    formats = {
-                        fmt["format_id"]: fmt
-                        for fmt in formats
-                    }
-                    embeds = []
-                    for fmt in formats.keys():
-                        fs = formats[fmt].get("filesize", 0.1) or 0.1
-                        if fs == float("inf"):
-                            fs = 0
-                            units = ["B"]
-                        else:
-                            units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
-                            while fs > 1024:
-                                fs /= 1024
-                                units.pop(0)
-                        embeds.append(
-                            discord.Embed(
-                                title=fmt,
-                                description="- Encoding: {0[vcodec]} + {0[acodec]}\n"
-                                            "- Extension: `.{0[ext]}`\n"
-                                            "- Resolution: {0[resolution]}\n"
-                                            "- Filesize: {1}\n"
-                                            "- Protocol: {0[protocol]}\n".format(formats[fmt],
-                                                                                 f"{round(fs, 2)}{units[0]}"),
-                                colour=discord.Colour.blurple()
-                            ).add_field(
-                                name="Download:",
-                                value="{} url:{} video_format:{}".format(
-                                    self.bot.get_application_command("yt-dl").mention,
-                                    url,
-                                    fmt
-                                )
-                            )
-                        )
-                    _paginator = pages.Paginator(embeds, loop_pages=True)
-                    await ctx.delete(delay=0.1)
-                    return await _paginator.respond(ctx.interaction)
-
-                if _format:
-                    if _format not in info["formats"]:
-                        return await ctx.edit(
-                            embed=discord.Embed(
-                                title="Error",
-                                description="Invalid format. pass `list-formats:True` to see a list of formats.",
-                                colour=discord.Colour.red()
-                            )
-                        )
-
                 try:
                     await ctx.respond(
                         embed=discord.Embed(title="Downloading...", colour=discord.Colour.blurple())
@@ -1289,16 +1271,18 @@ class OtherCog(commands.Cog):
                                                     round(st_r, 2),
                                                     units[0],
                                                     MAX_SIZE_MB
-                            )
+                                                 )
                             continue
                         files.append(discord.File(file, file.name))
 
                     if not files:
-                        embed.description = "No files to upload."
+                        embed.description += "No files to upload. Directory list:\n%s" % (
+                            "\n".join(r'\* ' + f.name for f in tempdir.iterdir())
+                        )
                         return await ctx.edit(embed=embed)
                     else:
                         _desc = embed.description
-                        embed.description = f"Uploading {len(files)} file(s)..."
+                        embed.description += f"Uploading {len(files)} file(s)..."
                         await ctx.edit(embed=embed)
                         await ctx.channel.trigger_typing()
                         embed.description = _desc
