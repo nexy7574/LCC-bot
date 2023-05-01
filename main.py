@@ -31,6 +31,10 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
         )
     elif isinstance(error, JimmyBanException):
         return await ctx.respond(str(error))
+    elif isinstance(error, commands.CommandError):
+        if error.args and error.args[0] == "User not connected to a voice channel.":
+            return
+
     await ctx.respond("Application Command Error: `%r`" % error)
     raise error
 
@@ -49,7 +53,7 @@ async def on_command_error(ctx: commands.Context, error: Exception):
 async def on_application_command(ctx: discord.ApplicationContext):
     console.log(
         "{0.author} ({0.author.id}) used application command /{0.command.qualified_name} in "
-        "#{0.channel}, {0.guild}".format(ctx)
+        "[blue]#{0.channel}[/], {0.guild}".format(ctx)
     )
 
 

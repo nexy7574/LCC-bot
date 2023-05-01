@@ -210,7 +210,8 @@ class Events(commands.Cog):
             return
 
         channel = me_voice.channel
-        if len(channel.members) - 1 == 0:
+        members = [m for m in channel.members if not m.bot]
+        if len(members) == 0:
             # We are the only one in the channel
             await _dc(member.guild.voice_client)
 

@@ -98,6 +98,7 @@ except ImportError:
         "cogs.other",
         "cogs.starboard",
         "cogs.uptime",
+        "cogs.voice"
     ]
 
 
