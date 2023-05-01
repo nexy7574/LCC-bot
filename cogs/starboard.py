@@ -1,5 +1,9 @@
 import asyncio
 import textwrap
+import io
+from urllib.parse import urlparse
+
+import httpx
 from typing import Tuple
 
 import discord
@@ -11,6 +15,37 @@ class StarBoardCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.lock = asyncio.Lock()
+
+    @staticmethod
+    async def archive_image( starboard_message: discord.Message):
+        async with httpx.AsyncClient(
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.69; Win64; x64) "
+                              "LCC-Bot-Scraper/0 (https://github.com/EEKIM10/LCC-bot)"
+            }
+        ) as session:
+            image = starboard_message.embeds[0].image
+            if image and image.url:
+                parsed = urlparse(image.url)
+                filename = parsed.path.split("/")[-1]
+                try:
+                    r = await session.get(image.url)
+                except httpx.HTTPError:
+                    if image.proxy_url:
+                        r = await session.get(image.proxy_url)
+                    else:
+                        return
+
+                FS_LIMIT = starboard_message.guild.filesize_limit
+                # if FS_LIMIT is 8mb, its actually 25MB
+                if FS_LIMIT == 8 * 1024 * 1024:
+                    FS_LIMIT = 25 * 1024 * 1024
+                if r.status_code == 200 and len(r.content) < FS_LIMIT:
+                    file = io.BytesIO(r.content)
+                    file.seek(0)
+                    embed = starboard_message.embeds[0].copy()
+                    embed.set_image(url="attachment://" + filename)
+                    await starboard_message.edit(embed=embed, file=discord.File(file, filename=filename))
 
     async def generate_starboard_embed(self, message: discord.Message) -> discord.Embed:
         star_count = [x for x in message.reactions if str(x.emoji) == "\N{white medium star}"]
@@ -112,6 +147,7 @@ class StarBoardCog(commands.Cog):
                     if channel and channel.can_send():
                         msg = await channel.send(embed=await self.generate_starboard_embed(message))
                         await entry.update(starboard_message=msg.id)
+                        self.bot.loop.create_task(self.archive_image(msg))
                 else:
                     await entry.delete()
                     return
@@ -125,10 +161,12 @@ class StarBoardCog(commands.Cog):
                     except discord.NotFound:
                         msg = await channel.send(embeds=embeds)
                         await entry.update(starboard_message=msg.id)
+                        self.bot.loop.create_task(self.archive_image(msg))
                     except discord.HTTPException:
                         pass
                     else:
                         await msg.edit(embeds=embeds)
+                        self.bot.loop.create_task(self.archive_image(msg))
 
     @commands.message_command(name="Starboard Info")
     @discord.guild_only()

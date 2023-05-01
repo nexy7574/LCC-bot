@@ -340,13 +340,22 @@ class Events(commands.Cog):
                         await message.reply(file=file)
                     if message.reference is not None and message.reference.cached_message is not None:
                         if message.content.lower().strip() in ("what", "what?", "huh", "huh?", "?"):
-                            text = "{0.author.mention} said %r, you deaf sod.".format(
-                                message.reference.cached_message
-                            )
-                            _content = textwrap.shorten(
-                                text % message.reference.cached_message.content, width=2000, placeholder="[...]"
-                            )
-                            await message.reply(_content)
+                            if f"{message.author.mention} said '" * 3 in message.reference.cached_message.content:
+                                await message.reply("You really are deaf aren't you.")
+                            elif not message.reference.cached_message.content:
+                                await message.reply(
+                                    "Maybe *I* need to get my hearing checked, I have no idea what {} said.".format(
+                                        message.reference.cached_message.author.mention
+                                    )
+                                )
+                            else:
+                                text = "{0.author.mention} said %r, you deaf sod.".format(
+                                    message.reference.cached_message
+                                )
+                                _content = textwrap.shorten(
+                                    text % message.reference.cached_message.content, width=2000, placeholder="[...]"
+                                )
+                                await message.reply(_content)
                     await self.process_message_for_github_links(message)
                 if message.channel.permissions_for(message.guild.me).add_reactions:
                     if "mpreg" in message.content.lower() or "\U0001fac3" in message.content.lower():
