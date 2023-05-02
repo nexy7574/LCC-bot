@@ -38,7 +38,9 @@ class Bot(commands.Bot):
         for ext in extensions:
             try:
                 self.load_extension(ext)
-            except (discord.ExtensionNotFound, discord.ExtensionFailed, OSError) as e:
+            except discord.ExtensionNotFound:
+                console.log(f"[red]Failed to load extension {ext}: Extension not found.")
+            except (discord.ExtensionFailed, OSError) as e:
                 console.log(f"[red]Failed to load extension {ext}: {e}")
                 if getattr(config, "dev", False):
                     console.print_exception()
@@ -98,7 +100,7 @@ except ImportError:
         "cogs.other",
         "cogs.starboard",
         "cogs.uptime",
-#        "cogs.voice"
+        "cogs.voice"
     ]
 
 
