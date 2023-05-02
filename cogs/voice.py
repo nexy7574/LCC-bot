@@ -1,10 +1,26 @@
+import io
 import shutil
 import asyncio
 import discord
 import yt_dlp
 import tempfile
+from datetime import datetime
 from pathlib import Path
 from discord.ext import commands
+
+
+class TransparentQueue(asyncio.Queue):
+    def __init__(self, maxsize: int = 0) -> None:
+        super().__init__(maxsize)
+        self._internal_queue = []
+    
+    async def put(self, item):
+        await super().put(item)
+        self._internal_queue.append(item)
+
+    async def job_done(self):
+        await super().job_done()
+        self._internal_queue.pop(0)
 
 
 class YTDLSource(discord.PCMVolumeTransformer):
@@ -15,6 +31,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
         self.title = data.get("title")
         self.url = data.get("url")
+    
+    @property
+    def duration(self):
+        return self.data.get("duration")
 
     @classmethod
     async def from_url(cls, ytdl: yt_dlp.YoutubeDL, url, *, loop=None, stream=False):
@@ -51,6 +71,31 @@ class VoiceCog(commands.Cog):
         }
         self.cache = Path(tempfile.mkdtemp("jimmy-voice-cache-")).resolve()
         self.yt_dl = yt_dlp.YoutubeDL(self.ytdl_options)
+        # self.queue = TransparentQueue(100)
+        # self._queue_task = self.bot.loop.create_task(self.queue_task())
+
+    async def queue_task(self):
+        if not self.bot.is_ready():
+            await self.bot.wait_until_ready()
+        while True:
+            ctx, player, author, inserted_at = await self.queue.get()
+            ctx.guild.voice_client.play(player, after=self.after_player(ctx))
+
+            embed = discord.Embed(
+                description=f"Now playing: [{player.title}]({player.url}), as requested by {author.mention}.",
+                color=discord.Color.green(),
+            )
+            try:
+                await ctx.respond(
+                    embed=embed
+                )
+            except discord.HTTPException:
+                try:
+                    await ctx.send(embed=embed)
+                except discord.HTTPException:
+                    pass
+            
+            await self.queue.job_done()
 
     def cog_unload(self):
         shutil.rmtree(self.cache)
@@ -121,6 +166,17 @@ class VoiceCog(commands.Cog):
             await ctx.respond("Disconnected from voice channel.")
         else:
             await ctx.respond("Not connected to a voice channel.")
+
+    @commands.command(name="dump-metadata")
+    async def dump_metadata(self, ctx: commands.Context, *, url: str):
+        """Dumps JSON YT-DLP metadata to a file"""
+        async with ctx.channel.typing():
+            file = io.StringIO()
+            data = await self.unblock(self.yt_dl.extract_info, url, download=False)
+            data = await self.unblock(self.yt_dl.sanitize_info, data)
+            json.dump(data, file, indent=4)
+            file.seek(0)
+        return await ctx.respond(file=discord.File(file, filename="metadata.json"))
 
     async def cog_before_invoke(self, ctx: discord.ApplicationContext):
         await ctx.defer()
