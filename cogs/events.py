@@ -264,7 +264,7 @@ class Events(commands.Cog):
             if message.author.bot is True:
                 return
             if message.channel.can_send() and "ferdi" in message.content.lower():
-                await message.reply("https://ferdi-is.gay/")
+                await message.reply("https://ferdi-is.gay/", delete_after=30)
             # Only respond if the message has content...
             if message.content:
                 if message.channel.can_send():  # ... and we can send messages
@@ -338,6 +338,9 @@ class Events(commands.Cog):
                             )
                     if "carat" in message.content.lower():
                         file = discord.File(Path.cwd() / "assets" / "carat.png", filename="carat.png")
+                        await message.reply(file=file)
+                    if "smeg" in message.content.lower():
+                        file = discord.File(Path.cwd() / "assets" / "wordart.png", filename="smeg.png")
                         await message.reply(file=file)
                     if message.reference is not None and message.reference.cached_message is not None:
                         if message.content.lower().strip() in ("what", "what?", "huh", "huh?", "?"):
