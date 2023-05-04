@@ -203,7 +203,7 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(
-        self, 
+        self,
         member: discord.Member, 
         *_
     ):

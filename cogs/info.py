@@ -14,8 +14,8 @@ try:
     import fanshim
     import apa102
     import RPi.GPIO as GPIO
-except (ImportError, AttributeError):
-    fanshim = GPIO = None
+except ImportError:
+    fanshim = GPIO = apa102 = None
 
 
 class InfoCog(commands.Cog):
@@ -28,6 +28,7 @@ class InfoCog(commands.Cog):
         "SENSORS": "\N{thermometer}",
         "UPTIME": "\N{alarm clock}",
     }
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -182,7 +183,7 @@ class InfoCog(commands.Cog):
         embed.add_field(
             name=f"{self.EMOJIS['NETWORK']} Network",
             value=f"**Sent:** {humanize.naturalsize(network.bytes_sent, binary=binary)}\n"
-                    f"**Received:** {humanize.naturalsize(network.bytes_recv, binary=binary)}",
+                  f"**Received:** {humanize.naturalsize(network.bytes_recv, binary=binary)}",
             inline=False,
         )
         embed.add_field(
