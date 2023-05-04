@@ -45,7 +45,11 @@ class StarBoardCog(commands.Cog):
                     file.seek(0)
                     embed = starboard_message.embeds[0].copy()
                     embed.set_image(url="attachment://" + filename)
-                    await starboard_message.edit(embed=embed, file=discord.File(file, filename=filename))
+                    embeds = [
+                        embed,
+                        *starboard_message.embeds[1:]
+                    ]
+                    await starboard_message.edit(embeds=embeds, file=discord.File(file, filename=filename))
 
     async def generate_starboard_embed(self, message: discord.Message) -> discord.Embed:
         star_count = [x for x in message.reactions if str(x.emoji) == "\N{white medium star}"]
