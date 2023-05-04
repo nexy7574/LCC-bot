@@ -10,6 +10,12 @@ import psutil
 from functools import partial
 from discord.ext import commands
 from pathlib import Path
+try:
+    import fanshim
+    import apa102
+    import RPi.GPIO as GPIO
+except (ImportError, AttributeError):
+    fanshim = GPIO = None
 
 
 class InfoCog(commands.Cog):
@@ -134,6 +140,20 @@ class InfoCog(commands.Cog):
                 value="\n".join(f"{s.label}: {s.current:.2f} RPM" for s in fans),
                 inline=False,
             )
+        if fanshim:
+            # PiMoroni's fanshim by default uses pin 18 for control
+            fan_active = bool(GPIO.input(18))
+            LED = apa102.APA102(1, 15, 14, None)
+            # Get LED colour as a tuple of (r, g, b)
+            LED_colour = LED.get_pixel_colour(0)
+            # Convert to hex
+            LED_colour = "%02x%02x%02x" % LED_colour
+            if fan_active:
+                embed.add_field(
+                    name=f"{self.EMOJIS['SENSORS']} Fan",
+                    value=f"{self.EMOJIS['ON']} Active (LED: #{LED_colour})",
+                    inline=False,
+                )
 
         embed.add_field(
             name=f"{self.EMOJIS['RAM']} RAM",
