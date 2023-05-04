@@ -389,15 +389,22 @@ class Events(commands.Cog):
                 r"^linux$": {
                     "content": lambda: (assets / "copypasta.txt").read_text(),
                     "meta": {
-                        "needs_mention": True
+                        "needs_mention": True,
+                        "check": (assets / "copypasta.txt").exists
                     }
                 },
                 r"carat": {
                     "file": discord.File(assets / "carat.jpg"),
-                    "delete_after": None
+                    "delete_after": None,
+                    "meta": {
+                        "check": (assets / "carat.jpg").exists
+                    }
                 },
                 r"lupupa": {
                     "file": discord.File(assets / "lupupa.jpg"),
+                    "meta": {
+                        "check": (assets / "lupupa.jpg").exists
+                    }
                 },
                 r"[s5]+(m)+[e3]+[g9]+": {
                     "func": send_smeg,
@@ -405,7 +412,8 @@ class Events(commands.Cog):
                         "sub": {
                             r"pattern": r"(-_.\s)+",
                             r"with": ''
-                        }
+                        },
+                        "check": (assets / "smeg").exists
                     }
                 },
                 r"(what|huh)(\?|!)*": {
