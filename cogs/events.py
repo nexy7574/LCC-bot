@@ -396,6 +396,9 @@ class Events(commands.Cog):
                     "file": discord.File(assets / "carat.jpg"),
                     "delete_after": None
                 },
+                r"lupupa": {
+                    "file": discord.File(assets / "lupupa.jpg"),
+                },
                 r"[s5]+(m)+[e3]+[g9]+": {
                     "func": send_smeg,
                     "meta": {
@@ -488,6 +491,7 @@ class Events(commands.Cog):
                         for k, v in data.copy().items():
                             if callable(v):
                                 data[k] = v()
+                        data.setdefault("delete_after", 30)
                         await message.reply(**data)
                         break
 
