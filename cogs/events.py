@@ -308,13 +308,13 @@ class Events(commands.Cog):
                                 await message.reply("Unmute me >:(", file=discord.File(file))
                             else:
                                 
-                                def after(e):
+                                def after(err):
                                     asyncio.run_coroutine_threadsafe(
                                         _dc(voice),
                                         self.bot.loop
                                     )
-                                    if e is not None:
-                                        console.log(f"Error playing audio: {e}")
+                                    if err is not None:
+                                        console.log(f"Error playing audio: {err}")
 
                                 # noinspection PyTypeChecker
                                 src = discord.FFmpegPCMAudio(str(file.absolute()), stderr=subprocess.DEVNULL)
@@ -398,6 +398,11 @@ class Events(commands.Cog):
                             except discord.HTTPException as e:
                                 console.log("Failed to add gay reaction:", e)
 
+            if all(x in message.content.lower() for x in ("year", "linux", "desktop")):
+                date = discord.utils.utcnow()
+                # date = date.replace(year=date.year + 1)
+                return await message.reply(date.strftime("%Y") + " will be the year of the GNU+Linux desktop.")
+
             if self.bot.user in message.mentions:
                 if message.content.startswith(self.bot.user.mention):
                     if message.content.lower().endswith("bot"):
@@ -418,16 +423,6 @@ class Events(commands.Cog):
                                 text=f"Pos: {pos*100:.2f}% | Neutral: {neut*100:.2f}% | Neg: {neg*100:.2f}%"
                             )
                         return await message.reply(embed=embed)
-                    if message.content.lower().endswith(
-                        (
-                            "when is the year of the linux desktop?",
-                            "year of the linux desktop?",
-                            "year of the linux desktop",
-                        )
-                    ):
-                        date = discord.utils.utcnow()
-                        # date = date.replace(year=date.year + 1)
-                        return await message.reply(date.strftime("%Y") + " will be the year of the GNU+Linux desktop.")
 
                     if message.content.lower().endswith("fuck you"):
                         student = await get_or_none(Student, user_id=message.author.id)
