@@ -339,7 +339,9 @@ class Events(commands.Cog):
                     if "carat" in message.content.lower():
                         file = discord.File(Path.cwd() / "assets" / "carat.png", filename="carat.png")
                         await message.reply(file=file)
-                    if "smeg" in message.content.lower():
+                    smeg_regex = r"[s5]+(m)+[e3]+[g9]+"
+                    smeg_sub = r"(-_.\s)+"
+                    if re.match(smeg_regex, re.sub(smeg_sub, "", message.content.lower())):
                         file = discord.File(Path.cwd() / "assets" / "wordart.png", filename="smeg.png")
                         await message.reply(file=file)
                     if message.reference is not None and message.reference.cached_message is not None:
