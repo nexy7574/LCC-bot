@@ -17,7 +17,7 @@ class StarBoardCog(commands.Cog):
         self.lock = asyncio.Lock()
 
     @staticmethod
-    async def archive_image( starboard_message: discord.Message):
+    async def archive_image(starboard_message: discord.Message):
         async with httpx.AsyncClient(
             headers={
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.69; Win64; x64) "
@@ -145,7 +145,9 @@ class StarBoardCog(commands.Cog):
                 if star_count >= cap:
                     channel = discord.utils.get(message.guild.text_channels, name="starboard")
                     if channel and channel.can_send():
-                        msg = await channel.send(embed=await self.generate_starboard_embed(message))
+                        embed = await self.generate_starboard_embed(message)
+                        embeds = [embed, *tuple(filter(lambda x: x.type == "rich", message.embeds))][:10]
+                        msg = await channel.send(embeds=embeds)
                         await entry.update(starboard_message=msg.id)
                         self.bot.loop.create_task(self.archive_image(msg))
                 else:
