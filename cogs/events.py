@@ -342,8 +342,14 @@ class Events(commands.Cog):
                     smeg_regex = r"[s5]+(m)+[e3]+[g9]+"
                     smeg_sub = r"(-_.\s)+"
                     if re.match(smeg_regex, re.sub(smeg_sub, "", message.content.lower())):
-                        file = discord.File(Path.cwd() / "assets" / "wordart.png", filename="smeg.png")
-                        await message.reply(file=file)
+                        directory = Path.cwd() / "assets" / "smeg"
+                        if directory:
+                            choice = random.choice(list(directory.iterdir()))
+                            file = discord.File(
+                                choice,
+                                filename="%s.%s" % (os.urandom(32).hex(), choice.suffix)
+                            )
+                            await message.reply(file=file)
                     if message.reference is not None and message.reference.cached_message is not None:
                         if message.content.lower().strip() in ("what", "what?", "huh", "huh?", "?"):
                             if f"{message.author.mention} said '" * 3 in message.reference.cached_message.content:
