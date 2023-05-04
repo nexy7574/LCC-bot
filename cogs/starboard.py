@@ -7,6 +7,7 @@ import httpx
 from typing import Tuple
 
 import discord
+import orm
 from discord.ext import commands
 from utils.db import StarBoardMessage
 
@@ -135,6 +136,25 @@ class StarBoardCog(commands.Cog):
                 star_count = 0
             else:
                 star_count = star_count[0].count
+
+            if star_count == 0:
+                try:
+                    database: StarBoardMessage = await StarBoardMessage.objects.get(id=payload.message_id)
+                except orm.NoMatch:
+                    return
+                else:
+                    channel = discord.utils.get(message.guild.text_channels, name="starboard")
+                    if channel:
+                        try:
+                            message = await channel.fetch_message(database.id)
+                            await message.delete(delay=0.1, reason="Starboard message lost all stars.")
+                        except discord.HTTPException:
+                            pass
+                        finally:
+                            await database.delete()
+                    else:
+                        await database.delete()
+
             database: Tuple[StarBoardMessage, bool] = await StarBoardMessage.objects.get_or_create(
                 {"channel": payload.channel_id}, id=payload.message_id
             )
