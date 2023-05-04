@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import os
+import sys
 import time
 from typing import List
 
@@ -14,7 +15,8 @@ try:
     import fanshim
     import apa102
     import RPi.GPIO as GPIO
-except ImportError:
+except ImportError as e:
+    print("Raspberry Pi libraries not found.", e, file=sys.stderr)
     fanshim = GPIO = apa102 = None
 
 
@@ -27,6 +29,8 @@ class InfoCog(commands.Cog):
         "NETWORK": "\N{satellite antenna}",
         "SENSORS": "\N{thermometer}",
         "UPTIME": "\N{alarm clock}",
+        "ON": "\N{large green circle}",
+        "OFF": "\N{large red circle}",
     }
 
     def __init__(self, bot):
@@ -120,41 +124,46 @@ class InfoCog(commands.Cog):
             embed.add_field(
                 name=f"{self.EMOJIS['SENSORS']} Temperature (coretemp)",
                 value="\n".join(f"{s.label}: {s.current:.2f}°C" for s in temperature["coretemp"]),
-                inline=False,
+                inline=True,
             )
         elif "acpitz" in temperature:
             embed.add_field(
                 name=f"{self.EMOJIS['SENSORS']} Temperature (acpitz)",
                 value="\n".join(f"{s.label}: {s.current:.2f}°C" for s in temperature["acpitz"]),
-                inline=False,
+                inline=True,
             )
         elif "cpu_thermal" in temperature:
             embed.add_field(
                 name=f"{self.EMOJIS['SENSORS']} Temperature (cpu_thermal)",
                 value="\n".join(f"{s.label}: {s.current:.2f}°C" for s in temperature["cpu_thermal"]),
-                inline=False,
+                inline=True,
             )
 
         if fans:
             embed.add_field(
                 name=f"{self.EMOJIS['SENSORS']} Fans",
                 value="\n".join(f"{s.label}: {s.current:.2f} RPM" for s in fans),
-                inline=False,
+                inline=True,
             )
         if fanshim:
             # PiMoroni's fanshim by default uses pin 18 for control
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(18, GPIO.IN)
             fan_active = bool(GPIO.input(18))
-            LED = apa102.APA102(1, 15, 14, None)
+            # LED = apa102.APA102(1, 15, 14, None)
             # Get LED colour as a tuple of (r, g, b)
-            LED_colour = LED.get_pixel_colour(0)
+            # LED_colour = LED.get_pixel_colour(0)
             # Convert to hex
-            LED_colour = "%02x%02x%02x" % LED_colour
+            # LED_colour = "%02x%02x%02x" % LED_colour
+            LED_colour = "unknown"
+            fan_state = f"{self.EMOJIS['OFF']} Inactive"
             if fan_active:
-                embed.add_field(
-                    name=f"{self.EMOJIS['SENSORS']} Fan",
-                    value=f"{self.EMOJIS['ON']} Active (LED: #{LED_colour})",
-                    inline=False,
-                )
+                fan_state = f"{self.EMOJIS['ON']} Active"
+            embed.add_field(
+                name=f"{self.EMOJIS['SENSORS']} Fan",
+                value=f"{fan_state} (LED: #{LED_colour})",
+                inline=True,
+            )
 
         embed.add_field(
             name=f"{self.EMOJIS['RAM']} RAM",
@@ -184,7 +193,7 @@ class InfoCog(commands.Cog):
             name=f"{self.EMOJIS['NETWORK']} Network",
             value=f"**Sent:** {humanize.naturalsize(network.bytes_sent, binary=binary)}\n"
                   f"**Received:** {humanize.naturalsize(network.bytes_recv, binary=binary)}",
-            inline=False,
+            inline=True,
         )
         embed.add_field(
             name=f"{self.EMOJIS['UPTIME']} Uptime",
