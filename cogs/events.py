@@ -1,4 +1,5 @@
 import hashlib
+import inspect
 import io
 import json
 import os
@@ -7,11 +8,12 @@ import re
 import asyncio
 import textwrap
 import subprocess
+import traceback
 import warnings
 from datetime import datetime, timezone, timedelta
 from bs4 import BeautifulSoup
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict, Any
 import discord
 import httpx
 from discord.ext import commands, pages, tasks
@@ -217,6 +219,145 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
+        async def it_just_works():
+            _file = Path.cwd() / "assets" / "it-just-works.ogg"
+            if message.author.voice is not None and message.author.voice.channel is not None:
+                voice: discord.VoiceClient | None = None
+                if message.guild.voice_client is not None:
+                    # noinspection PyUnresolvedReferences
+                    if message.guild.voice_client.is_playing():
+                        return
+                    try:
+                        await _dc(message.guild.voice_client)
+                    except discord.HTTPException:
+                        pass
+                try:
+                    voice = await message.author.voice.channel.connect(timeout=10, reconnect=False)
+                except asyncio.TimeoutError:
+                    await message.channel.trigger_typing()
+                    await message.reply(
+                        "I'd play the song but discord's voice servers are shit.", 
+                        file=discord.File(_file)
+                    )
+                    region = message.author.voice.channel.rtc_region
+                    # noinspection PyUnresolvedReferences
+                    console.log(
+                        "Timed out connecting to voice channel: {0.name} in {0.guild.name} "
+                        "(region {1})".format(
+                            message.author.voice.channel,
+                            region.name if region else "auto (unknown)"
+                        )
+                    )
+                    return
+                
+                if voice.channel != message.author.voice.channel:
+                    await voice.move_to(message.author.voice.channel)
+                
+                if message.guild.me.voice.self_mute or message.guild.me.voice.mute:
+                    await _dc(voice)
+                    await message.channel.trigger_typing()
+                    await message.reply("Unmute me >:(", file=discord.File(_file))
+                else:
+                    
+                    def after(err):
+                        asyncio.run_coroutine_threadsafe(
+                            _dc(voice),
+                            self.bot.loop
+                        )
+                        if err is not None:
+                            console.log(f"Error playing audio: {err}")
+
+                    # noinspection PyTypeChecker
+                    src = discord.FFmpegPCMAudio(str(_file.resolve()), stderr=subprocess.DEVNULL)
+                    src = discord.PCMVolumeTransformer(src, volume=0.5)
+                    voice.play(
+                        src,
+                        after=after
+                    )
+            else:
+                await message.channel.trigger_typing()
+                await message.reply(file=discord.File(_file))
+
+        async def send_smeg():
+            directory = Path.cwd() / "assets" / "smeg"
+            if directory:
+                choice = random.choice(list(directory.iterdir()))
+                _file = discord.File(
+                    choice,
+                    filename="%s.%s" % (os.urandom(32).hex(), choice.suffix)
+                )
+                await message.reply(file=_file)
+
+        async def send_what():
+            msg = message.reference.cached_message
+            if not msg:
+                try:
+                    msg = await message.channel.fetch_message(message.reference.message_id)
+                except discord.HTTPException:
+                    return
+
+            if msg.content.count(f"{self.bot.user.mention} said ") >= 2:
+                await message.reply("You really are deaf, aren't you.")
+            elif not msg.content:
+                await message.reply(
+                    "Maybe *I* need to get my hearing checked, I have no idea what {} said.".format(
+                        msg.author.mention
+                    )
+                )
+            else:
+                text = "{0.author.mention} said '{0.content}', you deaf sod.".format(
+                    msg
+                )
+                _content = textwrap.shorten(
+                    text, width=2000, placeholder="[...]"
+                )
+                await message.reply(_content, allowed_mentions=discord.AllowedMentions.none())
+
+        async def send_fuck_you():
+            student = await get_or_none(Student, user_id=message.author.id)
+            if student is None:
+                return await message.reply("You aren't even verified...", delete_after=10)
+            elif student.ip_info is None:
+                if OAUTH_REDIRECT_URI:
+                    return await message.reply(
+                        f"Let me see who you are, and then we'll talk... <{OAUTH_REDIRECT_URI}>",
+                        delete_after=30
+                    )
+                else:
+                    return await message.reply(
+                        "I literally don't even know who you are...",
+                        delete_after=10
+                    )
+            else:
+                ip = student.ip_info
+                is_proxy = ip.get("proxy")
+                if is_proxy is None:
+                    is_proxy = "?"
+                else:
+                    is_proxy = "\N{WHITE HEAVY CHECK MARK}" if is_proxy else "\N{CROSS MARK}"
+
+                is_hosting = ip.get("hosting")
+                if is_hosting is None:
+                    is_hosting = "?"
+                else:
+                    is_hosting = "\N{WHITE HEAVY CHECK MARK}" if is_hosting else "\N{CROSS MARK}"
+
+                return await message.reply(
+                    "Nice argument, however,\n"
+                    "IP: {0[query]}\n"
+                    "ISP: {0[isp]}\n"
+                    "Latitude: {0[lat]}\n"
+                    "Longitude: {0[lon]}\n"
+                    "Proxy server: {1}\n"
+                    "VPS (or other hosting) provider: {2}\n\n"
+                    "\N{smiling face with sunglasses}".format(
+                        ip,
+                        is_proxy,
+                        is_hosting
+                    ),
+                    delete_after=30
+                )
+
         if not message.guild:
             return
 
@@ -233,241 +374,143 @@ class Events(commands.Cog):
                 await message.delete(delay=1)
 
         else:
-            # Respond to shronk bot
-            if message.author.id == 1063875884274163732 and message.channel.can_send():
-                if "pissylicious 💦💦" in message.content:
-                    from dns import asyncresolver
-                    import httpx
-                    response = await asyncresolver.resolve("shronkservz.tk", "A")
-                    ip_info_response = await httpx.AsyncClient().get(f"http://ip-api.com/json/{response[0].address}")
-                    if ip_info_response.status_code == 200:
-                        return await message.reply(
-                            f"Scattylicious\N{pile of poo}\N{pile of poo}\n"
-                            "IP: {0[query]}\n"
-                            "ISP: {0[isp]}\n"
-                            "Latitude: {0[lat]}\n"
-                            "Longitude: {0[lon]}\n".format(
-                                ip_info_response.json(),
-                            )
-                        )
-                RESPONSES = {
-                    "Congratulations!!": "Shut up SHRoNK Bot, nobody loves you.",
-                    "You run on a Raspberry Pi... I run on a real server": "At least my server gets action, "
-                                                                           "while yours just sits and collects dust!"
+            assets = Path.cwd() / "assets"
+            responses: Dict[str | tuple, Dict[str, Any]] = {
+                r"ferdi": {
+                    "content": "https://ferdi-is.gay/",
+                    "delete_after": 15,
+                },
+                r"\bbee(s)*\b": {
+                    "content": "https://ferdi-is.gay/bee",
+                },
+                r"it just works": {
+                    "func": it_just_works
+                },
+                r"^linux$": {
+                    "content": lambda: (assets / "copypasta.txt").read_text(),
+                    "meta": {
+                        "needs_mention": True
+                    }
+                },
+                r"carat": {
+                    "file": discord.File(assets / "carat.jpg"),
+                    "delete_after": None
+                },
+                r"[s5]+(m)+[e3]+[g9]+": {
+                    "func": send_smeg,
+                    "meta": {
+                        "sub": {
+                            r"pattern": r"(-_.\s)+",
+                            r"with": ''
+                        }
+                    }
+                },
+                r"(what|huh)(\?|!)*": {
+                    "func": send_what,
+                    "meta": {
+                        "check": lambda: message.reference is not None
+                    }
+                },
+                ("year", "linux", "desktop"): {
+                    "content": lambda: "%s will be the year of the GNU+Linux desktop." % datetime.now().year,
+                    "delete_after": None
+                },
+                r"fuck you(\W)*": {
+                    "func": send_fuck_you,
+                    "meta": {
+                        "check": lambda: message.content.startswith(self.bot.user.mention)
+                    }
                 }
-                for k, v in RESPONSES.items():
-                    if k in message.content:
-                        await message.reply("shut up", delete_after=3)
-                        await message.delete(delay=3)
-                        break
+            }
             # Stop responding to any bots
             if message.author.bot is True:
                 return
-            if message.channel.can_send() and "ferdi" in message.content.lower():
-                await message.reply("https://ferdi-is.gay/", delete_after=30)
+
             # Only respond if the message has content...
-            if message.content:
-                if message.channel.can_send():  # ... and we can send messages
-                    if "it just works" in message.content.lower():
-                        file = Path.cwd() / "assets" / "it-just-works.ogg"
-                        if message.author.voice is not None and message.author.voice.channel is not None:
-                            voice: discord.VoiceClient | None = None
-                            if message.guild.voice_client is not None:
-                                # noinspection PyUnresolvedReferences
-                                if message.guild.voice_client.is_playing():
-                                    return
-                                try:
-                                    await _dc(message.guild.voice_client)
-                                except discord.HTTPException:
-                                    pass
-                            try:
-                                voice = await message.author.voice.channel.connect(timeout=10, reconnect=False)
-                            except asyncio.TimeoutError:
-                                await message.channel.trigger_typing()
-                                await message.reply(
-                                    "I'd play the song but discord's voice servers are shit.", 
-                                    file=discord.File(file)
-                                )
-                                region = message.author.voice.channel.rtc_region
-                                # noinspection PyUnresolvedReferences
-                                console.log(
-                                    "Timed out connecting to voice channel: {0.name} in {0.guild.name} "
-                                    "(region {1})".format(
-                                        message.author.voice.channel,
-                                        region.name if region else "auto (unknown)"
-                                    )
-                                )
-                                return
-                            
-                            if voice.channel != message.author.voice.channel:
-                                await voice.move_to(message.author.voice.channel)
-                            
-                            if message.guild.me.voice.self_mute or message.guild.me.voice.mute:
-                                await _dc(voice)
-                                await message.channel.trigger_typing()
-                                await message.reply("Unmute me >:(", file=discord.File(file))
-                            else:
-                                
-                                def after(err):
-                                    asyncio.run_coroutine_threadsafe(
-                                        _dc(voice),
-                                        self.bot.loop
-                                    )
-                                    if err is not None:
-                                        console.log(f"Error playing audio: {err}")
+            if message.content and message.channel.can_send(discord.Embed, discord.File):
+                for key, data in responses.items():
+                    meta = data.pop("meta", {})
+                    if meta.get("needs_mention"):
+                        if not self.bot.user.mention not in message.mentions:
+                            continue
 
-                                # noinspection PyTypeChecker
-                                src = discord.FFmpegPCMAudio(str(file.absolute()), stderr=subprocess.DEVNULL)
-                                src = discord.PCMVolumeTransformer(src, volume=0.5)
-                                voice.play(
-                                    src,
-                                    after=after
-                                )
-                        else:
-                            await message.channel.trigger_typing()
-                            await message.reply(file=discord.File(file))
-                        
-                    if "linux" in message.content.lower() and self.bot.user in message.mentions:
+                    if meta.get("check"):
                         try:
-                            with open("./assets/copypasta.txt", "r") as f:
-                                await message.reply(f.read())
-                        except FileNotFoundError:
-                            await message.reply(
-                                "I'd just like to interject for a moment. What you're referring to as Linux, "
-                                "is in fact, uh... I don't know, I forgot."
-                            )
-                    if "carat" in message.content.lower():
-                        file = discord.File(Path.cwd() / "assets" / "carat.png", filename="carat.png")
-                        await message.reply(file=file)
-                    smeg_regex = r"[s5]+(m)+[e3]+[g9]+"
-                    smeg_sub = r"(-_.\s)+"
-                    if re.match(smeg_regex, re.sub(smeg_sub, "", message.content.lower())):
-                        directory = Path.cwd() / "assets" / "smeg"
-                        if directory:
-                            choice = random.choice(list(directory.iterdir()))
-                            file = discord.File(
-                                choice,
-                                filename="%s.%s" % (os.urandom(32).hex(), choice.suffix)
-                            )
-                            await message.reply(file=file)
-                    if message.reference is not None and message.reference.cached_message is not None:
-                        if message.content.lower().strip() in ("what", "what?", "huh", "huh?", "?"):
-                            if f"{message.author.mention} said '" * 3 in message.reference.cached_message.content:
-                                await message.reply("You really are deaf aren't you.")
-                            elif not message.reference.cached_message.content:
-                                await message.reply(
-                                    "Maybe *I* need to get my hearing checked, I have no idea what {} said.".format(
-                                        message.reference.cached_message.author.mention
-                                    )
-                                )
+                            okay = meta["check"]()
+                        except (Exception, RuntimeError):
+                            traceback.print_exc()
+                            okay = False
+
+                        if not okay:
+                            continue
+                    elif meta.get("checks") and isinstance(meta["checks"], list):
+                        for check in meta["checks"]:
+                            try:
+                                okay = check()
+                            except (Exception, RuntimeError):
+                                traceback.print_exc()
+                                okay = False
+
+                            if not okay:
+                                break
+                        else:
+                            continue
+
+                    if meta.get("sub") is not None and isinstance(meta["sub"], dict):
+                        content = re.sub(
+                            meta["sub"]["pattern"],
+                            meta["sub"]["with"],
+                            message.content
+                        )
+                    else:
+                        content = message.content
+
+                    if isinstance(key, str):
+                        regex = re.compile(key, re.IGNORECASE)
+                        if not regex.search(content):
+                            continue
+                    elif isinstance(key, tuple):
+                        if not all(k in content for k in key):
+                            continue
+
+                    if "func" in data:
+                        try:
+                            if inspect.iscoroutinefunction(data["func"]):
+                                await data["func"]()
+                                break
                             else:
-                                text = "{0.author.mention} said %r, you deaf sod.".format(
-                                    message.reference.cached_message
-                                )
-                                _content = textwrap.shorten(
-                                    text % message.reference.cached_message.content, width=2000, placeholder="[...]"
-                                )
-                                await message.reply(_content)
-                    await self.process_message_for_github_links(message)
+                                data["func"]()
+                                break
+                        except (Exception, RuntimeError):
+                            traceback.print_exc()
+                            continue
+                    else:
+                        for k, v in data.copy().items():
+                            if callable(v):
+                                data[k] = v()
+                        await message.reply(**data)
+                        break
+
+                await self.process_message_for_github_links(message)
+
+                T_EMOJI = "\U0001f3f3\U0000fe0f\U0000200d\U000026a7\U0000fe0f"
+                G_EMOJI = "\U0001f3f3\U0000fe0f\U0000200d\U0001f308"
+                N_EMOJI = "\U0001f922"
+                C_EMOJI = "\U0000271d\U0000fe0f"
+                reactions = {
+                    r"mpreg|lupupa|\U0001fac3": "\U0001fac3",  # mpreg
+                    r"(trans(gender)?($|\W+)|%s)" % T_EMOJI: T_EMOJI,  # trans
+                    r"gay|%s" % G_EMOJI: G_EMOJI,
+                    r"(femboy|trans(gender)?($|\W+))": C_EMOJI
+                }
                 if message.channel.permissions_for(message.guild.me).add_reactions:
-                    if "mpreg" in message.content.lower() or "\U0001fac3" in message.content.lower():
-                        try:
-                            await message.add_reaction("\U0001fac3")
-                        except discord.HTTPException as e:
-                            console.log("Failed to add mpreg reaction:", e)
-                    if "lupupa" in message.content.lower():
-                        try:
-                            await message.add_reaction("\U0001fac3")
-                        except discord.HTTPException as e:
-                            console.log("Failed to add mpreg reaction:", e)
-
                     is_naus = random.randint(1, 100) == 32
-                    if self.bot.user in message.mentions or message.channel.id == 1032974266527907901 or is_naus:
-                        T_EMOJI = "\U0001f3f3\U0000fe0f\U0000200d\U000026a7\U0000fe0f"
-                        G_EMOJI = "\U0001f3f3\U0000fe0f\U0000200d\U0001f308"
-                        N_EMOJI = "\U0001f922"
-                        C_EMOJI = "\U0000271d\U0000fe0f"
-                        if any((x in message.content.lower() for x in ("trans", T_EMOJI, "femboy"))) or is_naus:
-                            try:
-                                await message.add_reaction(N_EMOJI)
-                            except discord.HTTPException as e:
-                                console.log("Failed to add trans reaction:", e)
-                        if "gay" in message.content.lower() or G_EMOJI in message.content.lower():
-                            try:
-                                await message.add_reaction(C_EMOJI)
-                            except discord.HTTPException as e:
-                                console.log("Failed to add gay reaction:", e)
+                    for key, value in reactions.items():
+                        if re.search(key, message.content, re.IGNORECASE):
+                            await message.add_reaction(value)
 
-            if all(x in message.content.lower() for x in ("year", "linux", "desktop")):
-                date = discord.utils.utcnow()
-                # date = date.replace(year=date.year + 1)
-                return await message.reply(date.strftime("%Y") + " will be the year of the GNU+Linux desktop.")
-
-            if self.bot.user in message.mentions:
-                if message.content.startswith(self.bot.user.mention):
-                    if message.content.lower().endswith("bot"):
-                        pos, neut, neg, _ = await self.analyse_text(message.content)
-                        if pos > neg:
-                            embed = discord.Embed(description=":D", color=discord.Color.green())
-                            embed.set_footer(
-                                text=f"Pos: {pos*100:.2f}% | Neutral: {neut*100:.2f}% | Neg: {neg*100:.2f}%"
-                            )
-                        elif pos == neg:
-                            embed = discord.Embed(description=":|", color=discord.Color.greyple())
-                            embed.set_footer(
-                                text=f"Pos: {pos * 100:.2f}% | Neutral: {neut * 100:.2f}% | Neg: {neg * 100:.2f}%"
-                            )
-                        else:
-                            embed = discord.Embed(description=":(", color=discord.Color.red())
-                            embed.set_footer(
-                                text=f"Pos: {pos*100:.2f}% | Neutral: {neut*100:.2f}% | Neg: {neg*100:.2f}%"
-                            )
-                        return await message.reply(embed=embed)
-
-                    if message.content.lower().endswith("fuck you"):
-                        student = await get_or_none(Student, user_id=message.author.id)
-                        if student is None:
-                            return await message.reply("You aren't even verified...", delete_after=10)
-                        elif student.ip_info is None:
-                            if OAUTH_REDIRECT_URI:
-                                return await message.reply(
-                                    f"Let me see who you are, and then we'll talk... <{OAUTH_REDIRECT_URI}>",
-                                    delete_after=30
-                                )
-                            else:
-                                return await message.reply(
-                                    "I literally don't even know who you are...",
-                                    delete_after=10
-                                )
-                        else:
-                            ip = student.ip_info
-                            is_proxy = ip.get("proxy")
-                            if is_proxy is None:
-                                is_proxy = "?"
-                            else:
-                                is_proxy = "\N{WHITE HEAVY CHECK MARK}" if is_proxy else "\N{CROSS MARK}"
-
-                            is_hosting = ip.get("hosting")
-                            if is_hosting is None:
-                                is_hosting = "?"
-                            else:
-                                is_hosting = "\N{WHITE HEAVY CHECK MARK}" if is_hosting else "\N{CROSS MARK}"
-
-                            return await message.reply(
-                                "Nice argument, however,\n"
-                                "IP: {0[query]}\n"
-                                "ISP: {0[isp]}\n"
-                                "Latitude: {0[lat]}\n"
-                                "Longitude: {0[lon]}\n"
-                                "Proxy server: {1}\n"
-                                "VPS (or other hosting) provider: {2}\n\n"
-                                "\N{smiling face with sunglasses}".format(
-                                    ip,
-                                    is_proxy,
-                                    is_hosting
-                                ),
-                                delete_after=30
-                            )
+                    if is_naus:
+                        await message.add_reaction(N_EMOJI)
 
     @tasks.loop(minutes=10)
     async def fetch_discord_atom_feed(self):

@@ -20,15 +20,16 @@ class Bot(commands.Bot):
     if TYPE_CHECKING:
         web: Optional[Dict[str, Union[Server, Config, Task]]]
 
-    def __init__(self, intents: discord.Intents, guilds: list[int], extensions: list[str]):
+    def __init__(self, intents: discord.Intents, guilds: list[int], extensions: list[str], prefixes: list[str]):
         from .db import registry
         from .console import console
         super().__init__(
-            command_prefix=commands.when_mentioned_or("h!", "r!"),
+            command_prefix=commands.when_mentioned_or(*prefixes),
             debug_guilds=guilds,
             allowed_mentions=discord.AllowedMentions.none(),
             intents=intents,
-            max_messages=5000
+            max_messages=5000,
+            case_insensitive=True,
         )
         self.loop.run_until_complete(registry.create_all())
         self.training_lock = Lock()
@@ -103,5 +104,10 @@ except ImportError:
         "cogs.voice"
     ]
 
+try:
+    from config import prefixes as _prefixes
+except ImportError:
+    _prefixes = ("h!", "r!")
 
-bot = Bot(_intents, config.guilds, _extensions)
+
+bot = Bot(_intents, config.guilds, _extensions, list(_prefixes))
