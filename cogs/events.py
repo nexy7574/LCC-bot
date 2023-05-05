@@ -219,64 +219,65 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        async def it_just_works():
-            _file = Path.cwd() / "assets" / "it-just-works.ogg"
-            if message.author.voice is not None and message.author.voice.channel is not None:
-                voice: discord.VoiceClient | None = None
-                if message.guild.voice_client is not None:
-                    # noinspection PyUnresolvedReferences
-                    if message.guild.voice_client.is_playing():
-                        return
+        def play_voice(_file):
+            async def internal():
+                if message.author.voice is not None and message.author.voice.channel is not None:
+                    voice: discord.VoiceClient | None = None
+                    if message.guild.voice_client is not None:
+                        # noinspection PyUnresolvedReferences
+                        if message.guild.voice_client.is_playing():
+                            return
+                        try:
+                            await _dc(message.guild.voice_client)
+                        except discord.HTTPException:
+                            pass
                     try:
-                        await _dc(message.guild.voice_client)
-                    except discord.HTTPException:
-                        pass
-                try:
-                    voice = await message.author.voice.channel.connect(timeout=10, reconnect=False)
-                except asyncio.TimeoutError:
-                    await message.channel.trigger_typing()
-                    await message.reply(
-                        "I'd play the song but discord's voice servers are shit.", 
-                        file=discord.File(_file)
-                    )
-                    region = message.author.voice.channel.rtc_region
-                    # noinspection PyUnresolvedReferences
-                    console.log(
-                        "Timed out connecting to voice channel: {0.name} in {0.guild.name} "
-                        "(region {1})".format(
-                            message.author.voice.channel,
-                            region.name if region else "auto (unknown)"
+                        voice = await message.author.voice.channel.connect(timeout=10, reconnect=False)
+                    except asyncio.TimeoutError:
+                        await message.channel.trigger_typing()
+                        await message.reply(
+                            "I'd play the song but discord's voice servers are shit.", 
+                            file=discord.File(_file)
                         )
-                    )
-                    return
-                
-                if voice.channel != message.author.voice.channel:
-                    await voice.move_to(message.author.voice.channel)
-                
-                if message.guild.me.voice.self_mute or message.guild.me.voice.mute:
-                    await _dc(voice)
-                    await message.channel.trigger_typing()
-                    await message.reply("Unmute me >:(", file=discord.File(_file))
-                else:
+                        region = message.author.voice.channel.rtc_region
+                        # noinspection PyUnresolvedReferences
+                        console.log(
+                            "Timed out connecting to voice channel: {0.name} in {0.guild.name} "
+                            "(region {1})".format(
+                                message.author.voice.channel,
+                                region.name if region else "auto (unknown)"
+                            )
+                        )
+                        return
                     
-                    def after(err):
-                        asyncio.run_coroutine_threadsafe(
-                            _dc(voice),
-                            self.bot.loop
-                        )
-                        if err is not None:
-                            console.log(f"Error playing audio: {err}")
+                    if voice.channel != message.author.voice.channel:
+                        await voice.move_to(message.author.voice.channel)
+                    
+                    if message.guild.me.voice.self_mute or message.guild.me.voice.mute:
+                        await _dc(voice)
+                        await message.channel.trigger_typing()
+                        await message.reply("Unmute me >:(", file=discord.File(_file))
+                    else:
+                        
+                        def after(err):
+                            asyncio.run_coroutine_threadsafe(
+                                _dc(voice),
+                                self.bot.loop
+                            )
+                            if err is not None:
+                                console.log(f"Error playing audio: {err}")
 
-                    # noinspection PyTypeChecker
-                    src = discord.FFmpegPCMAudio(str(_file.resolve()), stderr=subprocess.DEVNULL)
-                    src = discord.PCMVolumeTransformer(src, volume=0.5)
-                    voice.play(
-                        src,
-                        after=after
-                    )
-            else:
-                await message.channel.trigger_typing()
-                await message.reply(file=discord.File(_file))
+                        # noinspection PyTypeChecker
+                        src = discord.FFmpegPCMAudio(str(_file.resolve()), stderr=subprocess.DEVNULL)
+                        src = discord.PCMVolumeTransformer(src, volume=0.5)
+                        voice.play(
+                            src,
+                            after=after
+                        )
+                else:
+                    await message.channel.trigger_typing()
+                    await message.reply(file=discord.File(_file))
+            return internal
 
         async def send_smeg():
             directory = Path.cwd() / "assets" / "smeg"
@@ -384,7 +385,10 @@ class Events(commands.Cog):
                     "content": "https://ferdi-is.gay/bee",
                 },
                 r"it just works": {
-                    "func": it_just_works
+                    "func": play_voice(assets / "it-just-works.mp3"),
+                    "meta": {
+                        "check": (assets / "it-just-works.mp3").exists
+                    }
                 },
                 r"^linux$": {
                     "content": lambda: (assets / "copypasta.txt").read_text(),
@@ -430,6 +434,12 @@ class Events(commands.Cog):
                     "func": send_fuck_you,
                     "meta": {
                         "check": lambda: message.content.startswith(self.bot.user.mention)
+                    }
+                },
+                r"mine diamonds": {
+                    "func": play_voice(assets / "mine-diamonds.opus"),
+                    "meta": {
+                        "check": (assets / "mine-diamonds.opus").exists
                     }
                 }
             }
