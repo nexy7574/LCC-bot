@@ -396,7 +396,7 @@ class Events(commands.Cog):
                     "file": discord.File(assets / "carat.jpg"),
                     "delete_after": None
                 },
-                r"lupupa": {
+                r"(lupupa|fuck(ed)? the hell out\W*)": {
                     "file": discord.File(assets / "lupupa.jpg"),
                 },
                 r"[s5]+(m)+[e3]+[g9]+": {
