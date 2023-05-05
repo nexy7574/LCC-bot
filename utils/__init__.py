@@ -1,7 +1,7 @@
 from typing import Optional, TYPE_CHECKING
 from urllib.parse import urlparse
 
-import discord
+import time
 from discord.ext import commands
 
 from ._email import *
@@ -28,6 +28,28 @@ class JimmyBanException(discord.CheckFailure):
 
     def __repr__(self):
         return f"<JimmyBanException until={self.until!r} reason={self.reason!r}>"
+
+
+class Timer:
+    def __init__(self, target: dict = None, name: str = ...):
+        self.target = target
+        self.name = name
+        self._start_time = None
+        self._end_time = None
+
+    @property
+    def total(self) -> float:
+        if not self._start_time and not self._end_time:
+            raise RuntimeError("Timer has not been started or stopped.")
+        return self._end_time - self._start_time
+
+    def __enter__(self):
+        self._start_time = time.time()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._end_time = time.time()
+        if self.target and self.name is not ...:
+            self.target[self.name] = self.total
 
 
 def simple_embed_paginator(

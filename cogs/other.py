@@ -35,9 +35,7 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
-# from selenium.webdriver.ie
-
-from utils import console
+from utils import console, Timer
 
 try:
     from config import proxy
@@ -1536,38 +1534,53 @@ class OtherCog(commands.Cog):
     ):
         """OCRs an image"""
         await ctx.defer()
+        timings: Dict[str, float] = {}
         attachment: discord.Attachment
-        data = await attachment.read()
-        file = io.BytesIO(data)
-        file.seek(0)
-        img = await self.bot.loop.run_in_executor(None, Image.open, file)
+        with Timer(timings, "download attachment"):
+            data = await attachment.read()
+            file = io.BytesIO(data)
+            file.seek(0)
+        with Timer(timings, "Parse image"):
+            img = await self.bot.loop.run_in_executor(None, Image.open, file)
         try:
-            text = await self.bot.loop.run_in_executor(None, pytesseract.image_to_string, img)
+            with Timer(timings, "Run OCR"):
+                text = await self.bot.loop.run_in_executor(None, pytesseract.image_to_string, img)
         except pytesseract.TesseractError as e:
             return await ctx.respond(f"Failed to perform OCR: `{e}`")
 
-        if len(text) > ctx.guild.filesize_limit - 100:
-            try:
-                response = await self.http.put(
-                    "https://api.mystb.in/paste",
-                    json={
-                        "files": [
-                            {
-                                "filename": "ocr.txt",
-                                "content": text
-                            }
-                        ],
-                    }
-                )
-                response.raise_for_status()
-            except httpx.HTTPError:
-                return await ctx.respond("OCR content too large to post.")
-            else:
-                data = response.json()
-                return await ctx.respond("https://mystb.in/%s" % data["id"])
+        if len(text) > 4096:
+            with Timer(timings, "Upload text to mystbin"):
+                try:
+                    response = await self.http.put(
+                        "https://api.mystb.in/paste",
+                        json={
+                            "files": [
+                                {
+                                    "filename": "ocr.txt",
+                                    "content": text
+                                }
+                            ],
+                        }
+                    )
+                    response.raise_for_status()
+                except httpx.HTTPError:
+                    return await ctx.respond("OCR content too large to post.")
+                else:
+                    data = response.json()
+                    with Timer(timings, "Respond (URL)"):
+                        embed = discord.Embed(
+                            description="View on [mystb.in](%s)" % ("https://mystb.in/" + data["id"]),
+                            colour=discord.Colour.dark_theme()
+                        )
+                        await ctx.respond(embed=embed)
+        else:
+            with Timer(timings, "Respond (File)"):
+                out_file = io.BytesIO(text.encode("utf-8", "replace"))
+                await ctx.respond(file=discord.File(out_file, filename="ocr.txt"))
 
-        out_file = io.BytesIO(text.encode("utf-8", "replace"))
-        return await ctx.respond(file=discord.File(out_file, filename="ocr.txt"))
+        await ctx.edit(
+            content="Timings:\n" + "\n".join("%s: %s" % (k.title(), v) for k, v in timings.items()),
+        )
 
 
 def setup(bot):

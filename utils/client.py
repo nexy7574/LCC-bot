@@ -55,6 +55,8 @@ class Bot(commands.Bot):
 
     async def on_error(self, event: str, *args, **kwargs):
         e_type, e, tb = sys.exc_info()
+        if isinstance(e, discord.NotFound) and e.code == 10062:  # invalid interaction
+            return
         if isinstance(e, discord.CheckFailure) and 'The global check once functions failed.' in str(e):
             return
         await super().on_error(event, *args, **kwargs)

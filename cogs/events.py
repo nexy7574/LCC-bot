@@ -260,12 +260,21 @@ class Events(commands.Cog):
                     else:
                         
                         def after(err):
-                            asyncio.run_coroutine_threadsafe(
+                            self.bot.loop.create_task(
                                 _dc(voice),
-                                self.bot.loop
                             )
                             if err is not None:
                                 console.log(f"Error playing audio: {err}")
+                                self.bot.loop.create_task(
+                                    message.add_reaction("\N{speaker with cancellation stroke}")
+                                )
+                            else:
+                                self.bot.loop.create_task(
+                                    message.remove_reaction("\N{speaker with three sound waves}", self.bot.user)
+                                )
+                                self.bot.loop.create_task(
+                                    message.add_reaction("\N{speaker}")
+                                )
 
                         # noinspection PyTypeChecker
                         src = discord.FFmpegPCMAudio(str(_file.resolve()), stderr=subprocess.DEVNULL)
@@ -274,6 +283,8 @@ class Events(commands.Cog):
                             src,
                             after=after
                         )
+                        if message.channel.permissions_for(message.guild.me).add_reactions:
+                            await message.add_reaction("\N{speaker with three sound waves}")
                 else:
                     await message.channel.trigger_typing()
                     await message.reply(file=discord.File(_file))
@@ -414,7 +425,7 @@ class Events(commands.Cog):
                     "func": send_smeg,
                     "meta": {
                         "sub": {
-                            r"pattern": r"(-_.\s)+",
+                            r"pattern": r"([-_.\s\u200b])+",
                             r"with": ''
                         },
                         "check": (assets / "smeg").exists
@@ -436,7 +447,7 @@ class Events(commands.Cog):
                         "check": lambda: message.content.startswith(self.bot.user.mention)
                     }
                 },
-                r"mine diamonds": {
+                r"mine(ing|d)? (diamonds|away)": {
                     "func": play_voice(assets / "mine-diamonds.opus"),
                     "meta": {
                         "check": (assets / "mine-diamonds.opus").exists

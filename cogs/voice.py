@@ -3,7 +3,10 @@ import io
 import json
 import shutil
 import asyncio
+import subprocess
+
 import discord
+import httpx
 import yt_dlp
 import tempfile
 from pathlib import Path
@@ -136,7 +139,12 @@ class VoiceCog(commands.Cog):
         return await self.bot.loop.run_in_executor(None, call)
 
     @commands.slash_command(name="play")
-    async def stream(self, ctx: discord.ApplicationContext, url: str, volume: float = 100):
+    async def stream(
+            self,
+            ctx: discord.ApplicationContext,
+            url: str,
+            volume: float = 100,
+    ):
         """Streams a URL using yt-dl"""
         if not ctx.user.voice:
             await ctx.respond("You are not connected to a voice channel.")
@@ -332,6 +340,73 @@ class VoiceCog(commands.Cog):
             else:
                 await sender("You are not connected to a voice channel.")
                 raise commands.CommandError("User not connected to a voice channel.")
+
+    @commands.slash_command(name="boost-audio")
+    async def boost_audio(
+            self,
+            ctx: discord.ApplicationContext,
+            file: discord.Attachment,
+            level: discord.Option(
+                float,
+                "A level (in percentage) of volume (e.g. 150 = 150%)",
+                min_value=0.1,
+                max_value=999.99
+            )
+    ):
+        """Boosts an audio file's audio level."""
+        await ctx.defer()
+        if file.size >= (25 * 1024 * 1024):
+            return await ctx.respond("File is too large (25MB Max).")
+
+        with tempfile.TemporaryDirectory("jimmy-audio-boost-") as temp_dir_raw:
+            temp_dir = Path(temp_dir_raw).resolve()
+            _input = temp_dir / file.filename
+            output = _input.with_name(_input.name + "-processed" + '.'.join(_input.suffixes))
+            await file.save(_input)
+
+            proc: subprocess.CompletedProcess = await self.bot.loop.run_in_executor(
+                None,
+                functools.partial(
+                    subprocess.run,
+                    (
+                        "ffmpeg",
+                        "-hide_banner",
+                        "-i",
+                        str(_input),
+                        "-b:a",
+                        "44.1k",
+                        "-af",
+                        "volume=%d" % (level / 100),
+                        str(output),
+                    ),
+                    capture_output=True
+                )
+            )
+            if proc.returncode == 0:
+                if output.stat().st_size >= (25 * 1024 * 1024) + len(output.name):
+                    return await ctx.respond("I'd love to serve you your boosted file, but its too large.")
+                return await ctx.respond(file=discord.File(output))
+            else:
+                data = {
+                    "files": [
+                        {
+                            "content": proc.stderr.decode() or 'empty',
+                            "filename": "stderr.txt"
+                        },
+                        {
+                            "content": proc.stdout.decode() or 'empty',
+                            "filename": "stdout.txt"
+                        }
+                    ]
+                }
+                response = await httpx.AsyncClient().put("https://api.mystb.in/paste", json=data)
+                if response.status_code == 201:
+                    data = response.json()
+                    key = "https://mystb.in/" + data["id"]
+                else:
+                    key = "https://www.youtube.com/watch?v=dgha9S39Y6M&status_code=%d" % response.status_code
+                await ctx.respond("Failed ([exit code %d](%s))" % (proc.returncode, key))
+                await ctx.edit(embed=None)
 
 
 def setup(bot):
