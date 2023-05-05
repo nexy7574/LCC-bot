@@ -17,3 +17,5 @@ pyttsx3>=2.90
 yt-dlp
 beautifulsoup4>=4.12.0
 lxml>=4.9.2
+pytesseract>=0.3.10
+pillow>=9.5.0

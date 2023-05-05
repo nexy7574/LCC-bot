@@ -21,6 +21,8 @@ from typing import Literal
 from typing import Tuple, Optional, Dict
 from pathlib import Path
 from urllib.parse import urlparse
+from PIL import Image
+import pytesseract
 
 import aiohttp
 import discord
@@ -1520,6 +1522,52 @@ class OtherCog(commands.Cog):
             return await ctx.respond(file=result, view=GenerateNewView())
         else:
             return await ctx.respond(result, view=GenerateNewView())
+
+    @commands.slash_command()
+    @commands.cooldown(1, 30, commands.BucketType.user)
+    @commands.max_concurrency(1, commands.BucketType.user)
+    async def ocr(
+            self,
+            ctx: discord.ApplicationContext,
+            attachment: discord.Option(
+                discord.SlashCommandOptionType.attachment,
+                description="Image to perform OCR on",
+            )
+    ):
+        """OCRs an image"""
+        await ctx.defer()
+        attachment: discord.Attachment
+        data = await attachment.read()
+        file = io.BytesIO(data)
+        file.seek(0)
+        img = await self.bot.loop.run_in_executor(None, Image.open, file)
+        try:
+            text = await self.bot.loop.run_in_executor(None, pytesseract.image_to_string, img)
+        except pytesseract.TesseractError as e:
+            return await ctx.respond(f"Failed to perform OCR: `{e}`")
+
+        if len(text) > ctx.guild.filesize_limit - 100:
+            try:
+                response = await self.http.put(
+                    "https://api.mystb.in/paste",
+                    json={
+                        "files": [
+                            {
+                                "filename": "ocr.txt",
+                                "content": text
+                            }
+                        ],
+                    }
+                )
+                response.raise_for_status()
+            except httpx.HTTPError:
+                return await ctx.respond("OCR content too large to post.")
+            else:
+                data = response.json()
+                return await ctx.respond("https://mystb.in/%s" % data["id"])
+
+        out_file = io.BytesIO(text.encode("utf-8", "replace"))
+        return await ctx.respond(file=discord.File(out_file, filename="ocr.txt"))
 
 
 def setup(bot):
