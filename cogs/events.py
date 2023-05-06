@@ -396,9 +396,9 @@ class Events(commands.Cog):
                     "content": "https://ferdi-is.gay/bee",
                 },
                 r"it just works": {
-                    "func": play_voice(assets / "it-just-works.mp3"),
+                    "func": play_voice(assets / "it-just-works.ogg"),
                     "meta": {
-                        "check": (assets / "it-just-works.mp3").exists
+                        "check": (assets / "it-just-works.ogg").exists
                     }
                 },
                 r"^linux$": {
