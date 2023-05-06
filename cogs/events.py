@@ -298,7 +298,7 @@ class Events(commands.Cog):
                     choice,
                     filename="%s.%s" % (os.urandom(32).hex(), choice.suffix)
                 )
-                await message.reply(file=_file)
+                await message.reply(file=_file, delete_after=60)
 
         async def send_what():
             msg = message.reference.cached_message
