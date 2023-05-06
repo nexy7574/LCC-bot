@@ -4,6 +4,7 @@ import sys
 import discord
 import os
 import httpx
+from pathlib import Path
 from datetime import datetime, timezone
 from hashlib import sha512
 
@@ -13,19 +14,33 @@ from http import HTTPStatus
 from utils import Student, get_or_none, VerifyCode, console, BannedStudentID
 from config import guilds
 
+SF_ROOT = Path(__file__).parent / "static"
+if SF_ROOT.exists() and SF_ROOT.is_dir():
+    from fastapi.staticfiles import StaticFiles
+else:
+    StaticFiles = None
+
 try:
     from config import OAUTH_ID, OAUTH_SECRET, OAUTH_REDIRECT_URI
 except ImportError:
     OAUTH_ID = OAUTH_SECRET = OAUTH_REDIRECT_URI = None
 
+try:
+    from config import WEB_ROOT_PATH
+except ImportError:
+    WEB_ROOT_PATH = ""
+
 GENERAL = "https://ptb.discord.com/channels/994710566612500550/1018915342317277215/"
 
 OAUTH_ENABLED = OAUTH_ID and OAUTH_SECRET and OAUTH_REDIRECT_URI
 
-app = FastAPI(root_path="/jimmy")
+app = FastAPI(root_path=WEB_ROOT_PATH)
 app.state.bot = None
 app.state.states = {}
 app.state.http = httpx.Client()
+
+if StaticFiles:
+    app.mount("/static", StaticFiles(directory=SF_ROOT), name="static")
 
 try:
     from utils.client import bot

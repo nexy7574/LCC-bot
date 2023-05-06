@@ -8,3 +8,4 @@ targets.json
 *.kdev4
 .env
 *.pyc
+web/static
