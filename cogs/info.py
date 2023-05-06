@@ -16,7 +16,7 @@ try:
     import apa102
     import RPi.GPIO as GPIO
 except ImportError as e:
-    print("Raspberry Pi libraries not found.", e, file=sys.stderr)
+    # print("Raspberry Pi libraries not found.", e, file=sys.stderr)
     fanshim = GPIO = apa102 = None
 
 

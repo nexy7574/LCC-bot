@@ -339,7 +339,7 @@ class UptimeCompetition(commands.Cog):
         embeds = entries = []
         for _target in targets:
             _target = self.get_target(_target, _target)
-            query = UptimeEntry.objects.filter(UptimeEntry.columns.timestamp >= look_back_timestamp).filter(
+            query = UptimeEntry.objects.filter(timestamp__gte=look_back_timestamp).filter(
                 target_id=_target["id"]
             )
             query = query.order_by("-timestamp")
