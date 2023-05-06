@@ -1,5 +1,6 @@
 import asyncio
 import sys
+from pathlib import Path
 
 import discord
 import config
@@ -95,16 +96,11 @@ try:
 except ImportError:
     _extensions = [
         "jishaku",
-        "cogs.verify",
-        "cogs.mod",
-        "cogs.events",
-        "cogs.assignments",
-        "cogs.timetable",
-        "cogs.other",
-        "cogs.starboard",
-        "cogs.uptime",
-        "cogs.voice"
     ]
+    for file in Path("cogs").glob("*.py"):
+        if file.name.startswith(("_", ".")):
+            continue
+        _extensions.append(f"cogs.{file.stem}")
 
 try:
     from config import prefixes as _prefixes
