@@ -11,13 +11,6 @@ import psutil
 from functools import partial
 from discord.ext import commands
 from pathlib import Path
-try:
-    import fanshim
-    import apa102
-    import RPi.GPIO as GPIO
-except ImportError as e:
-    # print("Raspberry Pi libraries not found.", e, file=sys.stderr)
-    fanshim = GPIO = apa102 = None
 
 
 class InfoCog(commands.Cog):
@@ -145,16 +138,9 @@ class InfoCog(commands.Cog):
                 value="\n".join(f"{s.label}: {s.current:.2f} RPM" for s in fans),
                 inline=True,
             )
-        if fanshim:
-            # PiMoroni's fanshim by default uses pin 18 for control
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setup(18, GPIO.IN)
-            fan_active = bool(GPIO.input(18))
-            # LED = apa102.APA102(1, 15, 14, None)
-            # Get LED colour as a tuple of (r, g, b)
-            # LED_colour = LED.get_pixel_colour(0)
-            # Convert to hex
-            # LED_colour = "%02x%02x%02x" % LED_colour
+        if Path("/tmp/fanstate").exists():
+            with open("/tmp/fanstate", "r") as f:
+                fan_active = f.read().strip() == "1"
             LED_colour = "unknown"
             fan_state = f"{self.EMOJIS['OFF']} Inactive"
             if fan_active:
