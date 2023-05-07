@@ -431,7 +431,7 @@ class Events(commands.Cog):
                         "check": (assets / "smeg").exists
                     }
                 },
-                r"(what|huh)(\?|!)*": {
+                r"(what|huh)(\?|!)*$": {
                     "func": send_what,
                     "meta": {
                         "check": lambda: message.reference is not None
