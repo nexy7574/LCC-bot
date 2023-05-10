@@ -453,7 +453,8 @@ class Events(commands.Cog):
                         "check": (assets / "mine-diamonds.opus").exists
                     }
                 },
-                r"vir[mg]in(\smedia\W*)?$": {
+                r"v[ei]r[mg]in(\sme(d|m[a]?)ia\W*)?$": {
+                    "content": "Get virgin'd"
                     "file": lambda: discord.File(
                         random.choice(list(Path(assets / 'virgin').iterdir()))
                     ),
