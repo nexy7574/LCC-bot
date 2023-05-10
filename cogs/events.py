@@ -452,6 +452,14 @@ class Events(commands.Cog):
                     "meta": {
                         "check": (assets / "mine-diamonds.opus").exists
                     }
+                },
+                r"vir[mg]in(\smedia\W*)?$": {
+                    "file": lambda: discord.File(
+                        random.choice(list(Path(assets / 'virgin').iterdir()))
+                    ),
+                    "meta": {
+                        "check": (assets / 'virgin').exists
+                    }
                 }
             }
             # Stop responding to any bots
