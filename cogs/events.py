@@ -454,7 +454,7 @@ class Events(commands.Cog):
                     }
                 },
                 r"v[ei]r[mg]in(\sme(d|m[a]?)ia\W*)?$": {
-                    "content": "Get virgin'd"
+                    "content": "Get virgin'd",
                     "file": lambda: discord.File(
                         random.choice(list(Path(assets / 'virgin').iterdir()))
                     ),
