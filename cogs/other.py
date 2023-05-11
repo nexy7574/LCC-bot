@@ -1264,6 +1264,7 @@ class OtherCog(commands.Cog):
                             embed.description += f"\N{warning sign}\ufe0f {file.name} is empty.\n"
                             continue
                         st = file.stat().st_size
+                        COMPRESS_FAILED = False
                         if st / 1024 / 1024 >= MAX_SIZE_MB or st >= BYTES_REMAINING:
                             if compress_if_possible:
                                 await ctx.edit(
@@ -1297,7 +1298,7 @@ class OtherCog(commands.Cog):
                                         )
                                     )
                                 except subprocess.CalledProcessError as e:
-                                    pass
+                                    COMPRESS_FAILED = True
                                 else:
                                     file = target
                                     st = file.stat().st_size
@@ -1311,11 +1312,12 @@ class OtherCog(commands.Cog):
                                 st_r /= 1024
                                 units.pop(0)
                             embed.description += "\N{warning sign}\ufe0f {} is too large to upload ({!s}{}" \
-                                                 ", max is {}MB).\n".format(
+                                                 ", max is {}MB{}).\n".format(
                                                     file.name,
                                                     round(st_r, 2),
                                                     units[0],
-                                                    MAX_SIZE_MB
+                                                    MAX_SIZE_MB,
+                                                    ', compressing failed' if COMPRESS_FAILED else ''
                                                  )
                             continue
                         else:
