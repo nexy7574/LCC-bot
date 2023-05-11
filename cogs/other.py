@@ -1160,14 +1160,15 @@ class OtherCog(commands.Cog):
                 if formats[fmt]["format"] == _format:
                     _format = fmt
                     break
-            elif not await self.bot.is_owner(ctx.user):
-                return await ctx.edit(
-                    embed=discord.Embed(
-                        title="Error",
-                        description="Invalid format %r. pass `list-formats:True` to see a list of formats." % _fmt,
-                        colour=discord.Colour.red()
+            else:
+                if not await self.bot.is_owner(ctx.user):
+                    return await ctx.edit(
+                        embed=discord.Embed(
+                            title="Error",
+                            description="Invalid format %r. pass `list-formats:True` to see a list of formats." % _fmt,
+                            colour=discord.Colour.red()
+                        )
                     )
-                )
 
         MAX_SIZE_MB = ctx.guild.filesize_limit / 1024 / 1024
         if MAX_SIZE_MB == 8.0:
