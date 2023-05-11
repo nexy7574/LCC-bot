@@ -1171,6 +1171,7 @@ class OtherCog(commands.Cog):
         MAX_SIZE_MB = ctx.guild.filesize_limit / 1024 / 1024
         if MAX_SIZE_MB == 8.0:
             MAX_SIZE_MB = 25.0
+        BYTES_REMAINING = (MAX_SIZE_MB - 0.256) * 1024 * 1024
         import yt_dlp
 
         with tempfile.TemporaryDirectory(prefix="jimmy-ytdl-wat") as tempdir_str:
@@ -1250,17 +1251,19 @@ class OtherCog(commands.Cog):
                     del logger
                     files = []
                     if upload_log:
-                        if stdout.stat().st_size:
+                        if (out_size := stdout.stat().st_size):
                             files.append(discord.File(stdout, "stdout.txt"))
-                        if stderr.stat().st_size:
+                            BYTES_REMAINING -= out_size
+                        if (err_size := stderr.stat().st_size):
                             files.append(discord.File(stderr, "stderr.txt"))
+                            BYTES_REMAINING -= err_size
 
                     for file in tempdir.glob(f"{ctx.user.id}-*"):
                         if file.stat().st_size == 0:
                             embed.description += f"\N{warning sign}\ufe0f {file.name} is empty.\n"
                             continue
                         st = file.stat().st_size
-                        if st / 1024 / 1024 >= MAX_SIZE_MB:
+                        if st / 1024 / 1024 >= MAX_SIZE_MB or st >= BYTES_REMAINING:
                             if compress_if_possible:
                                 target = file.with_name(file.name + '.compressed' + file.suffix)
                                 ffmpeg_command = [
@@ -1290,8 +1293,9 @@ class OtherCog(commands.Cog):
                                 else:
                                     file = target
                                     st = file.stat().st_size
-                                    if st / 1024 / 1024 <= MAX_SIZE_MB:
+                                    if st / 1024 / 1024 <= MAX_SIZE_MB and or st < BYTES_REMAINING:
                                         files.append(discord.File(file, file.name))
+                                        BYTES_REMAINING -= st
                                         continue
                             units = ["B", "KB", "MB", "GB", "TB"]
                             st_r = st
@@ -1306,7 +1310,9 @@ class OtherCog(commands.Cog):
                                                     MAX_SIZE_MB
                                                  )
                             continue
-                        files.append(discord.File(file, file.name))
+                        else:
+                            files.append(discord.File(file, file.name))
+                            BYTES_REMAINING -= st
 
                     if not files:
                         embed.description += "No files to upload. Directory list:\n%s" % (
