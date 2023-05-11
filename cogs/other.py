@@ -1301,10 +1301,6 @@ class OtherCog(commands.Cog):
                             else:
                                 file = target
                                 st = file.stat().st_size
-                                if st / 1024 / 1024 <= MAX_SIZE_MB and st < BYTES_REMAINING:
-                                    files.append(discord.File(file, file.name))
-                                    BYTES_REMAINING -= st
-                                    continue
                         if st / 1024 / 1024 >= MAX_SIZE_MB or st >= BYTES_REMAINING:
                             units = ["B", "KB", "MB", "GB", "TB"]
                             st_r = st
