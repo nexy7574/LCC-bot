@@ -1279,8 +1279,6 @@ class OtherCog(commands.Cog):
                                 "-hide_banner",
                                 "-i",
                                 str(file),
-                                "-c",
-                                "copy",
                                 "-crf",
                                 "30",
                                 "-preset",
