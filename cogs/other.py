@@ -1160,7 +1160,7 @@ class OtherCog(commands.Cog):
                 if formats[fmt]["format"] == _format:
                     _format = fmt
                     break
-            else:
+            elif not await self.bot.is_owner(ctx.user):
                 return await ctx.edit(
                     embed=discord.Embed(
                         title="Error",
