@@ -1276,6 +1276,7 @@ class OtherCog(commands.Cog):
                             target = file.with_name(file.name + '.compressed' + file.suffix)
                             ffmpeg_command = [
                                 "ffmpeg",
+                                "-hide_banner",
                                 "-i",
                                 str(file),
                                 "-c",
@@ -1292,7 +1293,6 @@ class OtherCog(commands.Cog):
                                     partial(
                                         subprocess.run, 
                                         ffmpeg_command,
-                                        capture_output=True,
                                         check=True
                                     )
                                 )
@@ -1313,7 +1313,7 @@ class OtherCog(commands.Cog):
                                                     round(st_r, 2),
                                                     units[0],
                                                     MAX_SIZE_MB,
-                                                    ', compressing failed' if COMPRESS_FAILED else ''
+                                                    ', compressing failed' if COMPRESS_FAILED else ', compressed fine.'
                                                  )
                             continue
                         else:
