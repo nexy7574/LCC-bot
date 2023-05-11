@@ -1113,9 +1113,17 @@ class OtherCog(commands.Cog):
                 default=""
             ) = "",
             upload_log: bool = False,
+            compress_if_possible: bool = False
     ):
         """Downloads a video using youtube-dl"""
         await ctx.defer()
+        if compress_if_possible and not await self.bot.is_user(ctx.user):
+            return await ctx.edit(
+                embed=discord.Embed(
+                    description="You can't compress files.",
+                    color=discord.Color.red()
+                )
+            )
         formats = await self.list_formats(url)
         if list_formats:
             embeds = []
@@ -1260,6 +1268,37 @@ class OtherCog(commands.Cog):
                             continue
                         st = file.stat().st_size
                         if st / 1024 / 1024 >= MAX_SIZE_MB:
+                            if compress_if_possible:
+                                ffmpeg_command = [
+                                    "ffmpeg",
+                                    "-i",
+                                    str(file),
+                                    "-c",
+                                    "copy",
+                                    "-crf",
+                                    "25",
+                                    "-preset",
+                                    "medium",
+                                    str(file.with_name(file.name + '.compressed' + file.suffix))
+                                ]
+                                try:
+                                    await self.bot.loop.run_in_executor(
+                                        None, 
+                                        partial(
+                                            subprocess.run, 
+                                            ffmpeg_command,
+                                            capture_output=True,
+                                            check=True
+                                        )
+                                    )
+                                except subprocess.CalledProcessError as e:
+                                    pass
+                                else:
+                                    file = file.with_name(file.name + '.compressed' + file.suffix)
+                                    st = file.stat().st_size
+                                    if st / 1024 / 1024 <= MAX_SIZE_MB:
+                                        files.append(discord.File(file, file.name))
+                                        continue
                             units = ["B", "KB", "MB", "GB", "TB"]
                             st_r = st
                             while st_r > 1024:
