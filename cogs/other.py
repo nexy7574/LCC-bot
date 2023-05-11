@@ -1117,7 +1117,7 @@ class OtherCog(commands.Cog):
     ):
         """Downloads a video using youtube-dl"""
         await ctx.defer()
-        if compress_if_possible and not await self.bot.is_user(ctx.user):
+        if compress_if_possible and not await self.bot.is_owner(ctx.user):
             return await ctx.edit(
                 embed=discord.Embed(
                     description="You can't compress files.",
@@ -1269,6 +1269,7 @@ class OtherCog(commands.Cog):
                         st = file.stat().st_size
                         if st / 1024 / 1024 >= MAX_SIZE_MB:
                             if compress_if_possible:
+                                target = file.with_name(file.name + '.compressed' + file.suffix)
                                 ffmpeg_command = [
                                     "ffmpeg",
                                     "-i",
@@ -1276,10 +1277,10 @@ class OtherCog(commands.Cog):
                                     "-c",
                                     "copy",
                                     "-crf",
-                                    "25",
+                                    "30",
                                     "-preset",
-                                    "medium",
-                                    str(file.with_name(file.name + '.compressed' + file.suffix))
+                                    "slow",
+                                    str(target)
                                 ]
                                 try:
                                     await self.bot.loop.run_in_executor(
@@ -1294,7 +1295,7 @@ class OtherCog(commands.Cog):
                                 except subprocess.CalledProcessError as e:
                                     pass
                                 else:
-                                    file = file.with_name(file.name + '.compressed' + file.suffix)
+                                    file = target
                                     st = file.stat().st_size
                                     if st / 1024 / 1024 <= MAX_SIZE_MB:
                                         files.append(discord.File(file, file.name))
@@ -1326,6 +1327,11 @@ class OtherCog(commands.Cog):
                         await ctx.channel.trigger_typing()
                         embed.description = _desc
                         await ctx.edit(embed=embed, files=files)
+                        await asyncio.sleep(120.0)
+                        try:
+                            await ctx.edit(embed=None)
+                        except discord.NotFound:
+                            pass
     
     @commands.slash_command(name="text-to-mp3")
     @commands.cooldown(5, 600, commands.BucketType.user)
