@@ -1266,6 +1266,13 @@ class OtherCog(commands.Cog):
                         st = file.stat().st_size
                         if st / 1024 / 1024 >= MAX_SIZE_MB or st >= BYTES_REMAINING:
                             if compress_if_possible:
+                                await ctx.edit(
+                                    embed=discord.Embed(
+                                        title="Compressing...",
+                                        description=str(file),
+                                        colour=discord.Colour.blurple()
+                                    )
+                                )
                                 target = file.with_name(file.name + '.compressed' + file.suffix)
                                 ffmpeg_command = [
                                     "ffmpeg",
