@@ -1331,11 +1331,13 @@ class OtherCog(commands.Cog):
                         await ctx.channel.trigger_typing()
                         embed.description = _desc
                         await ctx.edit(embed=embed, files=files)
-                        await asyncio.sleep(120.0)
-                        try:
-                            await ctx.edit(embed=None)
-                        except discord.NotFound:
-                            pass
+                        async def bgtask():
+                            await asyncio.sleep(120.0)
+                            try:
+                                await ctx.edit(embed=None)
+                            except discord.NotFound:
+                                pass
+                        self.bot.loop.create_task(bgtask())
     
     @commands.slash_command(name="text-to-mp3")
     @commands.cooldown(5, 600, commands.BucketType.user)
