@@ -461,6 +461,12 @@ class Events(commands.Cog):
                     "meta": {
                         "check": (assets / 'virgin').exists
                     }
+                },
+                r"richard|(dick\W*$)": {
+                    "file": discord.File(assets / "visio.png"),
+                    "meta": {
+                        "check": (assets / "visio.png").exists
+                    }
                 }
             }
             # Stop responding to any bots
