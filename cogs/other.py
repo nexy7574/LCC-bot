@@ -1390,6 +1390,7 @@ class OtherCog(commands.Cog):
                     except (ConnectionError, httpx.HTTPError, httpx.NetworkError) as e:
                         await _msg.edit(content="Failed to download text. " + str(e))
                         return
+                    
                 else:
                     _msg = await interaction.followup.send("Converting text to MP3... (0 seconds elapsed)")
                 
@@ -1400,6 +1401,7 @@ class OtherCog(commands.Cog):
                             content=f"Converting text to MP3... ({time.time() - start_time:.1f} seconds elapsed)"
                         )
 
+                start_time = time.time()
                 task = _bot.loop.create_task(assurance_task())
                 try:
                     mp3, size = await asyncio.wait_for(
