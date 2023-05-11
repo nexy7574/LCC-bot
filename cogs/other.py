@@ -1398,10 +1398,10 @@ class OtherCog(commands.Cog):
                     while True:
                         await asyncio.sleep(5.5)
                         await _msg.edit(
-                            content=f"Converting text to MP3... ({time.time() - start_time:.1f} seconds elapsed)"
+                            content=f"Converting text to MP3... ({time() - start_time:.1f} seconds elapsed)"
                         )
 
-                start_time = time.time()
+                start_time = time()
                 task = _bot.loop.create_task(assurance_task())
                 try:
                     mp3, size = await asyncio.wait_for(
