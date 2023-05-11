@@ -1373,7 +1373,11 @@ class OtherCog(commands.Cog):
                     _url = text_pre[4:].strip()
                     _msg = await interaction.followup.send("Downloading text...")
                     try:
-                        response = await _self.http.get(_url, headers={"User-Agent": "Mozilla/5.0"})
+                        response = await _self.http.get(
+                            _url, 
+                            headers={"User-Agent": "Mozilla/5.0"}, 
+                            follow_redirects=True
+                        )
                         if response.status_code != 200:
                             await _msg.edit(content=f"Failed to download text. Status code: {response.status_code}")
                             return
@@ -1386,15 +1390,32 @@ class OtherCog(commands.Cog):
                     except (ConnectionError, httpx.HTTPError, httpx.NetworkError) as e:
                         await _msg.edit(content="Failed to download text. " + str(e))
                         return
-                    else:
-                        await _msg.edit(content="Text downloaded; Converting to MP3...")
                 else:
-                    _msg = await interaction.followup.send("Converting text to MP3...")
+                    _msg = await interaction.followup.send("Converting text to MP3... (0 seconds elapsed)")
+                
+                async def assurance_task():
+                    while True:
+                        await asyncio.sleep(5.5)
+                        await _msg.edit(
+                            content=f"Converting text to MP3... ({time.time() - start_time:.1f} seconds elapsed)"
+                        )
+
+                task = self.bot.loop.create_task(assurance_task())
                 try:
-                    mp3, size = await _bot.loop.run_in_executor(None, _convert, text_pre)
+                    mp3, size = await asyncio.wait_for(
+                        _bot.loop.run_in_executor(None, _convert, text_pre),
+                        timeout=300
+                    )
+                except asyncio.TimeoutError:
+                    task.cancel()
+                    await _msg.edit(content="Failed to convert text to MP3 - Timeout. Try shorter/less complex text.")
+                    return
                 except (Exception, IOError) as e:
+                    task.cancel()
                     await _msg.edit(content="failed. " + str(e))
                     raise e
+                task.cancel()
+                del task
                 if size >= ctx.guild.filesize_limit - 1500:
                     await _msg.edit(
                         content=f"MP3 is too large ({size / 1024 / 1024}Mb vs "
