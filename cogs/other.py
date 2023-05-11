@@ -1265,47 +1265,47 @@ class OtherCog(commands.Cog):
                             continue
                         st = file.stat().st_size
                         COMPRESS_FAILED = False
-                        if st / 1024 / 1024 >= MAX_SIZE_MB or st >= BYTES_REMAINING:
-                            if compress_if_possible:
-                                await ctx.edit(
-                                    embed=discord.Embed(
-                                        title="Compressing...",
-                                        description=str(file),
-                                        colour=discord.Colour.blurple()
+                        if compress_if_possible and file.suffix in (".mp4", ".mkv", ".mov"):
+                            await ctx.edit(
+                                embed=discord.Embed(
+                                    title="Compressing...",
+                                    description=str(file),
+                                    colour=discord.Colour.blurple()
+                                )
+                            )
+                            target = file.with_name(file.name + '.compressed' + file.suffix)
+                            ffmpeg_command = [
+                                "ffmpeg",
+                                "-i",
+                                str(file),
+                                "-c",
+                                "copy",
+                                "-crf",
+                                "30",
+                                "-preset",
+                                "slow",
+                                str(target)
+                            ]
+                            try:
+                                await self.bot.loop.run_in_executor(
+                                    None, 
+                                    partial(
+                                        subprocess.run, 
+                                        ffmpeg_command,
+                                        capture_output=True,
+                                        check=True
                                     )
                                 )
-                                target = file.with_name(file.name + '.compressed' + file.suffix)
-                                ffmpeg_command = [
-                                    "ffmpeg",
-                                    "-i",
-                                    str(file),
-                                    "-c",
-                                    "copy",
-                                    "-crf",
-                                    "30",
-                                    "-preset",
-                                    "slow",
-                                    str(target)
-                                ]
-                                try:
-                                    await self.bot.loop.run_in_executor(
-                                        None, 
-                                        partial(
-                                            subprocess.run, 
-                                            ffmpeg_command,
-                                            capture_output=True,
-                                            check=True
-                                        )
-                                    )
-                                except subprocess.CalledProcessError as e:
-                                    COMPRESS_FAILED = True
-                                else:
-                                    file = target
-                                    st = file.stat().st_size
-                                    if st / 1024 / 1024 <= MAX_SIZE_MB and st < BYTES_REMAINING:
-                                        files.append(discord.File(file, file.name))
-                                        BYTES_REMAINING -= st
-                                        continue
+                            except subprocess.CalledProcessError as e:
+                                COMPRESS_FAILED = True
+                            else:
+                                file = target
+                                st = file.stat().st_size
+                                if st / 1024 / 1024 <= MAX_SIZE_MB and st < BYTES_REMAINING:
+                                    files.append(discord.File(file, file.name))
+                                    BYTES_REMAINING -= st
+                                    continue
+                        if st / 1024 / 1024 >= MAX_SIZE_MB or st >= BYTES_REMAINING:
                             units = ["B", "KB", "MB", "GB", "TB"]
                             st_r = st
                             while st_r > 1024:
