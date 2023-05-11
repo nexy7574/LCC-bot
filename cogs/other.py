@@ -1117,13 +1117,6 @@ class OtherCog(commands.Cog):
     ):
         """Downloads a video using youtube-dl"""
         await ctx.defer()
-        if compress_if_possible and not await self.bot.is_owner(ctx.user):
-            return await ctx.edit(
-                embed=discord.Embed(
-                    description="You can't compress files.",
-                    color=discord.Color.red()
-                )
-            )
         formats = await self.list_formats(url)
         if list_formats:
             embeds = []
