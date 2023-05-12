@@ -813,7 +813,7 @@ class OtherCog(commands.Cog):
                 f"\\* URL: <{friendly_url}>\n"
                 f"\\* Load time: {fetch_time:.2f}ms\n"
                 f"\\* Screenshot render time: {screenshot_time:.2f}ms\n"
-                f"\\* Total time: {(fetch_time + screenshot_time):.2f}ms\n" +
+                f"\\* Total time: {(fetch_time + screenshot_time):.2f}ms\n"
                 (
                     '* Probability of being scat or something else horrifying: 100%'
                     if ctx.user.id == 1019233057519177778 else ''
@@ -978,7 +978,8 @@ class OtherCog(commands.Cog):
                         "logger": logger,
                         "format": _format or f"(bv*+ba/bv/ba/b)[filesize<={MAX_SIZE_MB}M]",
                         "paths": paths,
-                        "outtmpl": f"{ctx.user.id}-%(title)s.%(ext)s"
+                        "outtmpl": f"{ctx.user.id}-%(title)s.%(ext)s",
+                        "trim_file_name": 128,
                     }
             ) as downloader:
                 try:
@@ -1059,11 +1060,11 @@ class OtherCog(commands.Cog):
                                 units.pop(0)
                             embed.description += "\N{warning sign}\ufe0f {} is too large to upload ({!s}{}" \
                                                  ", max is {}MB{}).\n".format(
-                                                    file.name,
-                                                    round(st_r, 2),
-                                                    units[0],
-                                                    MAX_SIZE_MB,
-                                                    ', compressing failed' if COMPRESS_FAILED else ', compressed fine.'
+                                                     file.name,
+                                                     round(st_r, 2),
+                                                     units[0],
+                                                     MAX_SIZE_MB,
+                                                     ', compressing failed' if COMPRESS_FAILED else ', compressed fine.'
                                                  )
                             continue
                         else:
@@ -1090,7 +1091,7 @@ class OtherCog(commands.Cog):
                             except discord.NotFound:
                                 pass
                         self.bot.loop.create_task(bgtask())
-    
+
     @commands.slash_command(name="text-to-mp3")
     @commands.cooldown(5, 600, commands.BucketType.user)
     async def text_to_mp3(
@@ -1209,7 +1210,7 @@ class OtherCog(commands.Cog):
                 try:
                     mp3, size = await asyncio.wait_for(
                         _bot.loop.run_in_executor(None, _convert, text_pre),
-                        timeout=300
+                        timeout=600
                     )
                 except asyncio.TimeoutError:
                     task.cancel()
