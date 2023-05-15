@@ -978,7 +978,7 @@ class OtherCog(commands.Cog):
                         "logger": logger,
                         "format": _format or f"(bv*+ba/bv/ba/b)[filesize<={MAX_SIZE_MB}M]",
                         "paths": paths,
-                        "outtmpl": f"{ctx.user.id}-%(title)s.%(ext)s",
+                        "outtmpl": f"{ctx.user.id}-%(title).50s.%(ext)s",
                         "trim_file_name": 128,
                     }
             ) as downloader:
@@ -1004,10 +1004,10 @@ class OtherCog(commands.Cog):
                     del logger
                     files = []
                     if upload_log:
-                        if (out_size := stdout.stat().st_size):
+                        if out_size := stdout.stat().st_size:
                             files.append(discord.File(stdout, "stdout.txt"))
                             BYTES_REMAINING -= out_size
-                        if (err_size := stderr.stat().st_size):
+                        if err_size := stderr.stat().st_size:
                             files.append(discord.File(stderr, "stderr.txt"))
                             BYTES_REMAINING -= err_size
 
