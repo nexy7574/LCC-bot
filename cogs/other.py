@@ -1040,9 +1040,9 @@ class OtherCog(commands.Cog):
 
                             try:
                                 await self.bot.loop.run_in_executor(
-                                    None, 
+                                    None,
                                     partial(
-                                        subprocess.run, 
+                                        subprocess.run,
                                         ffmpeg_command,
                                         check=True
                                     )
@@ -1178,8 +1178,8 @@ class OtherCog(commands.Cog):
                     _msg = await interaction.followup.send("Downloading text...")
                     try:
                         response = await _self.http.get(
-                            _url, 
-                            headers={"User-Agent": "Mozilla/5.0"}, 
+                            _url,
+                            headers={"User-Agent": "Mozilla/5.0"},
                             follow_redirects=True
                         )
                         if response.status_code != 200:
@@ -1194,10 +1194,10 @@ class OtherCog(commands.Cog):
                     except (ConnectionError, httpx.HTTPError, httpx.NetworkError) as e:
                         await _msg.edit(content="Failed to download text. " + str(e))
                         return
-                    
+
                 else:
                     _msg = await interaction.followup.send("Converting text to MP3... (0 seconds elapsed)")
-                
+
                 async def assurance_task():
                     while True:
                         await asyncio.sleep(5.5)
@@ -1405,9 +1405,10 @@ class OtherCog(commands.Cog):
                 out_file = io.BytesIO(text.encode("utf-8", "replace"))
                 await ctx.respond(file=discord.File(out_file, filename="ocr.txt"))
 
-        await ctx.edit(
-            content="Timings:\n" + "\n".join("%s: %s" % (k.title(), v) for k, v in timings.items()),
-        )
+        if timings:
+            await ctx.edit(
+                content="Timings:\n" + "\n".join("%s: %s" % (k.title(), v) for k, v in timings.items()),
+            )
 
 
 def setup(bot):
