@@ -1,5 +1,6 @@
 import datetime
 import sys
+import discord
 import uuid
 from typing import TYPE_CHECKING, Optional, TypeVar
 from enum import IntEnum, auto
@@ -212,6 +213,7 @@ class AccessTokens(orm.Model):
         "entry_id": orm.UUID(primary_key=True, default=uuid.uuid4),
         "user_id": orm.BigInteger(unique=True),
         "access_token": orm.String(min_length=6, max_length=128),
+        "expires": orm.Float(default=lambad: discord.utils.utcnow().timestamp() + 604800),
         "ip_info": orm.JSON(default=None, allow_null=True),
     }
 

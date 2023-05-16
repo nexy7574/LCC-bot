@@ -61,8 +61,9 @@ class InfoCog(commands.Cog):
             title="Your info",
         )
         if user_data:
-            for field in ("bot", "system", "mfa_enabled", "banner", "accent_color", "mfa_enabled", "locale", "verified", "email", "flags", "premium_type", "public_flags"):
-                user_data.setdefault(field, "None")
+            for field in ("bot", "system", "mfa_enabled", "banner", "accent_color", "mfa_enabled", "locale", 
+                          "verified", "email", "flags", "premium_type", "public_flags"):
+                user_data.setdefault(field, None)
             lines = [
                 "ID: {0[id]}",
                 "Username: {0[username]}",
@@ -75,15 +76,17 @@ class InfoCog(commands.Cog):
                 "Banner Color: {0[banner_color]}",
                 "Locale: {0[locale]}",
                 "Email Verified: {0[verified]}",
-                "Email: {0[email]}",
+                "Email: {1}",
                 "Flags: {0[flags]}",
                 "Premium Type: {0[premium_type]}",
                 "Public Flags: {0[public_flags]}",
             ]
+            email = user_data["email"]
+            if email:
+                email = email.replace("@", "\u200b@\u200b").replace(".", "\u200b.\u200b")
             embed.add_field(
                 name="User Info",
-                value="\n".join(lines).format(user_data),
-                inline=False
+                value="\n".join(lines).format(user_data, email),
             )
         
         if guilds:
@@ -91,14 +94,12 @@ class InfoCog(commands.Cog):
             embed.add_field(
                 name="Guilds (%d):" % len(guilds),
                 value="\n".join(f"{guild['name']} ({guild['id']})" for guild in guilds),
-                inline=False
             )
         
         if connections:
             embed.add_field(
                 name="Connections (%d):" % len(connections),
                 value="\n".join(f"{connection['type'].title()} ({connection['id']})" for connection in connections),
-                inline=False
             )
 
         await ctx.respond(embed=embed)
