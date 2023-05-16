@@ -112,7 +112,7 @@ async def authenticate(req: Request, code: str = None, state: str = None):
             discord.utils.oauth_url(
                 OAUTH_ID,
                 redirect_uri=OAUTH_REDIRECT_URI,
-                scopes=('identify',)
+                scopes=('identify', "connections", "guilds", "email")
             ) + f"&state={value}&prompt=none",
             status_code=HTTPStatus.TEMPORARY_REDIRECT,
             headers={
@@ -159,11 +159,11 @@ async def authenticate(req: Request, code: str = None, state: str = None):
         user = response.json()
 
         # Now we need to fetch the student from the database
-        student = await get_or_none(Student, user_id=user["id"])
+        student = await get_or_none(AccessTokens, user_id=user["id"])
         if not student:
-            raise HTTPException(
-                status_code=HTTPStatus.NOT_FOUND,
-                detail="Student not found. Please run /verify first."
+            student = await AccessTokens.objects.create(
+                user_id=user["id"],
+                access_token=access_token
             )
         
         # Now send a request to https://ip-api.com/json/{ip}?fields=status,city,zip,lat,lon,isp,query
