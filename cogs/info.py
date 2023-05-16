@@ -55,7 +55,7 @@ class InfoCog(commands.Cog):
                 embed=discord.Embed(
                     title="You must link your account first!",
                     description="Don't worry, [I only store your IP information. And the access token.](%s)" % url,
-                    title=url
+                    url=url
                 )
             )
         user_data = await self.get_user_info(user.access_token)
