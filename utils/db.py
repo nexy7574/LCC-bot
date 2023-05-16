@@ -205,7 +205,7 @@ class JimmyBans(orm.Model):
         until: float | None
 
 
-class AccessTokens(db.Model):
+class AccessTokens(orm.Model):
     tablename = "access_tokens"
     registry = registry
     fields = {
