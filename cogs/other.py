@@ -1085,8 +1085,11 @@ class OtherCog(commands.Cog):
                         await ctx.edit(embed=embed)
                         await ctx.channel.trigger_typing()
                         embed.description = _desc
+                        start = time.time()
                         await ctx.edit(embed=embed, files=files)
-                        await ctx.send()
+                        end = time.time()
+                        if (end - start) < 10:
+                            await ctx.respond("*clearing typing*", delete_after=0.01)
 
                         async def bgtask():
                             await asyncio.sleep(120.0)

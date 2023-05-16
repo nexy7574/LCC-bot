@@ -468,7 +468,7 @@ class Events(commands.Cog):
                 },
                 r"c(mon|ome on) jimmy": {
                     "content": "IM TRYING"
-                }
+                },
             }
             # Stop responding to any bots
             if message.author.bot is True:
