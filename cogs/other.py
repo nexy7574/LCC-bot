@@ -813,7 +813,7 @@ class OtherCog(commands.Cog):
                 f"\\* URL: <{friendly_url}>\n"
                 f"\\* Load time: {fetch_time:.2f}ms\n"
                 f"\\* Screenshot render time: {screenshot_time:.2f}ms\n"
-                f"\\* Total time: {(fetch_time + screenshot_time):.2f}ms\n"
+                f"\\* Total time: {(fetch_time + screenshot_time):.2f}ms\n" +
                 (
                     '* Probability of being scat or something else horrifying: 100%'
                     if ctx.user.id == 1019233057519177778 else ''
@@ -864,6 +864,7 @@ class OtherCog(commands.Cog):
                 autocomplete=format_autocomplete,
                 default=""
             ) = "",
+            extract_audio: bool = False,
             upload_log: bool = False,
             compress_if_possible: bool = False
     ):
@@ -978,8 +979,9 @@ class OtherCog(commands.Cog):
                         "logger": logger,
                         "format": _format or f"(bv*+ba/bv/ba/b)[filesize<={MAX_SIZE_MB}M]",
                         "paths": paths,
-                        "outtmpl": f"{ctx.user.id}-%(title)s.%(ext)s",
+                        "outtmpl": f"{ctx.user.id}-%(title).50s.%(ext)s",
                         "trim_file_name": 128,
+                        "extractaudio": extract_audio,
                     }
             ) as downloader:
                 try:
@@ -1004,10 +1006,10 @@ class OtherCog(commands.Cog):
                     del logger
                     files = []
                     if upload_log:
-                        if (out_size := stdout.stat().st_size):
+                        if out_size := stdout.stat().st_size:
                             files.append(discord.File(stdout, "stdout.txt"))
                             BYTES_REMAINING -= out_size
-                        if (err_size := stderr.stat().st_size):
+                        if err_size := stderr.stat().st_size:
                             files.append(discord.File(stderr, "stderr.txt"))
                             BYTES_REMAINING -= err_size
 
@@ -1017,42 +1019,43 @@ class OtherCog(commands.Cog):
                             continue
                         st = file.stat().st_size
                         COMPRESS_FAILED = False
-                        if compress_if_possible and file.suffix in (".mp4", ".mkv", ".mov"):
-                            await ctx.edit(
-                                embed=discord.Embed(
-                                    title="Compressing...",
-                                    description="File name: `%s`\nThis will take a long time." % file.name,
-                                    colour=discord.Colour.blurple()
-                                )
-                            )
-                            target = file.with_name(file.name + '.compressed' + file.suffix)
-                            ffmpeg_command = [
-                                "ffmpeg",
-                                "-hide_banner",
-                                "-i",
-                                str(file),
-                                "-crf",
-                                "30",
-                                "-preset",
-                                "slow",
-                                str(target)
-                            ]
-
-                            try:
-                                await self.bot.loop.run_in_executor(
-                                    None, 
-                                    partial(
-                                        subprocess.run, 
-                                        ffmpeg_command,
-                                        check=True
+                        if st / 1024 / 1024 >= MAX_SIZE_MB or st >= BYTES_REMAINING:
+                            if compress_if_possible and file.suffix in (".mp4", ".mkv", ".mov"):
+                                await ctx.edit(
+                                    embed=discord.Embed(
+                                        title="Compressing...",
+                                        description="File name: `%s`\nThis will take a long time." % file.name,
+                                        colour=discord.Colour.blurple()
                                     )
                                 )
-                            except subprocess.CalledProcessError as e:
-                                COMPRESS_FAILED = True
-                            else:
-                                file = target
-                                st = file.stat().st_size
-                        if st / 1024 / 1024 >= MAX_SIZE_MB or st >= BYTES_REMAINING:
+                                target = file.with_name(file.name + '.compressed' + file.suffix)
+                                ffmpeg_command = [
+                                    "ffmpeg",
+                                    "-hide_banner",
+                                    "-i",
+                                    str(file),
+                                    "-crf",
+                                    "30",
+                                    "-preset",
+                                    "fast",
+                                    str(target)
+                                ]
+
+                                try:
+                                    await self.bot.loop.run_in_executor(
+                                        None,
+                                        partial(
+                                            subprocess.run,
+                                            ffmpeg_command,
+                                            check=True
+                                        )
+                                    )
+                                except subprocess.CalledProcessError:
+                                    COMPRESS_FAILED = True
+                                else:
+                                    file = target
+                                    st = file.stat().st_size
+
                             units = ["B", "KB", "MB", "GB", "TB"]
                             st_r = st
                             while st_r > 1024:
@@ -1083,6 +1086,7 @@ class OtherCog(commands.Cog):
                         await ctx.channel.trigger_typing()
                         embed.description = _desc
                         await ctx.edit(embed=embed, files=files)
+                        await ctx.send()
 
                         async def bgtask():
                             await asyncio.sleep(120.0)
@@ -1178,8 +1182,8 @@ class OtherCog(commands.Cog):
                     _msg = await interaction.followup.send("Downloading text...")
                     try:
                         response = await _self.http.get(
-                            _url, 
-                            headers={"User-Agent": "Mozilla/5.0"}, 
+                            _url,
+                            headers={"User-Agent": "Mozilla/5.0"},
                             follow_redirects=True
                         )
                         if response.status_code != 200:
@@ -1194,10 +1198,10 @@ class OtherCog(commands.Cog):
                     except (ConnectionError, httpx.HTTPError, httpx.NetworkError) as e:
                         await _msg.edit(content="Failed to download text. " + str(e))
                         return
-                    
+
                 else:
                     _msg = await interaction.followup.send("Converting text to MP3... (0 seconds elapsed)")
-                
+
                 async def assurance_task():
                     while True:
                         await asyncio.sleep(5.5)
@@ -1405,9 +1409,10 @@ class OtherCog(commands.Cog):
                 out_file = io.BytesIO(text.encode("utf-8", "replace"))
                 await ctx.respond(file=discord.File(out_file, filename="ocr.txt"))
 
-        await ctx.edit(
-            content="Timings:\n" + "\n".join("%s: %s" % (k.title(), v) for k, v in timings.items()),
-        )
+        if timings:
+            await ctx.edit(
+                content="Timings:\n" + "\n".join("%s: %s" % (k.title(), v) for k, v in timings.items()),
+            )
 
 
 def setup(bot):
