@@ -62,7 +62,7 @@ class InfoCog(commands.Cog):
         )
         if user_data:
             for field in ("bot", "system", "mfa_enabled", "banner", "accent_color", "mfa_enabled", "locale", "verified", "email", "flags", "premium_type", "public_flags"):
-                user_data.set_default(field, "None")
+                user_data.setdefault(field, "None")
             lines = [
                 "ID: {0[id]}",
                 "Username: {0[username]}",
