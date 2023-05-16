@@ -12,6 +12,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 from http import HTTPStatus
 from utils import Student, get_or_none, VerifyCode, console, BannedStudentID
+from utils.db import AccessTokens
 from config import guilds
 
 SF_ROOT = Path(__file__).parent / "static"
