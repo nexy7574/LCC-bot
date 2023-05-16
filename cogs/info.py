@@ -46,11 +46,7 @@ class InfoCog(commands.Cog):
         
         user = await get_or_none(AccessTokens, user_id=ctx.author.id)
         if not user:
-            url = discord.utils.oauth_url(
-                OAUTH_ID,
-                redirect_uri=OAUTH_REDIRECT_URI,
-                scopes=('identify', "connections", "guilds", "email")
-            ) + f"&state={value}&prompt=none"
+            url = "https://droplet.nexy7574.co.uk/jimmy/auth"
             return await ctx.respond(
                 embed=discord.Embed(
                     title="You must link your account first!",
