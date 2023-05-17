@@ -928,7 +928,7 @@ class OtherCog(commands.Cog):
         BYTES_REMAINING = (MAX_SIZE_MB - 0.256) * 1024 * 1024
         import yt_dlp
 
-        with tempfile.TemporaryDirectory(prefix="jimmy-ytdl-wat") as tempdir_str:
+        with tempfile.TemporaryDirectory(prefix="jimmy-ytdl-") as tempdir_str:
             tempdir = Path(tempdir_str).resolve()
             stdout = tempdir / "stdout.txt"
             stderr = tempdir / "stderr.txt"
@@ -1020,7 +1020,14 @@ class OtherCog(commands.Cog):
                         st = file.stat().st_size
                         COMPRESS_FAILED = False
                         if st / 1024 / 1024 >= MAX_SIZE_MB or st >= BYTES_REMAINING:
-                            if compress_if_possible and file.suffix in (".mp4", ".mkv", ".mov"):
+                            if compress_if_possible and file.suffix in (
+                                    ".mp4",
+                                    ".mkv",
+                                    ".mov",
+                                    '.aac',
+                                    '.opus',
+                                    '.webm'
+                            ):
                                 await ctx.edit(
                                     embed=discord.Embed(
                                         title="Compressing...",
@@ -1037,7 +1044,7 @@ class OtherCog(commands.Cog):
                                     "-crf",
                                     "30",
                                     "-preset",
-                                    "fast",
+                                    "slow",
                                     str(target)
                                 ]
 
@@ -1085,9 +1092,9 @@ class OtherCog(commands.Cog):
                         await ctx.edit(embed=embed)
                         await ctx.channel.trigger_typing()
                         embed.description = _desc
-                        start = time.time()
+                        start = time()
                         await ctx.edit(embed=embed, files=files)
-                        end = time.time()
+                        end = time()
                         if (end - start) < 10:
                             await ctx.respond("*clearing typing*", delete_after=0.01)
 
