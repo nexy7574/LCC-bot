@@ -972,22 +972,32 @@ class OtherCog(commands.Cog):
                 )
             }
 
-            with yt_dlp.YoutubeDL(
+            args = {
+                "windowsfilenames": True,
+                "restrictfilenames": True,
+                "noplaylist": True,
+                "nocheckcertificate": True,
+                "no_color": True,
+                "noprogress": True,
+                "logger": logger,
+                "format": _format or None,
+                "paths": paths,
+                "outtmpl": f"{ctx.user.id}-%(title).50s.%(ext)s",
+                "trim_file_name": 128,
+                "extract_audio": extract_audio,
+            }
+            if extract_audio:
+                args["postprocessors"] = [
                     {
-                        "windowsfilenames": True,
-                        "restrictfilenames": True,
-                        "noplaylist": True,
-                        "nocheckcertificate": True,
-                        "no_color": True,
-                        "noprogress": True,
-                        "logger": logger,
-                        "format": _format or f"(bv*+ba/bv/ba/b)[filesize<={MAX_SIZE_MB}M]",
-                        "paths": paths,
-                        "outtmpl": f"{ctx.user.id}-%(title).50s.%(ext)s",
-                        "trim_file_name": 128,
-                        "extract_audio": extract_audio,
+                        "key": "FFmpegExtractAudio",
+                        "preferredquality": "192",
                     }
-            ) as downloader:
+                ]
+                args["format"] = args["format"] or f"(ba/b)[filesize<={MAX_SIZE_MB}M]"
+
+            if args["format"] is None:
+                args["format"] = f"(bv*+ba/bv/ba/b)[filesize<={MAX_SIZE_MB}M]"
+            with yt_dlp.YoutubeDL(args) as downloader:
                 try:
                     await ctx.respond(
                         embed=discord.Embed(title="Downloading...", colour=discord.Colour.blurple())
