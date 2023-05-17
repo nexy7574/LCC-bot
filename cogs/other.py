@@ -886,12 +886,16 @@ class OtherCog(commands.Cog):
                 embeds.append(
                     discord.Embed(
                         title=fmt,
-                        description="- Encoding: {0[vcodec]} + {0[acodec]}\n"
+                        description="- Encoding: {3} + {2}\n"
                                     "- Extension: `.{0[ext]}`\n"
                                     "- Resolution: {0[resolution]}\n"
                                     "- Filesize: {1}\n"
-                                    "- Protocol: {0[protocol]}\n".format(formats[fmt],
-                                                                         f"{round(fs, 2)}{units[0]}"),
+                                    "- Protocol: {0[protocol]}\n".format(
+                                        formats[fmt],
+                                        formats[fmt].get("acodec", 'N/A'),
+                                        formats[fmt].get("vcodec", 'N/A'),
+                                        f"{round(fs, 2)}{units[0]}"
+                        ),
                         colour=discord.Colour.blurple()
                     ).add_field(
                         name="Download:",
@@ -981,7 +985,7 @@ class OtherCog(commands.Cog):
                         "paths": paths,
                         "outtmpl": f"{ctx.user.id}-%(title).50s.%(ext)s",
                         "trim_file_name": 128,
-                        "extractaudio": extract_audio,
+                        "extract_audio": extract_audio,
                     }
             ) as downloader:
                 try:
