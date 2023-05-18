@@ -434,7 +434,7 @@ class Events(commands.Cog):
                     "delete_after": None
                 },
                 r"fuck you(\W)*": {
-                    "content": send_fuck_you,
+                    "func": send_fuck_you,
                     "meta": {
                         "check": lambda: message.content.startswith(self.bot.user.mention)
                     }
