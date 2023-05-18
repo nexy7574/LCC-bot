@@ -523,7 +523,7 @@ class Events(commands.Cog):
 
                     if "func" in data:
                         try:
-                            if inspect.iscoroutinefunction(data["func"]):
+                            if inspect.iscoroutinefunction(data["func"]) or inspect.iscoroutine(data["func"]):
                                 await data["func"]()
                                 break
                             else:
