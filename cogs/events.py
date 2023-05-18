@@ -434,7 +434,7 @@ class Events(commands.Cog):
                     "delete_after": None
                 },
                 r"fuck you(\W)*": {
-                    "func": send_fuck_you,
+                    "content": send_fuck_you,
                     "meta": {
                         "check": lambda: message.content.startswith(self.bot.user.mention)
                     }
@@ -534,9 +534,12 @@ class Events(commands.Cog):
                             continue
                     else:
                         for k, v in data.copy().items():
-                            if callable(v):
+                            if inspect.iscoroutinefunction(data["func"]) or inspect.iscoroutine(data["func"]):
+                                await v()
+                            elif callable(v):
                                 data[k] = v()
                         data.setdefault("delete_after", 30)
+                        await message.channel.trigger_typing()
                         await message.reply(**data)
                         break
 
