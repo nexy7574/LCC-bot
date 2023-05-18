@@ -535,7 +535,7 @@ class Events(commands.Cog):
                     else:
                         for k, v in data.copy().items():
                             if inspect.iscoroutinefunction(data[k]) or inspect.iscoroutine(data[k]):
-                                await v()
+                                data[k] = await v()
                             elif callable(v):
                                 data[k] = v()
                         data.setdefault("delete_after", 30)
