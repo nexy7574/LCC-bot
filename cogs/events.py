@@ -534,7 +534,7 @@ class Events(commands.Cog):
                             continue
                     else:
                         for k, v in data.copy().items():
-                            if inspect.iscoroutinefunction(data["func"]) or inspect.iscoroutine(data["func"]):
+                            if inspect.iscoroutinefunction(data[k]) or inspect.iscoroutine(data[k]):
                                 await v()
                             elif callable(v):
                                 data[k] = v()
