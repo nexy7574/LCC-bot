@@ -1438,6 +1438,33 @@ class OtherCog(commands.Cog):
                 content="Timings:\n" + "\n".join("%s: %s" % (k.title(), v) for k, v in timings.items()),
             )
 
+    @commands.slash_command(name="image-to-gif")
+    @commands.cooldown(1, 30, commands.BucketType.user)
+    @commands.max_concurrency(1, commands.BucketType.user)
+    async def convert_image_to_gif(
+            self,
+            ctx: discord.ApplicationContext,
+            image: discord.Option(
+                discord.SlashCommandOptionType.attachment,
+                description="Image to convert. PNG/JPEG only.",
+            )
+    ):
+        """Converts a static image to a gif, so you can save it"""
+        image: discord.Attachment
+        with tempfile.TemporaryFile("wb+") as f:
+            await image.save(f)
+            f.seek(0)
+            img = await self.bot.loop.run_in_executor(None, Image.open, f)
+            if img.format not in ("PNG", "JPEG", "WEBP", "HEIF", "BMP", "TIFF"):
+                return await ctx.respond("Image must be PNG or JPEG")
+            with tempfile.TemporaryFile("wb+") as f2:
+                await self.bot.loop.run_in_executor(None, img.save, f2, format="GIF")
+                f2.seek(0)
+                try:
+                    await ctx.respond(file=discord.File(f2, filename="image.gif"))
+                except discord.HTTPException as e:
+                    return await ctx.respond(f"Failed to upload: `{e}` (too large?)")
+
 
 def setup(bot):
     bot.add_cog(OtherCog(bot))
