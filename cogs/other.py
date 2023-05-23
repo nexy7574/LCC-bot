@@ -1447,6 +1447,11 @@ class OtherCog(commands.Cog):
             image: discord.Option(
                 discord.SlashCommandOptionType.attachment,
                 description="Image to convert. PNG/JPEG only.",
+            ),
+            backup: discord.Option(
+                discord.SlashCommandOptionType.boolean,
+                description="Sends the GIF to your DM as well so you'll never lose it.",
+                default=False
             )
     ):
         """Converts a static image to a gif, so you can save it"""
@@ -1456,7 +1461,8 @@ class OtherCog(commands.Cog):
             f.seek(0)
             img = await self.bot.loop.run_in_executor(None, Image.open, f)
             if img.format.upper() not in ("PNG", "JPEG", "WEBP", "HEIF", "BMP", "TIFF"):
-                return await ctx.respond("Image must be PNG or JPEG")
+                return await ctx.respond("Image must be PNG, JPEG, WEBP, or HEIF.")
+
             with tempfile.TemporaryFile("wb+") as f2:
                 caller = partial(img.save, f2, format="GIF")
                 await self.bot.loop.run_in_executor(None, caller)
@@ -1464,7 +1470,14 @@ class OtherCog(commands.Cog):
                 try:
                     await ctx.respond(file=discord.File(f2, filename="image.gif"))
                 except discord.HTTPException as e:
-                    return await ctx.respond(f"Failed to upload: `{e}` (too large?)")
+                    if e.code == 40005:
+                        return await ctx.respond("Image is too large.")
+                    return await ctx.respond(f"Failed to upload: `{e}`")
+                if backup:
+                    try:
+                        await ctx.user.send(file=discord.File(f2, filename="image.gif"))
+                    except discord.Forbidden:
+                        return await ctx.respond("Unable to mirror to your DM - am I blocked?", ephemeral=True)
 
 
 def setup(bot):
