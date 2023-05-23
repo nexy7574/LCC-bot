@@ -1455,10 +1455,11 @@ class OtherCog(commands.Cog):
             await image.save(f)
             f.seek(0)
             img = await self.bot.loop.run_in_executor(None, Image.open, f)
-            if img.format not in ("PNG", "JPEG", "WEBP", "HEIF", "BMP", "TIFF"):
+            if img.format.upper() not in ("PNG", "JPEG", "WEBP", "HEIF", "BMP", "TIFF"):
                 return await ctx.respond("Image must be PNG or JPEG")
             with tempfile.TemporaryFile("wb+") as f2:
-                await self.bot.loop.run_in_executor(None, img.save, f2, format="GIF")
+                caller = partial(img.save, f2, format="GIF")
+                await self.bot.loop.run_in_executor(None, caller)
                 f2.seek(0)
                 try:
                     await ctx.respond(file=discord.File(f2, filename="image.gif"))
