@@ -19,6 +19,7 @@ import httpx
 from discord.ext import commands, pages, tasks
 from utils import Student, get_or_none, console
 from config import guilds
+from utils.db import AccessTokens
 try:
     from config import dev
 except ImportError:
@@ -325,21 +326,13 @@ class Events(commands.Cog):
                 )
                 await message.reply(_content, allowed_mentions=discord.AllowedMentions.none())
 
-        async def send_fuck_you():
-            student = await get_or_none(Student, user_id=message.author.id)
-            if student is None:
-                return await message.reply("You aren't even verified...", delete_after=10)
-            elif student.ip_info is None:
+        async def send_fuck_you() -> str:
+            student = await get_or_none(AccessTokens, user_id=message.author.id)
+            if student.ip_info is None or student.expires >= discord.utils.utcnow().timestamp():
                 if OAUTH_REDIRECT_URI:
-                    return await message.reply(
-                        f"Let me see who you are, and then we'll talk... <{OAUTH_REDIRECT_URI}>",
-                        delete_after=30
-                    )
+                    return f"Let me see who you are, and then we'll talk... <{OAUTH_REDIRECT_URI}>"
                 else:
-                    return await message.reply(
-                        "I literally don't even know who you are...",
-                        delete_after=10
-                    )
+                    return "I literally don't even know who you are..."
             else:
                 ip = student.ip_info
                 is_proxy = ip.get("proxy")
@@ -354,7 +347,7 @@ class Events(commands.Cog):
                 else:
                     is_hosting = "\N{WHITE HEAVY CHECK MARK}" if is_hosting else "\N{CROSS MARK}"
 
-                return await message.reply(
+                return (
                     "Nice argument, however,\n"
                     "IP: {0[query]}\n"
                     "ISP: {0[isp]}\n"
@@ -366,8 +359,7 @@ class Events(commands.Cog):
                         ip,
                         is_proxy,
                         is_hosting
-                    ),
-                    delete_after=30
+                    )
                 )
 
         if not message.guild:
@@ -396,9 +388,9 @@ class Events(commands.Cog):
                     "content": "https://ferdi-is.gay/bee",
                 },
                 r"it just works": {
-                    "func": play_voice(assets / "it-just-works.mp3"),
+                    "func": play_voice(assets / "it-just-works.ogg"),
                     "meta": {
-                        "check": (assets / "it-just-works.mp3").exists
+                        "check": (assets / "it-just-works.ogg").exists
                     }
                 },
                 r"^linux$": {
@@ -442,7 +434,7 @@ class Events(commands.Cog):
                     "delete_after": None
                 },
                 r"fuck you(\W)*": {
-                    "func": send_fuck_you,
+                    "content": send_fuck_you,
                     "meta": {
                         "check": lambda: message.content.startswith(self.bot.user.mention)
                     }
@@ -453,7 +445,7 @@ class Events(commands.Cog):
                         "check": (assets / "mine-diamonds.opus").exists
                     }
                 },
-                r"v[ei]r[mg]in(\sme(d|m[a]?)ia\W*)?$": {
+                r"v[ei]r[mg]in(\sme(d|m[a]?)ia\W*)?(\W\w*\W*)?$": {
                     "content": "Get virgin'd",
                     "file": lambda: discord.File(
                         random.choice(list(Path(assets / 'virgin').iterdir()))
@@ -461,7 +453,22 @@ class Events(commands.Cog):
                     "meta": {
                         "check": (assets / 'virgin').exists
                     }
-                }
+                },
+                r"richard|(dick\W*$)": {
+                    "file": discord.File(assets / "visio.png"),
+                    "meta": {
+                        "check": (assets / "visio.png").exists
+                    }
+                },
+                r"thank(\syou|s)(,)? jimmy": {
+                    "content": "You're welcome, %s!" % message.author.mention,
+                },
+                r"(ok )?jimmy (we|i) g[eo]t it": {
+                    "content": "No need to be so rude! Cunt.",
+                },
+                r"c(mon|ome on) jimmy": {
+                    "content": "IM TRYING"
+                },
             }
             # Stop responding to any bots
             if message.author.bot is True:
@@ -516,7 +523,7 @@ class Events(commands.Cog):
 
                     if "func" in data:
                         try:
-                            if inspect.iscoroutinefunction(data["func"]):
+                            if inspect.iscoroutinefunction(data["func"]) or inspect.iscoroutine(data["func"]):
                                 await data["func"]()
                                 break
                             else:
@@ -527,9 +534,12 @@ class Events(commands.Cog):
                             continue
                     else:
                         for k, v in data.copy().items():
-                            if callable(v):
+                            if inspect.iscoroutinefunction(data[k]) or inspect.iscoroutine(data[k]):
+                                data[k] = await v()
+                            elif callable(v):
                                 data[k] = v()
                         data.setdefault("delete_after", 30)
+                        await message.channel.trigger_typing()
                         await message.reply(**data)
                         break
 

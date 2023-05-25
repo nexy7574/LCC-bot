@@ -2,6 +2,7 @@ import asyncio
 import io
 import json
 import os
+import subprocess
 import random
 import re
 import tempfile
@@ -711,9 +712,9 @@ class OtherCog(commands.Cog):
         window_width = max(min(1080 * 6, window_width), 1080 // 6)
         window_height = max(min(1920 * 6, window_height), 1920 // 6)
         await ctx.defer()
-        if ctx.user.id == 1019233057519177778 and ctx.me.guild_permissions.moderate_members:
-            if ctx.user.communication_disabled_until is None:
-                await ctx.user.timeout_for(timedelta(minutes=2), reason="no")
+        # if ctx.user.id == 1019233057519177778 and ctx.me.guild_permissions.moderate_members:
+        #     if ctx.user.communication_disabled_until is None:
+        #         await ctx.user.timeout_for(timedelta(minutes=2), reason="no")
         url = urlparse(url)
         if not url.scheme:
             if "/" in url.path:
@@ -846,255 +847,6 @@ class OtherCog(commands.Cog):
                     await blacklist.write(line)
         await ctx.respond("Removed domain from blacklist.")
 
-    # noinspection PyTypeHints
-    @commands.slash_command(name="yt-dl")
-    @commands.max_concurrency(1, commands.BucketType.user)
-    async def yt_dl(
-            self,
-            ctx: discord.ApplicationContext,
-            url: str,
-            video_format: discord.Option(
-                description="The format to download the video in.",
-                autocomplete=format_autocomplete,
-                default=""
-            ) = "",
-            upload_log: bool = True,
-            list_formats: bool = False,
-            proxy_mode: discord.Option(
-                str,
-                choices=[
-                    "No Proxy",
-                    "Dedicated Proxy",
-                    "Random Public Proxy"
-                ],
-                description="Only use if a download was blocked or 403'd.",
-                default="No Proxy",
-            ) = "No Proxy",
-    ):
-        """Downloads a video from <URL> using youtube-dl"""
-        use_proxy = ["No Proxy", "Dedicated Proxy", "Random Public Proxy"].index(proxy_mode)
-        embed = discord.Embed(
-            description="Loading..."
-        )
-        embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1101463077586735174.gif?v=1")
-        await ctx.defer()
-
-        await ctx.respond(embed=embed)
-        if list_formats:
-            # Nothing actually downloads here
-            try:
-                formats = await self.list_formats(url, use_proxy=use_proxy)
-            except FileNotFoundError:
-                _embed = embed.copy()
-                _embed.description = "yt-dlp not found."
-                _embed.colour = discord.Colour.red()
-                _embed.set_thumbnail(url=discord.Embed.Empty)
-                return await ctx.edit(embed=_embed)
-            except json.JSONDecodeError:
-                _embed = embed.copy()
-                _embed.description = "Unable to find formats. You're on your own. Wing it."
-                _embed.colour = discord.Colour.red()
-                _embed.set_thumbnail(url=discord.Embed.Empty)
-                return await ctx.edit(embed=_embed)
-            else:
-                embeds = []
-                for fmt in formats.keys():
-                    fs = formats[fmt]["filesize"] or 0.1
-                    if fs == float("inf"):
-                        fs = 0
-                        units = ["B"]
-                    else:
-                        units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
-                        while fs > 1024:
-                            fs /= 1024
-                            units.pop(0)
-                    embeds.append(
-                        discord.Embed(
-                            title=fmt,
-                            description="- Encoding: {0[vcodec]} + {0[acodec]}\n"
-                                        "- Extension: `.{0[ext]}`\n"
-                                        "- Resolution: {0[resolution]}\n"
-                                        "- Filesize: {1}\n"
-                                        "- Protocol: {0[protocol]}\n".format(formats[fmt], f"{round(fs, 2)}{units[0]}"),
-                            colour=discord.Colour.blurple()
-                        ).add_field(
-                            name="Download:",
-                            value="{} url:{} video_format:{}".format(
-                                self.bot.get_application_command("yt-dl").mention,
-                                url,
-                                fmt
-                            )
-                        )
-                    )
-                _paginator = pages.Paginator(embeds, loop_pages=True)
-                await ctx.delete(delay=0.1)
-                return await _paginator.respond(ctx.interaction)
-
-        with tempfile.TemporaryDirectory(prefix="jimmy-ytdl-") as tempdir:
-            video_format = video_format.lower()
-            MAX_SIZE = round(ctx.guild.filesize_limit / 1024 / 1024)
-            if MAX_SIZE == 8:
-                MAX_SIZE = 25
-            options = [
-                "--no-colors",
-                "--no-playlist",
-                "--no-check-certificates",
-                "--no-warnings",
-                "--newline",
-                "--restrict-filenames",
-                "--output",
-                f"{ctx.user.id}.%(title)s.%(ext)s",
-            ]
-            if video_format:
-                options.extend(["--format", f"({video_format})[filesize<={MAX_SIZE}M]"])
-            else:
-                options.extend(["--format", f"(bv*+ba/b/ba)[filesize<={MAX_SIZE}M]"])
-
-            if use_proxy == 1 and proxy:
-                options.append("--proxy")
-                options.append(proxy)
-                console.log("yt-dlp using proxy: %r", proxy)
-            elif use_proxy == 2 and proxies:
-                options.append("--proxy")
-                options.append(random.choice(proxies))
-                console.log("yt-dlp using random proxy: %r", options[-1])
-
-            _embed = embed.copy()
-            _embed.description = "Downloading..."
-            _embed.colour = discord.Colour.blurple()
-            await ctx.edit(
-                embed=_embed,
-            )
-            try:
-                venv = Path.cwd() / "venv" / ("Scripts" if os.name == "nt" else "bin")
-                if venv:
-                    venv = venv.absolute().resolve()
-                    if str(venv) not in os.environ["PATH"]:
-                        os.environ["PATH"] += os.pathsep + str(venv)
-
-                process = await asyncio.create_subprocess_exec(
-                    "yt-dlp",
-                    url,
-                    *options,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    cwd=Path(tempdir).resolve()
-                )
-                async with ctx.channel.typing():
-                    stdout, stderr = await process.communicate()
-                    stdout_log = io.BytesIO(stdout)
-                    stdout_log_file = discord.File(stdout_log, filename="stdout.txt")
-                    stderr_log = io.BytesIO(stderr)
-                    stderr_log_file = discord.File(stderr_log, filename="stderr.txt")
-                    await process.wait()
-            except FileNotFoundError:
-                return await ctx.edit(
-                    embed=discord.Embed(
-                        description="Downloader not found.",
-                        color=discord.Color.red()
-                    )
-                )
-
-            if process.returncode != 0:
-                files = [
-                    stdout_log_file,
-                    stderr_log_file
-                ]
-                if b"format is not available" in stderr:
-                    formats = await self.list_formats(url)
-                    embeds = []
-                    for fmt in formats.keys():
-                        fs = formats[fmt]["filesize"] or 0.1
-                        if fs == float("inf"):
-                            fs = 0
-                            units = ["B"]
-                        else:
-                            units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
-                            while fs > 1024:
-                                fs /= 1024
-                                units.pop(0)
-                        embeds.append(
-                            discord.Embed(
-                                title=fmt,
-                                description="- Encoding: {0[vcodec]} + {0[acodec]}\n"
-                                            "- Extension: `.{0[ext]}`\n"
-                                            "- Resolution: {0[resolution]}\n"
-                                            "- Filesize: {1}\n"
-                                            "- Protocol: {0[protocol]}\n".format(formats[fmt],
-                                                                                 f"{round(fs, 2)}{units[0]}"),
-                                colour=discord.Colour.blurple()
-                            ).add_field(
-                                name="Download:",
-                                value="{} url:{} video_format:{}".format(
-                                    self.bot.get_application_command("yt-dl").mention,
-                                    url,
-                                    fmt
-                                )
-                            )
-                        )
-                    _paginator = pages.Paginator(embeds, loop_pages=True)
-                    await ctx.delete(delay=0.1)
-                    return await _paginator.respond(ctx.interaction)
-                return await ctx.edit(content=f"Download failed:\n```\n{stderr.decode()}\n```", files=files)
-
-            _embed = embed.copy()
-            _embed.description = "Download complete."
-            _embed.colour = discord.Colour.green()
-            _embed.set_thumbnail(url=discord.Embed.Empty)
-            await ctx.edit(embed=_embed)
-            files = [
-                stdout_log_file,
-                stderr_log_file
-            ] if upload_log else []
-            cum_size = 0
-            for file in files:
-                n_b = len(file.fp.read())
-                file.fp.seek(0)
-                if n_b == 0:
-                    files.remove(file)
-                    continue
-                elif n_b >= 1024 * 1024 * 256:
-                    data = file.fp.read()
-                    compressed = await self.bot.loop.run_in_executor(
-                        gzip.compress, data, 9
-                    )
-                    file.fp.close()
-                    file.fp = io.BytesIO(compressed)
-                    file.fp.seek(0)
-                    file.filename += ".gz"
-                    cum_size += len(compressed)
-                else:
-                    cum_size += n_b
-
-            for file_name in Path(tempdir).glob(f"{ctx.user.id}.*"):
-                stat = file_name.stat()
-                size_mb = stat.st_size / 1024 / 1024
-                if (size_mb * 1024 * 1024 + cum_size) >= (MAX_SIZE - 0.256) * 1024 * 1024:
-                    warning = f"File {file_name.name} was too large ({size_mb:,.1f}MB vs {MAX_SIZE:.1f}MB)".encode()
-                    _x = io.BytesIO(
-                        warning
-                    )
-                    _x.seek(0)
-                    cum_size += len(warning)
-                    files.append(discord.File(_x, filename=file_name.name + ".txt"))
-                try:
-                    video = discord.File(file_name, filename=file_name.name)
-                    files.append(video)
-                except FileNotFoundError:
-                    continue
-                else:
-                    cum_size += size_mb * 1024 * 1024
-
-            if not files:
-                return await ctx.edit(embed=discord.Embed(description="No files found.", color=discord.Colour.red()))
-            await ctx.edit(
-                embed=discord.Embed(
-                    title="Here's your video!",
-                    color=discord.Colour.green()
-                ),
-                files=files
-            )
-
     @commands.slash_command(name="yt-dl-beta")
     @commands.max_concurrency(1, commands.BucketType.user)
     async def yt_dl_2(
@@ -1112,10 +864,17 @@ class OtherCog(commands.Cog):
                 autocomplete=format_autocomplete,
                 default=""
             ) = "",
+            extract_audio: bool = False,
             upload_log: bool = False,
+            # cookies: discord.Option(
+            #     bool,
+            #     description="Whether to ask for cookies.",
+            #     default=False
+            # ) = False
     ):
         """Downloads a video using youtube-dl"""
         await ctx.defer()
+        compress_if_possible = False
         formats = await self.list_formats(url)
         if list_formats:
             embeds = []
@@ -1132,12 +891,16 @@ class OtherCog(commands.Cog):
                 embeds.append(
                     discord.Embed(
                         title=fmt,
-                        description="- Encoding: {0[vcodec]} + {0[acodec]}\n"
+                        description="- Encoding: {3} + {2}\n"
                                     "- Extension: `.{0[ext]}`\n"
                                     "- Resolution: {0[resolution]}\n"
                                     "- Filesize: {1}\n"
-                                    "- Protocol: {0[protocol]}\n".format(formats[fmt],
-                                                                         f"{round(fs, 2)}{units[0]}"),
+                                    "- Protocol: {0[protocol]}\n".format(
+                                        formats[fmt],
+                                        formats[fmt].get("acodec", 'N/A'),
+                                        formats[fmt].get("vcodec", 'N/A'),
+                                        f"{round(fs, 2)}{units[0]}"
+                        ),
                         colour=discord.Colour.blurple()
                     ).add_field(
                         name="Download:",
@@ -1159,20 +922,22 @@ class OtherCog(commands.Cog):
                     _format = fmt
                     break
             else:
-                return await ctx.edit(
-                    embed=discord.Embed(
-                        title="Error",
-                        description="Invalid format %r. pass `list-formats:True` to see a list of formats." % _fmt,
-                        colour=discord.Colour.red()
+                if not await self.bot.is_owner(ctx.user):
+                    return await ctx.edit(
+                        embed=discord.Embed(
+                            title="Error",
+                            description="Invalid format %r. pass `list-formats:True` to see a list of formats." % _fmt,
+                            colour=discord.Colour.red()
+                        )
                     )
-                )
 
         MAX_SIZE_MB = ctx.guild.filesize_limit / 1024 / 1024
         if MAX_SIZE_MB == 8.0:
             MAX_SIZE_MB = 25.0
+        BYTES_REMAINING = (MAX_SIZE_MB - 0.256) * 1024 * 1024
         import yt_dlp
 
-        with tempfile.TemporaryDirectory(prefix="jimmy-ytdl-wat") as tempdir_str:
+        with tempfile.TemporaryDirectory(prefix="jimmy-ytdl-") as tempdir_str:
             tempdir = Path(tempdir_str).resolve()
             stdout = tempdir / "stdout.txt"
             stderr = tempdir / "stderr.txt"
@@ -1212,27 +977,44 @@ class OtherCog(commands.Cog):
                 )
             }
 
-            with yt_dlp.YoutubeDL(
+            args = {
+                "windowsfilenames": True,
+                "restrictfilenames": True,
+                "noplaylist": True,
+                "nocheckcertificate": True,
+                "no_color": True,
+                "noprogress": True,
+                "logger": logger,
+                "format": _format or None,
+                "paths": paths,
+                "outtmpl": f"{ctx.user.id}-%(title).50s.%(ext)s",
+                "trim_file_name": 128,
+                "extract_audio": extract_audio,
+            }
+            if extract_audio:
+                args["postprocessors"] = [
                     {
-                        "windowsfilenames": True,
-                        "restrictfilenames": True,
-                        "noplaylist": True,
-                        "nocheckcertificate": True,
-                        "no_color": True,
-                        "noprogress": True,
-                        "logger": logger,
-                        "format": _format or f"(bv*+ba/bv/ba/b)[filesize<={MAX_SIZE_MB}M]",
-                        "paths": paths,
-                        "outtmpl": f"{ctx.user.id}-%(title)s.%(ext)s",
-                        "format_sort": "codec:h264,ext"
+                        "key": "FFmpegExtractAudio",
+                        "preferredquality": "192",
                     }
-            ) as downloader:
+                ]
+                args["format"] = args["format"] or f"(ba/b)[filesize<={MAX_SIZE_MB}M]"
+
+            try:
+                url = urlparse(url)
+                if url.netloc in ("www.instagram.com", "instagram.com"):
+                    args["cookiesfrombrowser"] = ("firefox", "default")
+            except ValueError:
+                pass
+
+            if args["format"] is None:
+                args["format"] = f"(bv*+ba/bv/ba/b)[filesize<={MAX_SIZE_MB}M]"
+            with yt_dlp.YoutubeDL(args) as downloader:
                 try:
                     await ctx.respond(
                         embed=discord.Embed(title="Downloading...", colour=discord.Colour.blurple())
                     )
-                    async with ctx.channel.typing():
-                        await self.bot.loop.run_in_executor(None, partial(downloader.download, [url]))
+                    await self.bot.loop.run_in_executor(None, partial(downloader.download, [url]))
                 except yt_dlp.utils.DownloadError as e:
                     return await ctx.edit(
                         embed=discord.Embed(
@@ -1250,31 +1032,80 @@ class OtherCog(commands.Cog):
                     del logger
                     files = []
                     if upload_log:
-                        if stdout.stat().st_size:
+                        if out_size := stdout.stat().st_size:
                             files.append(discord.File(stdout, "stdout.txt"))
-                        if stderr.stat().st_size:
+                            BYTES_REMAINING -= out_size
+                        if err_size := stderr.stat().st_size:
                             files.append(discord.File(stderr, "stderr.txt"))
+                            BYTES_REMAINING -= err_size
 
                     for file in tempdir.glob(f"{ctx.user.id}-*"):
                         if file.stat().st_size == 0:
                             embed.description += f"\N{warning sign}\ufe0f {file.name} is empty.\n"
                             continue
                         st = file.stat().st_size
-                        if st / 1024 / 1024 >= MAX_SIZE_MB:
+                        COMPRESS_FAILED = False
+                        if st / 1024 / 1024 >= MAX_SIZE_MB or st >= BYTES_REMAINING:
+                            if compress_if_possible and file.suffix in (
+                                    ".mp4",
+                                    ".mkv",
+                                    ".mov",
+                                    '.aac',
+                                    '.opus',
+                                    '.webm'
+                            ):
+                                await ctx.edit(
+                                    embed=discord.Embed(
+                                        title="Compressing...",
+                                        description="File name: `%s`\nThis will take a long time." % file.name,
+                                        colour=discord.Colour.blurple()
+                                    )
+                                )
+                                target = file.with_name(file.name + '.compressed' + file.suffix)
+                                ffmpeg_command = [
+                                    "ffmpeg",
+                                    "-hide_banner",
+                                    "-i",
+                                    str(file),
+                                    "-crf",
+                                    "30",
+                                    "-preset",
+                                    "slow",
+                                    str(target)
+                                ]
+
+                                try:
+                                    await self.bot.loop.run_in_executor(
+                                        None,
+                                        partial(
+                                            subprocess.run,
+                                            ffmpeg_command,
+                                            check=True
+                                        )
+                                    )
+                                except subprocess.CalledProcessError:
+                                    COMPRESS_FAILED = True
+                                else:
+                                    file = target
+                                    st = file.stat().st_size
+
                             units = ["B", "KB", "MB", "GB", "TB"]
                             st_r = st
                             while st_r > 1024:
                                 st_r /= 1024
                                 units.pop(0)
                             embed.description += "\N{warning sign}\ufe0f {} is too large to upload ({!s}{}" \
-                                                 ", max is {}MB).\n".format(
-                                                    file.name,
-                                                    round(st_r, 2),
-                                                    units[0],
-                                                    MAX_SIZE_MB
+                                                 ", max is {}MB{}).\n".format(
+                                                     file.name,
+                                                     round(st_r, 2),
+                                                     units[0],
+                                                     MAX_SIZE_MB,
+                                                     ', compressing failed' if COMPRESS_FAILED else ', compressed fine.'
                                                  )
                             continue
-                        files.append(discord.File(file, file.name))
+                        else:
+                            files.append(discord.File(file, file.name))
+                            BYTES_REMAINING -= st
 
                     if not files:
                         embed.description += "No files to upload. Directory list:\n%s" % (
@@ -1287,8 +1118,20 @@ class OtherCog(commands.Cog):
                         await ctx.edit(embed=embed)
                         await ctx.channel.trigger_typing()
                         embed.description = _desc
+                        start = time()
                         await ctx.edit(embed=embed, files=files)
-    
+                        end = time()
+                        if (end - start) < 10:
+                            await ctx.respond("*clearing typing*", delete_after=0.01)
+
+                        async def bgtask():
+                            await asyncio.sleep(120.0)
+                            try:
+                                await ctx.edit(embed=None)
+                            except discord.NotFound:
+                                pass
+                        self.bot.loop.create_task(bgtask())
+
     @commands.slash_command(name="text-to-mp3")
     @commands.cooldown(5, 600, commands.BucketType.user)
     async def text_to_mp3(
@@ -1374,7 +1217,11 @@ class OtherCog(commands.Cog):
                     _url = text_pre[4:].strip()
                     _msg = await interaction.followup.send("Downloading text...")
                     try:
-                        response = await _self.http.get(_url, headers={"User-Agent": "Mozilla/5.0"})
+                        response = await _self.http.get(
+                            _url,
+                            headers={"User-Agent": "Mozilla/5.0"},
+                            follow_redirects=True
+                        )
                         if response.status_code != 200:
                             await _msg.edit(content=f"Failed to download text. Status code: {response.status_code}")
                             return
@@ -1387,15 +1234,34 @@ class OtherCog(commands.Cog):
                     except (ConnectionError, httpx.HTTPError, httpx.NetworkError) as e:
                         await _msg.edit(content="Failed to download text. " + str(e))
                         return
-                    else:
-                        await _msg.edit(content="Text downloaded; Converting to MP3...")
+
                 else:
-                    _msg = await interaction.followup.send("Converting text to MP3...")
+                    _msg = await interaction.followup.send("Converting text to MP3... (0 seconds elapsed)")
+
+                async def assurance_task():
+                    while True:
+                        await asyncio.sleep(5.5)
+                        await _msg.edit(
+                            content=f"Converting text to MP3... ({time() - start_time:.1f} seconds elapsed)"
+                        )
+
+                start_time = time()
+                task = _bot.loop.create_task(assurance_task())
                 try:
-                    mp3, size = await _bot.loop.run_in_executor(None, _convert, text_pre)
+                    mp3, size = await asyncio.wait_for(
+                        _bot.loop.run_in_executor(None, _convert, text_pre),
+                        timeout=600
+                    )
+                except asyncio.TimeoutError:
+                    task.cancel()
+                    await _msg.edit(content="Failed to convert text to MP3 - Timeout. Try shorter/less complex text.")
+                    return
                 except (Exception, IOError) as e:
+                    task.cancel()
                     await _msg.edit(content="failed. " + str(e))
                     raise e
+                task.cancel()
+                del task
                 if size >= ctx.guild.filesize_limit - 1500:
                     await _msg.edit(
                         content=f"MP3 is too large ({size / 1024 / 1024}Mb vs "
@@ -1579,9 +1445,85 @@ class OtherCog(commands.Cog):
                 out_file = io.BytesIO(text.encode("utf-8", "replace"))
                 await ctx.respond(file=discord.File(out_file, filename="ocr.txt"))
 
-        await ctx.edit(
-            content="Timings:\n" + "\n".join("%s: %s" % (k.title(), v) for k, v in timings.items()),
-        )
+        if timings:
+            await ctx.edit(
+                content="Timings:\n" + "\n".join("%s: %s" % (k.title(), v) for k, v in timings.items()),
+            )
+
+    @commands.slash_command(name="image-to-gif")
+    @commands.cooldown(1, 30, commands.BucketType.user)
+    @commands.max_concurrency(1, commands.BucketType.user)
+    async def convert_image_to_gif(
+            self,
+            ctx: discord.ApplicationContext,
+            image: discord.Option(
+                discord.SlashCommandOptionType.attachment,
+                description="Image to convert. PNG/JPEG only.",
+            ),
+            backup: discord.Option(
+                discord.SlashCommandOptionType.boolean,
+                description="Sends the GIF to your DM as well so you'll never lose it.",
+                default=False
+            )
+    ):
+        """Converts a static image to a gif, so you can save it"""
+        await ctx.defer()
+        image: discord.Attachment
+        with tempfile.TemporaryFile("wb+") as f:
+            await image.save(f)
+            f.seek(0)
+            img = await self.bot.loop.run_in_executor(None, Image.open, f)
+            if img.format.upper() not in ("PNG", "JPEG", "WEBP", "HEIF", "BMP", "TIFF"):
+                return await ctx.respond("Image must be PNG, JPEG, WEBP, or HEIF.")
+
+            with tempfile.TemporaryFile("wb+") as f2:
+                caller = partial(img.save, f2, format="GIF")
+                await self.bot.loop.run_in_executor(None, caller)
+                f2.seek(0)
+                try:
+                    await ctx.respond(file=discord.File(f2, filename="image.gif"))
+                except discord.HTTPException as e:
+                    if e.code == 40005:
+                        return await ctx.respond("Image is too large.")
+                    return await ctx.respond(f"Failed to upload: `{e}`")
+                if backup:
+                    try:
+                        await ctx.user.send(file=discord.File(f2, filename="image.gif"))
+                    except discord.Forbidden:
+                        return await ctx.respond("Unable to mirror to your DM - am I blocked?", ephemeral=True)
+
+    @commands.message_command(name="Convert Image to GIF")
+    async def convert_image_to_gif(self, ctx: discord.ApplicationContext, message: discord.Message):
+        await ctx.defer()
+        for attachment in message.attachments:
+            if attachment.content_type.startswith("image/"):
+                break
+        else:
+            return await ctx.respond("No image found.")
+        image = attachment
+        image: discord.Attachment
+        with tempfile.TemporaryFile("wb+") as f:
+            await image.save(f)
+            f.seek(0)
+            img = await self.bot.loop.run_in_executor(None, Image.open, f)
+            if img.format.upper() not in ("PNG", "JPEG", "WEBP", "HEIF", "BMP", "TIFF"):
+                return await ctx.respond("Image must be PNG, JPEG, WEBP, or HEIF.")
+
+            with tempfile.TemporaryFile("wb+") as f2:
+                caller = partial(img.save, f2, format="GIF")
+                await self.bot.loop.run_in_executor(None, caller)
+                f2.seek(0)
+                try:
+                    await ctx.respond(file=discord.File(f2, filename="image.gif"))
+                except discord.HTTPException as e:
+                    if e.code == 40005:
+                        return await ctx.respond("Image is too large.")
+                    return await ctx.respond(f"Failed to upload: `{e}`")
+                try:
+                    f2.seek(0)
+                    await ctx.user.send(file=discord.File(f2, filename="image.gif"))
+                except discord.Forbidden:
+                    return await ctx.respond("Unable to mirror to your DM - am I blocked?", ephemeral=True)
 
 
 def setup(bot):
