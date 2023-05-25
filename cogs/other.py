@@ -990,7 +990,7 @@ class OtherCog(commands.Cog):
                 "outtmpl": f"{ctx.user.id}-%(title).50s.%(ext)s",
                 "trim_file_name": 128,
                 "extract_audio": extract_audio,
-                "format_sort": "codec:h264,ext,filesize<25M"
+                "format_sort": ["codec:h264", "ext", "filesize<25M"]
             }
             if extract_audio:
                 args["postprocessors"] = [
