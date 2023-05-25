@@ -866,10 +866,15 @@ class OtherCog(commands.Cog):
             ) = "",
             extract_audio: bool = False,
             upload_log: bool = False,
-            compress_if_possible: bool = False
+            # cookies: discord.Option(
+            #     bool,
+            #     description="Whether to ask for cookies.",
+            #     default=False
+            # ) = False
     ):
         """Downloads a video using youtube-dl"""
         await ctx.defer()
+        compress_if_possible = False
         formats = await self.list_formats(url)
         if list_formats:
             embeds = []
@@ -994,6 +999,13 @@ class OtherCog(commands.Cog):
                     }
                 ]
                 args["format"] = args["format"] or f"(ba/b)[filesize<={MAX_SIZE_MB}M]"
+
+            try:
+                url = urlparse(url)
+                if url.netloc in ("www.instagram.com", "instagram.com"):
+                    args["cookiesfrombrowser"] = ("firefox", "default")
+            except ValueError:
+                pass
 
             if args["format"] is None:
                 args["format"] = f"(bv*+ba/bv/ba/b)[filesize<={MAX_SIZE_MB}M]"
