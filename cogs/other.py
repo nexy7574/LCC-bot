@@ -1479,6 +1479,37 @@ class OtherCog(commands.Cog):
                     except discord.Forbidden:
                         return await ctx.respond("Unable to mirror to your DM - am I blocked?", ephemeral=True)
 
+    @commands.message_command(name="Convert Image to GIF")
+    async def convert_image_to_gif(self, ctx: discord.ApplicationContext, message: discord.Message):
+        for attachment in message.attachments:
+            if attachment.content_type.startswith("image/"):
+                break
+        else:
+            return await ctx.respond("No image found.")
+        image = attachment
+        image: discord.Attachment
+        with tempfile.TemporaryFile("wb+") as f:
+            await image.save(f)
+            f.seek(0)
+            img = await self.bot.loop.run_in_executor(None, Image.open, f)
+            if img.format.upper() not in ("PNG", "JPEG", "WEBP", "HEIF", "BMP", "TIFF"):
+                return await ctx.respond("Image must be PNG, JPEG, WEBP, or HEIF.")
+
+            with tempfile.TemporaryFile("wb+") as f2:
+                caller = partial(img.save, f2, format="GIF")
+                await self.bot.loop.run_in_executor(None, caller)
+                f2.seek(0)
+                try:
+                    await ctx.respond(file=discord.File(f2, filename="image.gif"))
+                except discord.HTTPException as e:
+                    if e.code == 40005:
+                        return await ctx.respond("Image is too large.")
+                    return await ctx.respond(f"Failed to upload: `{e}`")
+                try:
+                    await ctx.user.send(file=discord.File(f2, filename="image.gif"))
+                except discord.Forbidden:
+                    return await ctx.respond("Unable to mirror to your DM - am I blocked?", ephemeral=True)
+
 
 def setup(bot):
     bot.add_cog(OtherCog(bot))
