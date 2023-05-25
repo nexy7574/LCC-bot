@@ -1506,6 +1506,7 @@ class OtherCog(commands.Cog):
                         return await ctx.respond("Image is too large.")
                     return await ctx.respond(f"Failed to upload: `{e}`")
                 try:
+                    f2.seek(0)
                     await ctx.user.send(file=discord.File(f2, filename="image.gif"))
                 except discord.Forbidden:
                     return await ctx.respond("Unable to mirror to your DM - am I blocked?", ephemeral=True)
