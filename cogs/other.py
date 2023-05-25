@@ -1001,13 +1001,6 @@ class OtherCog(commands.Cog):
                 ]
                 args["format"] = args["format"] or f"(ba/b)[filesize<={MAX_SIZE_MB}M]"
 
-            try:
-                url = urlparse(url)
-                if url.netloc in ("www.instagram.com", "instagram.com"):
-                    args["cookiesfrombrowser"] = ("firefox", "default")
-            except ValueError:
-                pass
-
             if args["format"] is None:
                 args["format"] = f"(bv*+ba/bv/ba/b)[filesize<={MAX_SIZE_MB}M]"
             with yt_dlp.YoutubeDL(args) as downloader:
