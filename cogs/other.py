@@ -1455,6 +1455,7 @@ class OtherCog(commands.Cog):
             )
     ):
         """Converts a static image to a gif, so you can save it"""
+        await ctx.defer()
         image: discord.Attachment
         with tempfile.TemporaryFile("wb+") as f:
             await image.save(f)
@@ -1481,6 +1482,7 @@ class OtherCog(commands.Cog):
 
     @commands.message_command(name="Convert Image to GIF")
     async def convert_image_to_gif(self, ctx: discord.ApplicationContext, message: discord.Message):
+        await ctx.defer()
         for attachment in message.attachments:
             if attachment.content_type.startswith("image/"):
                 break
