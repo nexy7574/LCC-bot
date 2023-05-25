@@ -1223,7 +1223,8 @@ class OtherCog(commands.Cog):
                         "logger": logger,
                         "format": _format or f"(bv*+ba/bv/ba/b)[filesize<={MAX_SIZE_MB}M]",
                         "paths": paths,
-                        "outtmpl": f"{ctx.user.id}-%(title)s.%(ext)s"
+                        "outtmpl": f"{ctx.user.id}-%(title)s.%(ext)s",
+                        "format_sort": "codec:h264,ext"
                     }
             ) as downloader:
                 try:
