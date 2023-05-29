@@ -259,7 +259,7 @@ class TimeTableCog(commands.Cog):
             f"Paper A: [{discord.utils.format_dt(paper_1, 'R')}]({paper_1_url})\n"
             f"Paper B: [{discord.utils.format_dt(paper_2, 'R')}]({paper_2_url})"
         )
-        await response.message.edit(suppress=True)
+        await (await ctx.response.original_response()).edit(suppress=True)
 
 
 def setup(bot):
