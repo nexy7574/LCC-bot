@@ -250,8 +250,8 @@ class TimeTableCog(commands.Cog):
     @commands.slash_command(name="exams")
     async def _exams(self, ctx: discord.ApplicationContext):
         """Shows when exams are."""
-        paper_1 = datetime(2023, 6, 14, 13, 0, 0, 0, 0, timezone.utc)
-        paper_2 = datetime(2023, 6, 21, 13, 0, 0, 0, 0, timezone.utc)
+        paper_1 = datetime(2023, 6, 14, 13, tzinfo=timezone.utc)
+        paper_2 = datetime(2023, 6, 21, 13, tzinfo=timezone.utc)
         paper_1_url = "https://classroom.google.com/c/NTQ5MzE5ODg0ODQ2/m/NTUzNjI5NjAyMDQ2/details"
         paper_2_url = "https://classroom.google.com/c/NTQ5MzE5ODg0ODQ2/m/NjA1Nzk3ODQ4OTg0/details"
         await ctx.respond(
