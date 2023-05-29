@@ -241,6 +241,7 @@ class TimeTableCog(commands.Cog):
                 return await ctx.respond("Invalid date (DD/MM/YYYY).")
         else:
             date = datetime.now()
+            date = datetime.now()
 
         text = self.format_timetable_message(date)
         view = TimeTableDaySwitcherView(ctx.user, self, date)
@@ -254,11 +255,11 @@ class TimeTableCog(commands.Cog):
         paper_2 = datetime(2023, 6, 21, 13, tzinfo=timezone.utc)
         paper_1_url = "https://classroom.google.com/c/NTQ5MzE5ODg0ODQ2/m/NTUzNjI5NjAyMDQ2/details"
         paper_2_url = "https://classroom.google.com/c/NTQ5MzE5ODg0ODQ2/m/NjA1Nzk3ODQ4OTg0/details"
-        await ctx.respond(
+        response = await ctx.respond(
             f"Paper A: [{discord.utils.format_dt(paper_1, 'R')}]({paper_1_url})\n"
             f"Paper B: [{discord.utils.format_dt(paper_2, 'R')}]({paper_2_url})"
         )
-        await ctx.message.edit(suppress=True)
+        await response.message.edit(suppress=True)
 
 
 def setup(bot):
