@@ -262,7 +262,10 @@ class TimeTableCog(commands.Cog):
         await asyncio.sleep(2)
         if response.message:
             await response.message.edit(suppress=True)
-        # message = await ctx.channel.fetch_message(response.id)
+        else:
+            message_id = (await ctx.interaction.original_response()).id
+            message = await ctx.channel.fetch_message(message_id)
+            await message.edit(suppress=True)
 
 
 def setup(bot):
