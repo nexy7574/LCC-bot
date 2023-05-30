@@ -1397,20 +1397,23 @@ class OtherCog(commands.Cog):
         await ctx.defer()
         timings: Dict[str, float] = {}
         attachment: discord.Attachment
-        with Timer(timings, "download attachment"):
+        with Timer() as _t:
             data = await attachment.read()
             file = io.BytesIO(data)
             file.seek(0)
-        with Timer(timings, "Parse image"):
+            timings["Download attachment"] = _t.total
+        with Timer() as _t:
             img = await self.bot.loop.run_in_executor(None, Image.open, file)
+            timings["Parse image"] = _t.total
         try:
-            with Timer(timings, "Run OCR"):
+            with Timer() as _t:
                 text = await self.bot.loop.run_in_executor(None, pytesseract.image_to_string, img)
+                timings["Perform OCR"] = _t.total
         except pytesseract.TesseractError as e:
             return await ctx.respond(f"Failed to perform OCR: `{e}`")
 
         if len(text) > 4096:
-            with Timer(timings, "Upload text to mystbin"):
+            with Timer() as _t:
                 try:
                     response = await self.http.put(
                         "https://api.mystb.in/paste",
@@ -1434,14 +1437,21 @@ class OtherCog(commands.Cog):
                             colour=discord.Colour.dark_theme()
                         )
                         await ctx.respond(embed=embed)
+            timings["Upload text to mystbin"] = _t.total
+        elif len(text) <= 1500 and text.count("\n") <= 7:
+            with Timer() as _t:
+                await ctx.respond(embed=discord.Embed(description=text))
+            timings["Respond (Text)"] = _t.total
         else:
-            with Timer(timings, "Respond (File)"):
+            with Timer() as _t:
                 out_file = io.BytesIO(text.encode("utf-8", "replace"))
                 await ctx.respond(file=discord.File(out_file, filename="ocr.txt"))
+            timings["Respond (File)"] = _t.total
 
         if timings:
+            text = "Timings:\n" + "\n".join("%s: %s" % (k.title(), v) for k, v in timings.items())
             await ctx.edit(
-                content="Timings:\n" + "\n".join("%s: %s" % (k.title(), v) for k, v in timings.items()),
+                content=text,
             )
 
     @commands.slash_command(name="image-to-gif")

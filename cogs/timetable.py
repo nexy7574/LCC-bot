@@ -18,9 +18,6 @@ def schedule_times():
     for h in range(24):
         for m in range(0, 60, 15):
             times.append(time(h, m, 0))
-    console.print("[TimeTable Updater Task] Update times:")
-    for _time in times:
-        console.print("[TimeTable Updater Task] {0.hour}:{0.minute}".format(_time))
     return times
 
 
@@ -220,9 +217,9 @@ class TimeTableCog(commands.Cog):
         """Shows the current/next lesson."""
         if date:
             try:
-                date = datetime.strptime(date, "%d/%m/%Y %H:%M")
+                date = datetime.strptime(date, "%d/%m/%y %H:%M")
             except ValueError:
-                return await ctx.respond("Invalid date (DD/MM/YYYY HH:MM).")
+                return await ctx.respond("Invalid date (DD/MM/YY HH:MM).")
         else:
             date = datetime.now()
         await ctx.defer()
@@ -237,11 +234,10 @@ class TimeTableCog(commands.Cog):
         """Shows the timetable for today/the specified date"""
         if date:
             try:
-                date = datetime.strptime(date, "%d/%m/%Y")
+                date = datetime.strptime(date, "%d/%m/%y")
             except ValueError:
-                return await ctx.respond("Invalid date (DD/MM/YYYY).")
+                return await ctx.respond("Invalid date (DD/MM/YY).")
         else:
-            date = datetime.now()
             date = datetime.now()
 
         text = self.format_timetable_message(date)
@@ -256,17 +252,13 @@ class TimeTableCog(commands.Cog):
         paper_2 = datetime(2023, 6, 21, 12, tzinfo=timezone.utc)
         paper_1_url = "https://classroom.google.com/c/NTQ5MzE5ODg0ODQ2/m/NTUzNjI5NjAyMDQ2/details"
         paper_2_url = "https://classroom.google.com/c/NTQ5MzE5ODg0ODQ2/m/NjA1Nzk3ODQ4OTg0/details"
-        response = await ctx.respond(
+        await ctx.respond(
             f"Paper A: [{discord.utils.format_dt(paper_1, 'R')}]({paper_1_url})\n"
             f"Paper B: [{discord.utils.format_dt(paper_2, 'R')}]({paper_2_url})"
         )
-        await asyncio.sleep(2)
-        if response.message:
-            await response.message.edit(suppress=True)
-        else:
-            message_id = (await ctx.interaction.original_response()).id
-            message = await ctx.channel.fetch_message(message_id)
-            await message.edit(suppress=True)
+        message_id = (await ctx.interaction.original_response()).id
+        message = await ctx.channel.fetch_message(message_id)
+        await message.edit(suppress=True)
 
 
 def setup(bot):

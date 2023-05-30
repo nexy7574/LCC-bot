@@ -39,8 +39,10 @@ class Timer:
 
     @property
     def total(self) -> float:
-        if not self._start_time and not self._end_time:
-            raise RuntimeError("Timer has not been started or stopped.")
+        if not self._start_time:
+            raise RuntimeError("Timer has not been started.")
+        if not self._end_time:
+            return time.time() - self._start_time
         return self._end_time - self._start_time
 
     def __enter__(self):
