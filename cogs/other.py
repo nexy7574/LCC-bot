@@ -1449,7 +1449,7 @@ class OtherCog(commands.Cog):
             timings["Respond (File)"] = _t.total
 
         if timings:
-            text = "Timings:\n" + "\n".join("%s: %s" % (k.title(), v) for k, v in timings.items())
+            text = "Timings:\n" + "\n".join("{}: {:.2f}s".format(k.title(), v) for k, v in timings.items())
             await ctx.edit(
                 content=text,
             )
