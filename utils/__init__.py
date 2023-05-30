@@ -47,6 +47,7 @@ class Timer:
 
     def __enter__(self):
         self._start_time = time.time()
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._end_time = time.time()
