@@ -143,11 +143,11 @@ class OtherCog(commands.Cog):
                         "id": fmt["format_id"],
                         "ext": fmt["ext"],
                         "protocol": fmt["protocol"],
-                        "acodec": fmt["acodec"],
-                        "vcodec": fmt["vcodec"],
-                        "resolution": fmt["resolution"],
+                        "acodec": fmt.get("acodec", "?"),
+                        "vcodec": fmt.get("vcodec", "?"),
+                        "resolution": fmt.get("resolution", "?x?"),
                         "filesize": fmt.get("filesize", float('inf')),
-                        "format": fmt["format"],
+                        "format": fmt.get("format", '?'),
                     }
                     for fmt in info["formats"]
                 }
@@ -928,7 +928,8 @@ class OtherCog(commands.Cog):
                             title="Error",
                             description="Invalid format %r. pass `list-formats:True` to see a list of formats." % _fmt,
                             colour=discord.Colour.red()
-                        )
+                        ),
+                        delete_after=30
                     )
 
         MAX_SIZE_MB = ctx.guild.filesize_limit / 1024 / 1024
@@ -1015,7 +1016,8 @@ class OtherCog(commands.Cog):
                             title="Error",
                             description=f"Download failed:\n```\n{e}\n```",
                             colour=discord.Colour.red()
-                        )
+                        ),
+                        delete_after=30
                     )
                 else:
                     embed = discord.Embed(
