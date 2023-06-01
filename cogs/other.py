@@ -907,7 +907,7 @@ class OtherCog(commands.Cog):
                     )
                 )
             _paginator = pages.Paginator(embeds, loop_pages=True)
-            await ctx.delete(delay=0.1)
+            # await ctx.delete(delay=0.1)
             return await _paginator.respond(ctx.interaction)
 
         if _format:
