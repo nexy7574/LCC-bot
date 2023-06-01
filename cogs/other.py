@@ -866,11 +866,6 @@ class OtherCog(commands.Cog):
             ) = "",
             extract_audio: bool = False,
             upload_log: bool = False,
-            # cookies: discord.Option(
-            #     bool,
-            #     description="Whether to ask for cookies.",
-            #     default=False
-            # ) = False
     ):
         """Downloads a video using youtube-dl"""
         await ctx.defer()

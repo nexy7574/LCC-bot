@@ -35,7 +35,10 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
         if error.args and error.args[0] == "User not connected to a voice channel.":
             return
 
-    await ctx.respond("Application Command Error: `%r`" % error)
+    if ctx.user.id == 1019233057519177778:
+        await ctx.respond("Uh oh! I did a fucky wucky >.< I'll make sure to let important peoplez know straight away!!")
+    else:
+        await ctx.respond("Application Command Error: `%r`" % error)
     raise error
 
 
