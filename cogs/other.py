@@ -992,7 +992,8 @@ class OtherCog(commands.Cog):
                 args["postprocessors"] = [
                     {
                         "key": "FFmpegExtractAudio",
-                        "preferredquality": "192",
+                        "preferredquality": "48",
+                        "preferredcodec": "ogg"
                     }
                 ]
                 args["format"] = args["format"] or f"(ba/b)[filesize<={MAX_SIZE_MB}M]"
