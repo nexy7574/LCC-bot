@@ -900,7 +900,7 @@ class OtherCog(commands.Cog):
                     ).add_field(
                         name="Download:",
                         value="{} url:{} video_format:{}".format(
-                            self.bot.get_application_command("yt-dl").mention,
+                            self.bot.get_application_command("yt-dl-beta").mention,
                             url,
                             fmt
                         )
