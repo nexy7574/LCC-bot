@@ -993,7 +993,7 @@ class OtherCog(commands.Cog):
                     {
                         "key": "FFmpegExtractAudio",
                         "preferredquality": "48",
-                        "preferredcodec": "ogg"
+                        "preferredcodec": "vorbis"
                     }
                 ]
                 args["format"] = args["format"] or f"(ba/b)[filesize<={MAX_SIZE_MB}M]"
