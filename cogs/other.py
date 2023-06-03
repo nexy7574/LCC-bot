@@ -1543,12 +1543,17 @@ class OtherCog(commands.Cog):
             while True:
                 await asyncio.sleep(random.randint(1, 10))
                 elapsed = time() - start_time
+                embed = discord.Embed(
+                    title="Sherlocking username...",
+                    description=f"Elapsed: {elapsed:.0f}s",
+                    colour=discord.Colour.dark_theme()
+                )
+                embed.add_field(
+                    name="stdout",
+                    value=f"```\n{stdout.decode('utf-8', 'replace')[:1000]}```"
+                )
                 await ctx.edit(
-                    embed=discord.Embed(
-                        title="Sherlocking username...",
-                        description=f"Elapsed: {elapsed:.0f}s",
-                        colour=discord.Colour.dark_theme()
-                    )
+                    embed=embed
                 )
 
         await ctx.defer()
@@ -1598,6 +1603,10 @@ class OtherCog(commands.Cog):
                     )
                 )
             # If it didn't error, send the results
+            print(os.listdir(tempdir))
+            print(os.listdir(os.path.join(tempdir, "results")))
+            print(stdout.decode())
+            print(stderr.decode())
             await ctx.respond(
                 file=discord.File(os.path.join(tempdir, "result.csv"), filename="result.csv"),
                 embed=discord.Embed(
