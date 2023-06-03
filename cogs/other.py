@@ -1611,10 +1611,20 @@ class OtherCog(commands.Cog):
                     )
                 )
             # If it didn't error, send the results
+            stdout = stdout.decode()
+            if len(stdout) > 4000:
+                paginator = commands.Paginator("```ansi", max_size=4000)
+                for line in stdout.splitlines():
+                    paginator.add_line(line)
+                desc = paginator.pages[0]
+                title = "Results (truncated)"
+            else:
+                desc = f"```ansi\n{stdout}```"
+                title = "Results"
             await ctx.edit(
                 embed=discord.Embed(
-                    title="Results",
-                    description=f"```ansi\n{stdout.decode()[:4000]}```",
+                    title=title,
+                    description=desc,
                     colour=discord.Colour.green(),
                 ),
             )
