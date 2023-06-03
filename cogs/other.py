@@ -1611,15 +1611,16 @@ class OtherCog(commands.Cog):
                     )
                 )
             # If it didn't error, send the results
-
             await ctx.edit(
-                files=list(map(discord.File, os.listdir(tempdir))),
                 embed=discord.Embed(
                     title="Results",
                     description=f"```ansi\n{stdout.decode()[:4000]}```",
                     colour=discord.Colour.green(),
                 ),
             )
+            files = list(map(discord.File, os.listdir(tempdir)))
+            if files:
+                await ctx.respond(files=files)
 
 
 def setup(bot):
