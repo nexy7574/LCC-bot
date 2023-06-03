@@ -1570,17 +1570,15 @@ class OtherCog(commands.Cog):
                 "-v",
                 f"{tempdir}:/opt/sherlock/results",
                 "sherlock",
-                # "--verbose",
+                "--folderoutput", "/opt/sherlock/results",
                 "--print-found",
-                # "--no-color"
+                "--csv"
             ]
             if search_nsfw:
                 command.append("--nsfw")
             if use_tor:
                 command.append("--tor")
             # Output to result.csv
-            command.append("--csv")
-            command.extend(["-fo", "/opt/sherlock/results"])
             # Username to search for
             command.append(username)
             # Run the command
