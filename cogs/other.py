@@ -1550,7 +1550,7 @@ class OtherCog(commands.Cog):
                 await asyncio.sleep(random.randint(1, 10))
                 elapsed = time() - start_time
                 embed = discord.Embed(
-                    title="Sherlocking username [%s]" % chars[n % len(chars)],
+                    title="Sherlocking username %s" % chars[n % 4],
                     description=f"Elapsed: {elapsed:.0f}s",
                     colour=discord.Colour.dark_theme()
                 )
