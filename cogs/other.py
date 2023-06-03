@@ -3,6 +3,7 @@ import glob
 import io
 import json
 import os
+import shutil
 import subprocess
 import random
 import re
@@ -1561,74 +1562,76 @@ class OtherCog(commands.Cog):
 
         await ctx.defer()
         # output results to a temporary directory
-        with tempfile.TemporaryDirectory() as tempdir:
-            command = [
-                "docker",
-                "run",
-                "--rm",
-                "-t",
-                "-v",
-                f"{tempdir}:/opt/sherlock/results",
-                "sherlock",
-                "--folderoutput", "/opt/sherlock/results",
-                "--print-found",
-                "--csv"
-            ]
-            if search_nsfw:
-                command.append("--nsfw")
-            if use_tor:
-                command.append("--tor")
-            # Output to result.csv
-            # Username to search for
-            command.append(username)
-            # Run the command
-            start_time = time()
-            result = await asyncio.create_subprocess_exec(
-                *command,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            await ctx.respond(embed=discord.Embed(title="Starting..."))
-            task = asyncio.create_task(background_task())
-            # Wait for it to finish
-            stdout, stderr = await result.communicate()
-            await result.wait()
-            task.cancel()
-            # wait for task to exit
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
-            # If it errored, send the error
-            if result.returncode != 0:
-                return await ctx.edit(
-                    embed=discord.Embed(
-                        title="Error",
-                        description=f"```ansi\n{stderr.decode()[:4000]}```",
-                        colour=discord.Colour.red(),
-                    )
-                )
-            # If it didn't error, send the results
-            stdout = stdout.decode()
-            if len(stdout) > 4000:
-                paginator = commands.Paginator("```ansi", max_size=4000)
-                for line in stdout.splitlines():
-                    paginator.add_line(line)
-                desc = paginator.pages[0]
-                title = "Results (truncated)"
-            else:
-                desc = f"```ansi\n{stdout}```"
-                title = "Results"
-            print(glob.glob(f"{tempdir}/*"))
-            files = list(map(discord.File, glob.glob(f"{tempdir}/*")))
-            await ctx.edit(
-                files=files,
+        tempdir = Path("./tmp/sherlock").resolve()
+        tempdir.mkdir(parents=True, exist_ok=True)
+        command = [
+            "docker",
+            "run",
+            "--rm",
+            "-t",
+            "-v",
+            f"{tempdir}:/opt/sherlock/results",
+            "sherlock",
+            "--folderoutput", "/opt/sherlock/results",
+            "--print-found",
+            "--csv"
+        ]
+        if search_nsfw:
+            command.append("--nsfw")
+        if use_tor:
+            command.append("--tor")
+        # Output to result.csv
+        # Username to search for
+        command.append(username)
+        # Run the command
+        start_time = time()
+        result = await asyncio.create_subprocess_exec(
+            *command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        await ctx.respond(embed=discord.Embed(title="Starting..."))
+        task = asyncio.create_task(background_task())
+        # Wait for it to finish
+        stdout, stderr = await result.communicate()
+        await result.wait()
+        task.cancel()
+        # wait for task to exit
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        # If it errored, send the error
+        if result.returncode != 0:
+            shutil.rmtree(tempdir, ignore_errors=True)
+            return await ctx.edit(
                 embed=discord.Embed(
-                    title=title,
-                    description=desc,
-                    colour=discord.Colour.green(),
-                ),
+                    title="Error",
+                    description=f"```ansi\n{stderr.decode()[:4000]}```",
+                    colour=discord.Colour.red(),
+                )
             )
+        # If it didn't error, send the results
+        stdout = stdout.decode()
+        if len(stdout) > 4000:
+            paginator = commands.Paginator("```ansi", max_size=4000)
+            for line in stdout.splitlines():
+                paginator.add_line(line)
+            desc = paginator.pages[0]
+            title = "Results (truncated)"
+        else:
+            desc = f"```ansi\n{stdout}```"
+            title = "Results"
+        files = list(map(discord.File, glob.glob(f"{tempdir}/*")))
+        await ctx.edit(
+            files=files,
+            embed=discord.Embed(
+                title=title,
+                description=desc,
+                colour=discord.Colour.green(),
+            ),
+        )
+        shutil.rmtree(tempdir, ignore_errors=True)
 
 
 def setup(bot):
