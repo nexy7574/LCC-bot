@@ -1602,7 +1602,7 @@ class OtherCog(commands.Cog):
                 pass
             # If it errored, send the error
             if result.returncode != 0:
-                return await ctx.respond(
+                return await ctx.edit(
                     embed=discord.Embed(
                         title="Error",
                         description=f"```{stderr.decode()}```",
@@ -1611,7 +1611,7 @@ class OtherCog(commands.Cog):
                 )
             # If it didn't error, send the results
 
-            await ctx.respond(
+            await ctx.edit(
                 files=list(map(discord.File, glob.glob(f"{tempdir}/*.csv") + glob.glob(f"{tempdir}/*.txt"))),
                 embed=discord.Embed(
                     title="Results",
