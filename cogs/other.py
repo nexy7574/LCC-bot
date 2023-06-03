@@ -1578,7 +1578,8 @@ class OtherCog(commands.Cog):
             if use_tor:
                 command.append("--tor")
             # Output to result.csv
-            command.extend(["--csv", "/opt/sherlock/results/result.csv"])
+            command.append("--csv")
+            command.extend(["-fo", "/opt/sherlock/results"])
             # Username to search for
             command.append(username)
             # Run the command
