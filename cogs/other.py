@@ -1619,17 +1619,16 @@ class OtherCog(commands.Cog):
             else:
                 desc = f"```ansi\n{stdout}```"
                 title = "Results"
+            print(glob.glob(f"{tempdir}/*"))
+            files = list(map(discord.File, glob.glob(f"{tempdir}/*")))
             await ctx.edit(
+                files=files,
                 embed=discord.Embed(
                     title=title,
                     description=desc,
                     colour=discord.Colour.green(),
                 ),
             )
-            print(glob.glob(f"{tempdir}/*"))
-            files = list(map(discord.File, glob.glob(f"{tempdir}/*")))
-            if files:
-                await ctx.respond(files=files)
 
 
 def setup(bot):
