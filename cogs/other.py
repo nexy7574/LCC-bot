@@ -1543,18 +1543,21 @@ class OtherCog(commands.Cog):
             return await ctx.respond("Username cannot contain spaces.")
 
         async def background_task():
+            chars = ["|", "/", "-", "\\"]
+            n = 0
             # Every 5 seconds update the embed to show that the command is still running
             while True:
                 await asyncio.sleep(random.randint(1, 10))
                 elapsed = time() - start_time
                 embed = discord.Embed(
-                    title="Sherlocking username...",
+                    title="Sherlocking username [%s]" % chars[n % len(chars)],
                     description=f"Elapsed: {elapsed:.0f}s",
                     colour=discord.Colour.dark_theme()
                 )
                 await ctx.edit(
                     embed=embed
                 )
+                n += 1
 
         await ctx.defer()
         # output results to a temporary directory
@@ -1567,6 +1570,8 @@ class OtherCog(commands.Cog):
                 "-v",
                 f"{tempdir}:/opt/sherlock/results",
                 "sherlock",
+                "--print-found",
+                "--no-color"
             ]
             if search_nsfw:
                 command.append("--nsfw")
@@ -1609,7 +1614,7 @@ class OtherCog(commands.Cog):
                 files=list(map(discord.File, glob.glob(f"{tempdir}/*.csv") + glob.glob(f"{tempdir}/*.txt"))),
                 embed=discord.Embed(
                     title="Results",
-                    description=f"```{stdout.decode()}```",
+                    description=f"```{stdout.decode()[:4000]}```",
                     colour=discord.Colour.green(),
                 ),
             )
