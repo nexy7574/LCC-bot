@@ -1538,6 +1538,19 @@ class OtherCog(commands.Cog):
             use_tor: bool = False
     ):
         """Sherlocks a username."""
+        async def background_task():
+            # Every 5 seconds update the embed to show that the command is still running
+            while True:
+                await asyncio.sleep(5)
+                elapsed = start_time - time()
+                await ctx.edit(
+                    embed=discord.Embed(
+                        title="Sherlocking username...",
+                        description=f"Elapsed: {elapsed:.0f}s",
+                        colour=discord.Colour.dark_theme()
+                    )
+                )
+
         await ctx.defer()
         # output results to a temporary directory
         with tempfile.TemporaryDirectory() as tempdir:
@@ -1551,21 +1564,30 @@ class OtherCog(commands.Cog):
                 "sherlock",
             ]
             if search_nsfw:
-                command.append("--print-found")
+                command.append("--nsfw")
             if use_tor:
                 command.append("--tor")
             # Output to result.csv
-            command.extend(["--csv", "result.csv"])
+            command.extend(["--csv", "/opt/sherlock/results/result.csv"])
             # Username to search for
             command.append(username)
             # Run the command
+            start_time = time()
             result = await asyncio.create_subprocess_exec(
                 *command,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
+            await ctx.respond(embed=discord.Embed(title="Starting..."))
+            task = asyncio.create_task(background_task())
             # Wait for it to finish
             stdout, stderr = await result.communicate()
+            task.cancel()
+            # wait for task to exit
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
             # If it errored, send the error
             if result.returncode != 0:
                 return await ctx.respond(
