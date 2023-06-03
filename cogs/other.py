@@ -1548,10 +1548,6 @@ class OtherCog(commands.Cog):
                     description=f"Elapsed: {elapsed:.0f}s",
                     colour=discord.Colour.dark_theme()
                 )
-                embed.add_field(
-                    name="stdout",
-                    value=f"```\n{stdout.decode('utf-8', 'replace')[:1000]}```"
-                )
                 await ctx.edit(
                     embed=embed
                 )
@@ -1587,6 +1583,7 @@ class OtherCog(commands.Cog):
             task = asyncio.create_task(background_task())
             # Wait for it to finish
             stdout, stderr = await result.communicate()
+            await result.wait()
             task.cancel()
             # wait for task to exit
             try:
