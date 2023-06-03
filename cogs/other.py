@@ -1,4 +1,5 @@
 import asyncio
+import glob
 import io
 import json
 import os
@@ -1538,6 +1539,9 @@ class OtherCog(commands.Cog):
             use_tor: bool = False
     ):
         """Sherlocks a username."""
+        if re.search(r"\s", username) is not None:
+            return await ctx.respond("Username cannot contain spaces.")
+
         async def background_task():
             # Every 5 seconds update the embed to show that the command is still running
             while True:
@@ -1600,12 +1604,9 @@ class OtherCog(commands.Cog):
                     )
                 )
             # If it didn't error, send the results
-            print(os.listdir(tempdir))
-            print(os.listdir(os.path.join(tempdir, "results")))
-            print(stdout.decode())
-            print(stderr.decode())
+
             await ctx.respond(
-                file=discord.File(os.path.join(tempdir, "result.csv"), filename="result.csv"),
+                files=list(map(discord.File, glob.glob(f"{tempdir}/*.csv") + glob.glob(f"{tempdir}/*.txt"))),
                 embed=discord.Embed(
                     title="Results",
                     description=f"```{stdout.decode()}```",
