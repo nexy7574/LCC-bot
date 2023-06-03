@@ -1571,7 +1571,7 @@ class OtherCog(commands.Cog):
                 f"{tempdir}:/opt/sherlock/results",
                 "sherlock",
                 "--print-found",
-                "--no-color"
+                # "--no-color"
             ]
             if search_nsfw:
                 command.append("--nsfw")
@@ -1605,7 +1605,7 @@ class OtherCog(commands.Cog):
                 return await ctx.edit(
                     embed=discord.Embed(
                         title="Error",
-                        description=f"```{stderr.decode()}```",
+                        description=f"```ansi\n{stderr.decode()[:4000]}```",
                         colour=discord.Colour.red(),
                     )
                 )
@@ -1615,7 +1615,7 @@ class OtherCog(commands.Cog):
                 files=list(map(discord.File, os.listdir(tempdir))),
                 embed=discord.Embed(
                     title="Results",
-                    description=f"```{stdout.decode()[:4000]}```",
+                    description=f"```ansi\n{stdout.decode()[:4000]}```",
                     colour=discord.Colour.green(),
                 ),
             )
