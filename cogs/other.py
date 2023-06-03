@@ -1527,6 +1527,64 @@ class OtherCog(commands.Cog):
                 except discord.Forbidden:
                     return await ctx.respond("Unable to mirror to your DM - am I blocked?", ephemeral=True)
 
+    @commands.slash_command()
+    @commands.cooldown(1, 180, commands.BucketType.user)
+    @commands.max_concurrency(1, commands.BucketType.user)
+    async def sherlock(
+            self,
+            ctx: discord.ApplicationContext,
+            username: str,
+            search_nsfw: bool = False,
+            use_tor: bool = False
+    ):
+        """Sherlocks a username."""
+        await ctx.defer()
+        # output results to a temporary directory
+        with tempfile.TemporaryDirectory() as tempdir:
+            command = [
+                "docker",
+                "run",
+                "--rm",
+                "-t",
+                "-v",
+                f"{tempdir}:/opt/sherlock/results",
+                "sherlock",
+            ]
+            if search_nsfw:
+                command.append("--print-found")
+            if use_tor:
+                command.append("--tor")
+            # Output to result.csv
+            command.extend(["--csv", "result.csv"])
+            # Username to search for
+            command.append(username)
+            # Run the command
+            result = await asyncio.create_subprocess_exec(
+                *command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            # Wait for it to finish
+            stdout, stderr = await result.communicate()
+            # If it errored, send the error
+            if result.returncode != 0:
+                return await ctx.respond(
+                    embed=discord.Embed(
+                        title="Error",
+                        description=f"```{stderr.decode()}```",
+                        colour=discord.Colour.red(),
+                    )
+                )
+            # If it didn't error, send the results
+            await ctx.respond(
+                file=discord.File(os.path.join(tempdir, "result.csv"), filename="result.csv"),
+                embed=discord.Embed(
+                    title="Results",
+                    description=f"```{stdout.decode()}```",
+                    colour=discord.Colour.green(),
+                ),
+            )
+
 
 def setup(bot):
     bot.add_cog(OtherCog(bot))
