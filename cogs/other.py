@@ -1626,7 +1626,7 @@ class OtherCog(commands.Cog):
                     colour=discord.Colour.green(),
                 ),
             )
-            files = list(map(discord.File, os.listdir(tempdir)))
+            files = list(map(discord.File, glob.glob(f"{tempdir}/*")))
             if files:
                 await ctx.respond(files=files)
 
