@@ -1541,8 +1541,8 @@ class OtherCog(commands.Cog):
         async def background_task():
             # Every 5 seconds update the embed to show that the command is still running
             while True:
-                await asyncio.sleep(5)
-                elapsed = start_time - time()
+                await asyncio.sleep(random.randint(1, 10))
+                elapsed = time() - start_time
                 await ctx.edit(
                     embed=discord.Embed(
                         title="Sherlocking username...",
