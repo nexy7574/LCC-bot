@@ -1570,6 +1570,7 @@ class OtherCog(commands.Cog):
                 "-v",
                 f"{tempdir}:/opt/sherlock/results",
                 "sherlock",
+                "--verbose",
                 "--print-found",
                 # "--no-color"
             ]
