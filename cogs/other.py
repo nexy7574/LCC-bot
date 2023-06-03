@@ -1612,7 +1612,7 @@ class OtherCog(commands.Cog):
             # If it didn't error, send the results
 
             await ctx.edit(
-                files=list(map(discord.File, glob.glob(f"{tempdir}/*.csv") + glob.glob(f"{tempdir}/*.txt"))),
+                files=list(map(discord.File, os.listdir(tempdir))),
                 embed=discord.Embed(
                     title="Results",
                     description=f"```{stdout.decode()[:4000]}```",
