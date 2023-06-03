@@ -1547,7 +1547,7 @@ class OtherCog(commands.Cog):
             n = 0
             # Every 5 seconds update the embed to show that the command is still running
             while True:
-                await asyncio.sleep(random.randint(1, 10))
+                await asyncio.sleep(2.5)
                 elapsed = time() - start_time
                 embed = discord.Embed(
                     title="Sherlocking username %s" % chars[n % 4],
