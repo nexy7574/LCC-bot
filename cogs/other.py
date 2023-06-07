@@ -859,6 +859,7 @@ class OtherCog(commands.Cog):
                 type=str
             ),
             list_formats: bool = False,
+            force_compatibility: bool = True,
             _format: discord.Option(
                 name="format",
                 description="The format to download.",
@@ -918,16 +919,6 @@ class OtherCog(commands.Cog):
                 if formats[fmt]["format"] == _format:
                     _format = fmt
                     break
-            # else:
-            #     if not await self.bot.is_owner(ctx.user):
-            #         return await ctx.edit(
-            #             embed=discord.Embed(
-            #                 title="Error",
-            #                description="Invalid format %r. pass `list-formats:True` to see a list of formats." % _fmt,
-            #                 colour=discord.Colour.red()
-            #             ),
-            #             delete_after=30
-            #         )
 
         MAX_SIZE_MB = ctx.guild.filesize_limit / 1024 / 1024
         if MAX_SIZE_MB == 8.0:
@@ -1002,10 +993,15 @@ class OtherCog(commands.Cog):
 
             if args["format"] is None:
                 args["format"] = f"(bv*+ba/bv/ba/b)[filesize<={MAX_SIZE_MB}M]"
+            
+            if force_compatibility:
+                args["format"] = f"(bv[ext=mp4]+ba[ext=m4a]/best[ext=mp4])[filesize<={MAX_SIZE_MB}M]"
             with yt_dlp.YoutubeDL(args) as downloader:
                 try:
                     await ctx.respond(
-                        embed=discord.Embed(title="Downloading...", colour=discord.Colour.blurple())
+                        embed=discord.Embed(
+                            title="Downloading...", colour=discord.Colour.blurple()
+                        ).set_footer(text="Warning: forced compatibility, download may be too large.")
                     )
                     await self.bot.loop.run_in_executor(None, partial(downloader.download, [url]))
                 except yt_dlp.utils.DownloadError as e:
@@ -1014,7 +1010,7 @@ class OtherCog(commands.Cog):
                             title="Error",
                             description=f"Download failed:\n```\n{e}\n```",
                             colour=discord.Colour.red()
-                        ),
+                        ).set_footer(text="Warning: forced compatibility, download may be too large."),
                         delete_after=30
                     )
                 else:
@@ -1040,62 +1036,19 @@ class OtherCog(commands.Cog):
                         st = file.stat().st_size
                         COMPRESS_FAILED = False
                         if st / 1024 / 1024 >= MAX_SIZE_MB or st >= BYTES_REMAINING:
-                            if compress_if_possible and file.suffix in (
-                                    ".mp4",
-                                    ".mkv",
-                                    ".mov",
-                                    '.aac',
-                                    '.opus',
-                                    '.webm'
-                            ):
-                                await ctx.edit(
-                                    embed=discord.Embed(
-                                        title="Compressing...",
-                                        description="File name: `%s`\nThis will take a long time." % file.name,
-                                        colour=discord.Colour.blurple()
-                                    )
-                                )
-                                target = file.with_name(file.name + '.compressed' + file.suffix)
-                                ffmpeg_command = [
-                                    "ffmpeg",
-                                    "-hide_banner",
-                                    "-i",
-                                    str(file),
-                                    "-crf",
-                                    "30",
-                                    "-preset",
-                                    "slow",
-                                    str(target)
-                                ]
-
-                                try:
-                                    await self.bot.loop.run_in_executor(
-                                        None,
-                                        partial(
-                                            subprocess.run,
-                                            ffmpeg_command,
-                                            check=True
-                                        )
-                                    )
-                                except subprocess.CalledProcessError:
-                                    COMPRESS_FAILED = True
-                                else:
-                                    file = target
-                                    st = file.stat().st_size
-
                             units = ["B", "KB", "MB", "GB", "TB"]
                             st_r = st
                             while st_r > 1024:
                                 st_r /= 1024
                                 units.pop(0)
                             embed.description += "\N{warning sign}\ufe0f {} is too large to upload ({!s}{}" \
-                                                 ", max is {}MB{}).\n".format(
+                                                 ", max is {}MB).\n".format(
                                                      file.name,
                                                      round(st_r, 2),
                                                      units[0],
                                                      MAX_SIZE_MB,
-                                                     ', compressing failed' if COMPRESS_FAILED else ', compressed fine.'
                                                  )
+                            embed.set_footer(text="Warning: forced compatibility, download may be too large.")
                             continue
                         else:
                             files.append(discord.File(file, file.name))
@@ -1109,6 +1062,7 @@ class OtherCog(commands.Cog):
                     else:
                         _desc = embed.description
                         embed.description += f"Uploading {len(files)} file(s)..."
+                        embed.set_footer(text="Warning: forced compatibility, download may be too large.")
                         await ctx.edit(embed=embed)
                         await ctx.channel.trigger_typing()
                         embed.description = _desc
