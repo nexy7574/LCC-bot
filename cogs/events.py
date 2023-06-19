@@ -469,6 +469,9 @@ class Events(commands.Cog):
                 r"c(mon|ome on) jimmy": {
                     "content": "IM TRYING"
                 },
+                r"(bor(r)?is|johnson)": {
+                    "file": discord.File(assets / "boris.jpeg")
+                }
             }
             # Stop responding to any bots
             if message.author.bot is True:
