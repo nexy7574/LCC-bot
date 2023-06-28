@@ -365,6 +365,29 @@ class Events(commands.Cog):
         if not message.guild:
             return
 
+        if message.channel.name == "femboy-hole":
+            if Path("/tmp/jimmy-bridge").exists():
+                payload = {
+                    "author": str(message.user),
+                    "content": message.content,
+                    "attachments": [
+                        {
+                            "url": a.url,
+                            "filename": a.filename,
+                            "size": a.size,
+                            "width": a.width,
+                            "height": a.height,
+                            "content_type": a.content_type,
+                        }
+                        for a in message.attachments
+                    ]
+                }
+                dumped = json.dumps(payload, separators=(",", ":")).encode()
+                buffer_need = 8192 - len(dumped)
+                if buffer_need > 0:
+                    dumped += b"\0" * buffer_need
+                Path("/tmp/jimmy-bridge").write_bytes(dumped)
+
         if message.channel.name == "pinboard":
             if message.type == discord.MessageType.pins_add:
                 await message.delete(delay=0.01)

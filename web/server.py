@@ -281,3 +281,25 @@ async def verify(code: str):
         GENERAL,
         status_code=308
     )
+
+
+@app.post("/bridge")
+async def bridge(req: Request):
+    body = await req.json()
+    if body["secret"] != app.state.bot.http.token:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid secret."
+        )
+
+    channel = app.state.bot.get_channel(1032974266527907901)
+    if not channel:
+        raise HTTPException(
+            status_code=404,
+            detail="Channel does not exist."
+        )
+
+    await channel.send(
+        f"**{body['sender']}**:\n>>> {body['message']}"
+    )
+    return {"status": "ok"}

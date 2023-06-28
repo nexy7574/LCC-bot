@@ -1540,6 +1540,8 @@ class OtherCog(commands.Cog):
             use_tor: bool = False
     ):
         """Sherlocks a username."""
+        # git clone https://github.com/sherlock-project/sherlock.git && cd sherlock && docker build -t sherlock .
+
         if re.search(r"\s", username) is not None:
             return await ctx.respond("Username cannot contain spaces.")
 
