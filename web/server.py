@@ -1,3 +1,4 @@
+import asyncio
 import ipaddress
 import sys
 
@@ -318,7 +319,12 @@ async def bridge_recv(ws: WebSocket, secret: str = Header(None)):
 
     await ws.accept()
     while True:
-        data = await app.state.bot.bridge_queue.get()
+        try:
+            data = app.state.bot.bridge_queue.get_nowait()
+        except asyncio.QueueEmpty:
+            await asyncio.sleep(0.5)
+            continue
+
         try:
             await ws.send_json(data)
         except WebSocketDisconnect:

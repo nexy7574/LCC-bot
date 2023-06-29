@@ -385,6 +385,7 @@ class Events(commands.Cog):
             }
             # dumped = json.dumps(payload, separators=(",", ":"))
             self.bot.bridge_queue.put_nowait(payload)
+            print("Added %s to queue" % payload)
 
         if message.channel.name == "pinboard":
             if message.type == discord.MessageType.pins_add:
