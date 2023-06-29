@@ -316,11 +316,12 @@ async def bridge_recv(ws: WebSocket, secret: str = Header(None)):
             status_code=401,
             detail="Invalid secret."
         )
+    queue: asyncio.Queue = app.state.bot.bridge_queue
 
     await ws.accept()
     while True:
         try:
-            data = app.state.bot.bridge_queue.get_nowait()
+            data = queue.get_nowait()
         except asyncio.QueueEmpty:
             await asyncio.sleep(0.5)
             continue
@@ -330,4 +331,4 @@ async def bridge_recv(ws: WebSocket, secret: str = Header(None)):
         except WebSocketDisconnect:
             break
         finally:
-            app.state.bot.bridge_queue.job_done()
+            queue.task_done()
