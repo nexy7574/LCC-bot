@@ -61,6 +61,7 @@ class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.http = httpx.AsyncClient()
+        self.bot.bridge_queue = asyncio.Queue()
         self.fetch_discord_atom_feed.start()
 
     def cog_unload(self):
@@ -366,27 +367,24 @@ class Events(commands.Cog):
             return
 
         if message.channel.name == "femboy-hole":
-            if Path("/tmp/jimmy-bridge").exists():
-                payload = {
-                    "author": str(message.user),
-                    "content": message.content,
-                    "attachments": [
-                        {
-                            "url": a.url,
-                            "filename": a.filename,
-                            "size": a.size,
-                            "width": a.width,
-                            "height": a.height,
-                            "content_type": a.content_type,
-                        }
-                        for a in message.attachments
-                    ]
-                }
-                dumped = json.dumps(payload, separators=(",", ":")).encode()
-                buffer_need = 8192 - len(dumped)
-                if buffer_need > 0:
-                    dumped += b"\0" * buffer_need
-                Path("/tmp/jimmy-bridge").write_bytes(dumped)
+            payload = {
+                "author": str(message.user),
+                "content": message.content,
+                "at": message.created_at.timestamp(),
+                "attachments": [
+                    {
+                        "url": a.url,
+                        "filename": a.filename,
+                        "size": a.size,
+                        "width": a.width,
+                        "height": a.height,
+                        "content_type": a.content_type,
+                    }
+                    for a in message.attachments
+                ]
+            }
+            # dumped = json.dumps(payload, separators=(",", ":"))
+            self.bot.bridge_queue.put_nowait(payload)
 
         if message.channel.name == "pinboard":
             if message.type == discord.MessageType.pins_add:

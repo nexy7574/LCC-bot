@@ -8,9 +8,12 @@ from pathlib import Path
 from datetime import datetime, timezone
 from hashlib import sha512
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Header
 from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 from http import HTTPStatus
+
+from starlette.websockets import WebSocket, WebSocketDisconnect
+
 from utils import Student, get_or_none, VerifyCode, console, BannedStudentID
 from utils.db import AccessTokens
 from config import guilds
@@ -283,7 +286,7 @@ async def verify(code: str):
     )
 
 
-@app.post("/bridge")
+@app.post("/bridge", include_in_schema=False)
 async def bridge(req: Request):
     body = await req.json()
     if body["secret"] != app.state.bot.http.token:
@@ -303,3 +306,22 @@ async def bridge(req: Request):
         f"**{body['sender']}**:\n>>> {body['message']}"
     )
     return {"status": "ok"}
+
+
+@app.websocket('/bridge/recv')
+def bridge_recv(ws: WebSocket, secret: str = Header(None)):
+    if secret != app.state.bot.http.token:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid secret."
+        )
+
+    await ws.accept()
+    while True:
+        data = await app.state.bot.bridge_queue.get()
+        try:
+            await ws.send_json(data)
+        except WebSocketDisconnect:
+            break
+        finally:
+            app.state.bot.bridge_queue.job_done()
