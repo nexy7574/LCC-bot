@@ -368,7 +368,7 @@ class Events(commands.Cog):
 
         if message.channel.name == "femboy-hole":
             payload = {
-                "author": str(message.user),
+                "author": str(message.author),
                 "content": message.content,
                 "at": message.created_at.timestamp(),
                 "attachments": [
