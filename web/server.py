@@ -309,7 +309,7 @@ async def bridge(req: Request):
 
 
 @app.websocket('/bridge/recv')
-def bridge_recv(ws: WebSocket, secret: str = Header(None)):
+async def bridge_recv(ws: WebSocket, secret: str = Header(None)):
     if secret != app.state.bot.http.token:
         raise HTTPException(
             status_code=401,
