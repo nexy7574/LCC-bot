@@ -383,7 +383,6 @@ class Events(commands.Cog):
                     for a in message.attachments
                 ]
             }
-            # dumped = json.dumps(payload, separators=(",", ":"))
             self.bot.bridge_queue.put_nowait(payload)
             print("Added %s to queue" % payload)
 

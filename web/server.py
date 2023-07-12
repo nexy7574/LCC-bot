@@ -1,6 +1,7 @@
 import asyncio
 import ipaddress
 import sys
+import textwrap
 
 import discord
 import os
@@ -287,8 +288,9 @@ async def verify(code: str):
     )
 
 
-@app.post("/bridge", include_in_schema=False)
+@app.post("/bridge", include_in_schema=False, status_code=201)
 async def bridge(req: Request):
+    from discord.ext.commands import Paginator
     body = await req.json()
     if body["secret"] != app.state.bot.http.token:
         raise HTTPException(
@@ -296,17 +298,45 @@ async def bridge(req: Request):
             detail="Invalid secret."
         )
 
-    channel = app.state.bot.get_channel(1032974266527907901)
+    channel = app.state.bot.get_channel(1032974266527907901)  # type: discord.TextChannel | None
     if not channel:
         raise HTTPException(
             status_code=404,
             detail="Channel does not exist."
         )
 
-    await channel.send(
-        f"**{body['sender']}**:\n>>> {body['message']}"
-    )
-    return {"status": "ok"}
+    if len(body["message"]) > 6000:
+        raise HTTPException(
+            status_code=400,
+            detail="Message too long."
+        )
+    paginator = Paginator(prefix="", suffix="", max_size=1990)
+    for line in body["message"].splitlines():
+        try:
+            paginator.add_line(line)
+        except ValueError:
+            paginator.add_line(textwrap.shorten(line, width=1900, placeholder="<...>"))
+    if len(paginator.pages) > 1:
+        msg = await channel.send(
+            f"**{body['sender']}**:"
+        )
+        m = len(paginator.pages)
+        for n, page in enumerate(paginator.pages, 1):
+            await channel.send(
+                f"[{n}/{m}]\n>>> {page}",
+                allowed_mentions=discord.AllowedMentions.none(),
+                reference=msg,
+                silent=True,
+                suppress=True
+            )
+    else:
+        await channel.send(
+            f"**{body['sender']}**:\n>>> {body['message']}"[:2000],
+            allowed_mentions=discord.AllowedMentions.none(),
+            silent=True,
+            suppress=True
+        )
+    return {"status": "ok", "pages": len(paginator.pages)}
 
 
 @app.websocket('/bridge/recv')
