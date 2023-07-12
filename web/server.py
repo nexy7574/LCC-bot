@@ -53,6 +53,7 @@ try:
     app.state.bot = bot
 except ImportError:
     bot = None
+app.state.last_sender = None
 
 
 @app.middleware("http")
@@ -317,9 +318,11 @@ async def bridge(req: Request):
         except ValueError:
             paginator.add_line(textwrap.shorten(line, width=1900, placeholder="<...>"))
     if len(paginator.pages) > 1:
-        msg = await channel.send(
-            f"**{body['sender']}**:"
-        )
+        msg = None
+        if app.state.last_sender != body["sender"]:
+            msg = await channel.send(
+                f"**{body['sender']}**:"
+            )
         m = len(paginator.pages)
         for n, page in enumerate(paginator.pages, 1):
             await channel.send(
@@ -329,13 +332,18 @@ async def bridge(req: Request):
                 silent=True,
                 suppress=True
             )
+            app.state.last_sender = body["sender"]
     else:
+        content = f"**{body['sender']}**:\n>>> {body['message']}"
+        if app.state.last_sender == body["sender"]:
+            content = f">>> {body['message']}"
         await channel.send(
-            f"**{body['sender']}**:\n>>> {body['message']}"[:2000],
+            content,
             allowed_mentions=discord.AllowedMentions.none(),
             silent=True,
             suppress=True
         )
+        app.state.last_sender = body["sender"]
     return {"status": "ok", "pages": len(paginator.pages)}
 
 
