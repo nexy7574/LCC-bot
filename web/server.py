@@ -54,6 +54,7 @@ try:
 except ImportError:
     bot = None
 app.state.last_sender = None
+app.state.last_sender_ts = datetime.utcnow()
 
 
 @app.middleware("http")
@@ -291,6 +292,8 @@ async def verify(code: str):
 
 @app.post("/bridge", include_in_schema=False, status_code=201)
 async def bridge(req: Request):
+    now = datetime.utcnow()
+    ts_diff = (now - app.state.last_sender_ts).total_seconds()
     from discord.ext.commands import Paginator
     body = await req.json()
     if body["secret"] != app.state.bot.http.token:
@@ -319,7 +322,7 @@ async def bridge(req: Request):
             paginator.add_line(textwrap.shorten(line, width=1900, placeholder="<...>"))
     if len(paginator.pages) > 1:
         msg = None
-        if app.state.last_sender != body["sender"]:
+        if app.state.last_sender != body["sender"] or ts_diff >= 600:
             msg = await channel.send(
                 f"**{body['sender']}**:"
             )
@@ -335,7 +338,7 @@ async def bridge(req: Request):
             app.state.last_sender = body["sender"]
     else:
         content = f"**{body['sender']}**:\n>>> {body['message']}"
-        if app.state.last_sender == body["sender"]:
+        if app.state.last_sender == body["sender"] and ts_diff < 600:
             content = f">>> {body['message']}"
         await channel.send(
             content,
@@ -344,6 +347,7 @@ async def bridge(req: Request):
             suppress=False
         )
         app.state.last_sender = body["sender"]
+    app.state.last_sender_ts = now
     return {"status": "ok", "pages": len(paginator.pages)}
 
 
