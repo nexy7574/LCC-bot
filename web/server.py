@@ -330,7 +330,7 @@ async def bridge(req: Request):
                 allowed_mentions=discord.AllowedMentions.none(),
                 reference=msg,
                 silent=True,
-                suppress=True
+                suppress=n != m
             )
             app.state.last_sender = body["sender"]
     else:
@@ -341,7 +341,7 @@ async def bridge(req: Request):
             content,
             allowed_mentions=discord.AllowedMentions.none(),
             silent=True,
-            suppress=True
+            suppress=False
         )
         app.state.last_sender = body["sender"]
     return {"status": "ok", "pages": len(paginator.pages)}
