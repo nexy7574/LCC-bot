@@ -61,7 +61,8 @@ class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.http = httpx.AsyncClient()
-        self.bot.bridge_queue = asyncio.Queue()
+        if not hasattr(self.bot, "bridge_queue") or self.bot.bridge_queue.empty():
+            self.bot.bridge_queue = asyncio.Queue(50)
         self.fetch_discord_atom_feed.start()
 
     def cog_unload(self):
@@ -383,7 +384,15 @@ class Events(commands.Cog):
                     for a in message.attachments
                 ]
             }
-            self.bot.bridge_queue.put_nowait(payload)
+            try:
+                self.bot.bridge_queue.put_nowait(payload)
+            except asyncio.QueueFull:
+                _m = await message.reply(
+                    "There's over 50 messages waiting to be bridged, slow the fuck down!",
+                )
+                print("Queue overload!")
+                await self.bot.bridge_queue.put(payload)
+                await _m.delete(delay=0.01)
             print("Added %s to queue" % payload)
 
         if message.channel.name == "pinboard":
