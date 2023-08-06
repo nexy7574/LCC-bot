@@ -368,7 +368,7 @@ class Events(commands.Cog):
 
         if message.channel.name == "femboy-hole":
             payload = {
-                "author": str(message.author),
+                "author": message.author.name,
                 "content": message.content,
                 "at": message.created_at.timestamp(),
                 "attachments": [
@@ -383,6 +383,8 @@ class Events(commands.Cog):
                     for a in message.attachments
                 ]
             }
+            if message.author.discriminator:
+                payload["author"] += '#%s' % message.author.discriminator
             try:
                 self.bot.bridge_queue.put_nowait(payload)
             except asyncio.QueueFull:
