@@ -383,7 +383,7 @@ class Events(commands.Cog):
                     for a in message.attachments
                 ]
             }
-            if message.author.discriminator:
+            if message.author.discriminator != "0":
                 payload["author"] += '#%s' % message.author.discriminator
             try:
                 self.bot.bridge_queue.put_nowait(payload)
