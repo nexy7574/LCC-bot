@@ -257,7 +257,6 @@ class Events(commands.Cog):
                         await voice.move_to(message.author.voice.channel)
                     
                     if message.guild.me.voice.self_mute or message.guild.me.voice.mute:
-                        await _dc(voice)
                         await message.channel.trigger_typing()
                         await message.reply("Unmute me >:(", file=discord.File(_file))
                     else:
