@@ -366,35 +366,35 @@ class Events(commands.Cog):
         if not message.guild:
             return
 
-        if message.channel.name == "femboy-hole":
-            payload = {
-                "author": message.author.name,
-                "content": message.content,
-                "at": message.created_at.timestamp(),
-                "attachments": [
-                    {
-                        "url": a.url,
-                        "filename": a.filename,
-                        "size": a.size,
-                        "width": a.width,
-                        "height": a.height,
-                        "content_type": a.content_type,
-                    }
-                    for a in message.attachments
-                ]
-            }
-            if message.author.discriminator != "0":
-                payload["author"] += '#%s' % message.author.discriminator
-            try:
-                self.bot.bridge_queue.put_nowait(payload)
-            except asyncio.QueueFull:
-                _m = await message.reply(
-                    "There's over 50 messages waiting to be bridged, slow the fuck down!",
-                )
-                print("Queue overload!")
-                await self.bot.bridge_queue.put(payload)
-                await _m.delete(delay=0.01)
-            print("Added %s to queue" % payload)
+        # if message.channel.name == "femboy-hole" and not message.author.bot:
+        #     payload = {
+        #         "author": message.author.name,
+        #         "content": message.content,
+        #         "at": message.created_at.timestamp(),
+        #         "attachments": [
+        #             {
+        #                 "url": a.url,
+        #                 "filename": a.filename,
+        #                 "size": a.size,
+        #                 "width": a.width,
+        #                 "height": a.height,
+        #                 "content_type": a.content_type,
+        #             }
+        #             for a in message.attachments
+        #         ]
+        #     }
+        #     if message.author.discriminator != "0":
+        #         payload["author"] += '#%s' % message.author.discriminator
+        #     try:
+        #         self.bot.bridge_queue.put_nowait(payload)
+        #     except asyncio.QueueFull:
+        #         _m = await message.reply(
+        #             "There's over 50 messages waiting to be bridged, slow the fuck down!",
+        #         )
+        #         print("Queue overload!")
+        #         await self.bot.bridge_queue.put(payload)
+        #         await _m.delete(delay=0.01)
+        #     print("Added %s to queue" % payload)
 
         if message.channel.name == "pinboard":
             if message.type == discord.MessageType.pins_add:
