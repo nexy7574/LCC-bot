@@ -370,6 +370,7 @@ class Events(commands.Cog):
         if message.channel.name == "femboy-hole":
             payload = {
                 "author": message.author.name,
+                "avatar": message.author.display_avatar.with_format("webp").with_size(32).url,
                 "content": message.content,
                 "at": message.created_at.timestamp(),
                 "attachments": [
