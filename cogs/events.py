@@ -166,7 +166,7 @@ class Events(commands.Cog):
                     end_line = int(_re.group("end_line")) if _re.group("end_line") else start_line + 1
                     lines = lines[start_line:end_line]
 
-                paginator = commands.Paginator(prefix="```" + _p[1:], suffix="```", max_size=1000)
+                paginator = commands.Paginator(prefix="```" + _p[1:], suffix="```", max_size=2000)
                 for line in lines:
                     paginator.add_line(line)
 
@@ -293,16 +293,6 @@ class Events(commands.Cog):
                     await message.reply(file=discord.File(_file))
             return internal
 
-        async def send_smeg():
-            directory = Path.cwd() / "assets" / "smeg"
-            if directory:
-                choice = random.choice(list(directory.iterdir()))
-                _file = discord.File(
-                    choice,
-                    filename="%s.%s" % (os.urandom(32).hex(), choice.suffix)
-                )
-                await message.reply(file=_file, delete_after=60)
-
         async def send_what():
             msg = message.reference.cached_message
             if not msg:
@@ -327,42 +317,6 @@ class Events(commands.Cog):
                     text, width=2000, placeholder="[...]"
                 )
                 await message.reply(_content, allowed_mentions=discord.AllowedMentions.none())
-
-        async def send_fuck_you() -> str:
-            student = await get_or_none(AccessTokens, user_id=message.author.id)
-            if student.ip_info is None or student.expires >= discord.utils.utcnow().timestamp():
-                if OAUTH_REDIRECT_URI:
-                    return f"Let me see who you are, and then we'll talk... <{OAUTH_REDIRECT_URI}>"
-                else:
-                    return "I literally don't even know who you are..."
-            else:
-                ip = student.ip_info
-                is_proxy = ip.get("proxy")
-                if is_proxy is None:
-                    is_proxy = "?"
-                else:
-                    is_proxy = "\N{WHITE HEAVY CHECK MARK}" if is_proxy else "\N{CROSS MARK}"
-
-                is_hosting = ip.get("hosting")
-                if is_hosting is None:
-                    is_hosting = "?"
-                else:
-                    is_hosting = "\N{WHITE HEAVY CHECK MARK}" if is_hosting else "\N{CROSS MARK}"
-
-                return (
-                    "Nice argument, however,\n"
-                    "IP: {0[query]}\n"
-                    "ISP: {0[isp]}\n"
-                    "Latitude: {0[lat]}\n"
-                    "Longitude: {0[lon]}\n"
-                    "Proxy server: {1}\n"
-                    "VPS (or other hosting) provider: {2}\n\n"
-                    "\N{smiling face with sunglasses}".format(
-                        ip,
-                        is_proxy,
-                        is_hosting
-                    )
-                )
 
         if not message.guild:
             return
@@ -390,7 +344,7 @@ class Events(commands.Cog):
             if message.author != self.bot.user and (payload["content"] or payload["attachments"]):
                 await self.bot.bridge_queue.put(payload)
 
-        if message.channel.name == "pinboard":
+        if message.channel.name == "pinboard" and not message.content.startswith(("#", "//", ";", "h!")):
             if message.type == discord.MessageType.pins_add:
                 await message.delete(delay=0.01)
             else:
@@ -405,10 +359,6 @@ class Events(commands.Cog):
         else:
             assets = Path.cwd() / "assets"
             responses: Dict[str | tuple, Dict[str, Any]] = {
-                r"ferdi": {
-                    "content": "https://ferdi-is.gay/",
-                    "delete_after": 15,
-                },
                 r"\bbee(s)*\b": {
                     "content": "https://ferdi-is.gay/bee",
                 },
@@ -439,7 +389,9 @@ class Events(commands.Cog):
                     }
                 },
                 r"[s5]+(m)+[e3]+[g9]+": {
-                    "func": send_smeg,
+                    # "func": send_smeg,
+                    "file": lambda: discord.File(random.choice(list((assets/ "smeg").iterdir()))),
+                    "delete_after": 30,
                     "meta": {
                         "sub": {
                             r"pattern": r"([-_.\s\u200b])+",
@@ -457,12 +409,6 @@ class Events(commands.Cog):
                 ("year", "linux", "desktop"): {
                     "content": lambda: "%s will be the year of the GNU+Linux desktop." % datetime.now().year,
                     "delete_after": None
-                },
-                r"fuck you(\W)*": {
-                    "content": send_fuck_you,
-                    "meta": {
-                        "check": lambda: message.content.startswith(self.bot.user.mention)
-                    }
                 },
                 r"mine(ing|d)? (diamonds|away)": {
                     "func": play_voice(assets / "mine-diamonds.opus"),
