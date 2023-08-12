@@ -390,7 +390,7 @@ class Events(commands.Cog):
                 },
                 r"[s5]+(m)+[e3]+[g9]+": {
                     # "func": send_smeg,
-                    "file": lambda: discord.File(random.choice(list((assets/ "smeg").iterdir()))),
+                    "file": lambda: discord.File(random.choice(list((assets / "smeg").iterdir()))),
                     "delete_after": 30,
                     "meta": {
                         "sub": {
@@ -411,9 +411,9 @@ class Events(commands.Cog):
                     "delete_after": None
                 },
                 r"mine(ing|d)? (diamonds|away)": {
-                    "func": play_voice(assets / "mine-diamonds.opus"),
+                    "func": play_voice(assets / "mine-diamonds.ogg"),
                     "meta": {
-                        "check": (assets / "mine-diamonds.opus").exists
+                        "check": (assets / "mine-diamonds.ogg").exists
                     }
                 },
                 r"v[ei]r[mg]in(\sme(d|m[a]?)ia\W*)?(\W\w*\W*)?$": {
@@ -512,6 +512,9 @@ class Events(commands.Cog):
                                 data[k] = await v()
                             elif callable(v):
                                 data[k] = v()
+                        if data.get("file") is not None:
+                            if not isinstance(data["file"], discord.File):
+                                data["file"] = discord.File(data["file"])
                         data.setdefault("delete_after", 30)
                         await message.channel.trigger_typing()
                         await message.reply(**data)
@@ -624,13 +627,13 @@ class Events(commands.Cog):
                     content += "\n\n"
 
                 _status = {
-                    "Resolved": discord.Color.green(),
-                    "Investigating": discord.Color.dark_orange(),
-                    "Identified": discord.Color.orange(),
-                    "Monitoring": discord.Color.blurple(),
+                    "resolved": discord.Color.green(),
+                    "investigating": discord.Color.dark_orange(),
+                    "identified": discord.Color.orange(),
+                    "monitoring": discord.Color.blurple(),
                 }
 
-                colour = _status.get(content.splitlines()[1].split(" - ")[0].title(), discord.Color.greyple())
+                colour = _status.get(content.splitlines()[1].split(" - ")[0].lower(), discord.Color.greyple())
 
                 if len(content) > 4096:
                     content = f"[open on discordstatus.com (too large to display)]({entry.link['href']})"
