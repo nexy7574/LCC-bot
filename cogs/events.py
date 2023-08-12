@@ -368,6 +368,12 @@ class Events(commands.Cog):
                         "check": (assets / "it-just-works.ogg").exists
                     }
                 },
+                "count to (3|three)": {
+                    "func": play_voice(assets / "count-to-three.ogg"),
+                    "meta": {
+                        "check": (assets / "count-to-three.ogg").exists
+                    }
+                },
                 r"^linux$": {
                     "content": lambda: (assets / "copypasta.txt").read_text(),
                     "meta": {
