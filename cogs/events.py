@@ -684,7 +684,7 @@ class Events(commands.Cog):
                     "Monitoring": discord.Color.blurple(),
                 }
 
-                colour = _status.get(content.splitlines()[1].split(" - ")[0], discord.Color.greyple())
+                colour = _status.get(content.splitlines()[1].split(" - ")[0].title(), discord.Color.greyple())
 
                 if len(content) > 4096:
                     content = f"[open on discordstatus.com (too large to display)]({entry.link['href']})"
