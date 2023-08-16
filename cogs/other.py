@@ -1651,7 +1651,7 @@ class OtherCog(commands.Cog):
             channels = int(stream["channels"])
             codec = stream["codec_name"]
 
-            target_bitrate = math.floor((size_mb * 1024) / duration)
+            target_bitrate = math.floor((size_mb * 8192) / duration)
             if target_bitrate <= 0:
                 return await ctx.respond(
                     ":x: Target size too small (would've had a negative bitrate of %d)" % target_bitrate
