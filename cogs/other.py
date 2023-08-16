@@ -1673,6 +1673,7 @@ class OtherCog(commands.Cog):
                     "libopus",
                     "-b:a",
                     "%sK" % end_br,
+                    "-y",
                     output_file.name
                 ]
                 process = await asyncio.create_subprocess_exec(
