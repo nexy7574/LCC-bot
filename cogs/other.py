@@ -1600,6 +1600,14 @@ class OtherCog(commands.Cog):
     @discord.guild_only()
     async def opusinate(self, ctx: discord.ApplicationContext, file: discord.Attachment, size_mb: float = 8):
         """Converts the given file into opus with the given size."""
+        def humanise(v: int) -> str:
+            units = ["B", "KB", "MB", "GB", "TB", "PB", "EB"]
+            while v > 1024:
+                v /= 1024
+                units.pop(0)
+            n = round(v, 2) if v % 1 else v
+            return "%s%s" % (n, units[0])
+
         await ctx.defer()
         size_bytes = size_mb * 1024 * 1024
         max_size = ctx.guild.filesize_limit if ctx.guild else 8 * 1024 * 1024
@@ -1694,14 +1702,16 @@ class OtherCog(commands.Cog):
                 stat = output_location.stat()
                 content = ("\N{white heavy check mark} Transcoded from %r to opus @ %dkbps.\n"
                            "* Source: %dKbps\n* Target: %dKbps\n* Ceiling: %dKbps\n* Calculated: %dKbps\n"
-                           "* Duration: %.1f seconds") % (
+                           "* Duration: %.1f seconds\n* Input size: %s\n* Output size: %s") % (
                     codec,
                     end_br,
                     bit_rate,
                     target_bitrate,
                     br_ceiling,
                     end_br,
-                    duration
+                    duration,
+                    humanise(file.size),
+                    humanise(stat.st_size)
                 )
                 if stat.st_size <= max_size or share is False:
                     if stat.st_size >= (size_bytes - 100):
@@ -1722,7 +1732,10 @@ class OtherCog(commands.Cog):
                         )
                     )
                     return await ctx.respond(
-                        "[%s](https://droplet.nexy7574.co.uk/share/%s)" % (content, output_location.name)
+                        "%s\n* [Download](https://droplet.nexy7574.co.uk/share/tmp/%s)" % (
+                            content,
+                            output_location.name
+                        )
                     )
 
 
