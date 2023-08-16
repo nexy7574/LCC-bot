@@ -1700,9 +1700,10 @@ class OtherCog(commands.Cog):
 
                 output_location = Path(output_file.name)
                 stat = output_location.stat()
-                content = ("\N{white heavy check mark} Transcoded from %r to opus @ %dkbps.\n"
+                content = ("\N{white heavy check mark} Transcoded from %r to opus @ %dkbps.\n\n"
                            "* Source: %dKbps\n* Target: %dKbps\n* Ceiling: %dKbps\n* Calculated: %dKbps\n"
-                           "* Duration: %.1f seconds\n* Input size: %s\n* Output size: %s") % (
+                           "* Duration: %.1f seconds\n* Input size: %s\n* Output size: %s\n* Difference: %s"
+                           " (%dKbps)") % (
                     codec,
                     end_br,
                     bit_rate,
@@ -1711,7 +1712,8 @@ class OtherCog(commands.Cog):
                     end_br,
                     duration,
                     humanise(file.size),
-                    humanise(stat.st_size)
+                    humanise(stat.st_size),
+                    humanise(file.size - stat.st_size, )
                 )
                 if stat.st_size <= max_size or share is False:
                     if stat.st_size >= (size_bytes - 100):
@@ -1723,12 +1725,14 @@ class OtherCog(commands.Cog):
                         file=discord.File(output_location)
                     )
                 else:
+                    share_location = Path("/mnt/vol/share/tmp/") / output_location.name
+                    share_location.touch(0o755)
                     await self.bot.loop.run_in_executor(
                         None,
                         functools.partial(
                             shutil.copy,
                             output_location,
-                            "/mnt/vol/share/tmp/" + output_location.name
+                            share_location
                         )
                     )
                     return await ctx.respond(
