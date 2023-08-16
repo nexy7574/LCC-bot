@@ -1605,11 +1605,9 @@ class OtherCog(commands.Cog):
         max_size = ctx.guild.filesize_limit if ctx.guild else 8 * 1024 * 1024
         share = False
         if os.path.exists("/mnt/vol/share/droplet.secret"):
-            if hashlib.md5(Path("/mnt/vol/share/droplet.secret").read_bytes()) == "49c594007ed08a56b16301dca4dbfc10":
-                max_size = 250 * 1024 * 1024
-                share = True
+            share = True
 
-        if size_bytes > max_size:
+        if size_bytes > max_size or share is False or (share is True and size_mb >= 250):
             return await ctx.respond(":x: Max file size is %dMB" % round(max_size / 1024 / 1024))
 
         ct, suffix = file.content_type.split("/")
@@ -1658,7 +1656,8 @@ class OtherCog(commands.Cog):
                 return await ctx.respond(
                     ":x: Target size too small (would've had a negative bitrate of %d)" % target_bitrate
                 )
-            end_br = min(bit_rate, target_bitrate, 255 * channels)
+            br_ceiling = 255 * channels
+            end_br = min(bit_rate, target_bitrate, br_ceiling)
 
             with tempfile.NamedTemporaryFile(suffix=".ogg", prefix=file.filename) as output_file:
                 command = [
@@ -1693,29 +1692,38 @@ class OtherCog(commands.Cog):
 
                 output_location = Path(output_file.name)
                 stat = output_location.stat()
-                if stat.st_size >= (size_bytes - 100):
+                content = ("\N{white heavy check mark} Transcoded from %r to opus @ %dkbps.\n"
+                           "* Source: %dKbps\n* Target: %dKbps\n* Ceiling: %dKbps\n* Calculated: %dKbps\n"
+                           "* Duration: %.1f seconds") % (
+                    codec,
+                    end_br,
+                    bit_rate,
+                    target_bitrate,
+                    br_ceiling,
+                    end_br,
+                    duration
+                )
+                if stat.st_size <= max_size or share is False:
+                    if stat.st_size >= (size_bytes - 100):
+                        return await ctx.respond(
+                            ":x: File was too large."
+                        )
                     return await ctx.respond(
-                        ":x: File was too large."
+                        content,
+                        file=discord.File(output_location)
                     )
                 else:
-                    content = "\N{white heavy check mark} Transcoded from %r to opus @ %dkbps." % (codec, end_br)
-                    if share is False:
-                        return await ctx.respond(
-                            content,
-                            file=discord.File(output_location)
+                    await self.bot.loop.run_in_executor(
+                        None,
+                        functools.partial(
+                            shutil.copy,
+                            output_location,
+                            "/mnt/vol/share/tmp/" + output_location.name
                         )
-                    else:
-                        await self.bot.loop.run_in_executor(
-                            None,
-                            functools.partial(
-                                shutil.copy,
-                                output_location,
-                                "/mnt/vol/share/tmp/" + output_location.name
-                            )
-                        )
-                        return await ctx.respond(
-                            "[%s](https://droplet.nexy7574.co.uk/share/%s)" % (content, output_location.name)
-                        )
+                    )
+                    return await ctx.respond(
+                        "[%s](https://droplet.nexy7574.co.uk/share/%s)" % (content, output_location.name)
+                    )
 
 
 def setup(bot):
