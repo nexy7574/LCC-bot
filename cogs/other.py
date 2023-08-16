@@ -1598,7 +1598,7 @@ class OtherCog(commands.Cog):
 
     @commands.slash_command()
     @discord.guild_only()
-    async def opusinate(self, ctx: discord.ApplicationContext, file: discord.Attachment, size_mb: int = 25):
+    async def opusinate(self, ctx: discord.ApplicationContext, file: discord.Attachment, size_mb: float = 8):
         """Converts the given file into opus with the given size."""
         await ctx.defer()
         size_bytes = size_mb * 1024 * 1024
