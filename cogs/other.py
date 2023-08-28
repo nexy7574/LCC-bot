@@ -855,7 +855,7 @@ class OtherCog(commands.Cog):
                     await blacklist.write(line)
         await ctx.respond("Removed domain from blacklist.")
 
-    @commands.slash_command(name="yt-dl-beta")
+    @commands.slash_command(name="yt-dl")
     @commands.max_concurrency(1, commands.BucketType.user)
     async def yt_dl_2(
             self,
@@ -864,8 +864,6 @@ class OtherCog(commands.Cog):
                 description="The URL to download.",
                 type=str
             ),
-            list_formats: bool = False,
-            force_compatibility: bool = True,
             _format: discord.Option(
                 name="format",
                 description="The format to download.",
@@ -874,51 +872,10 @@ class OtherCog(commands.Cog):
                 default=""
             ) = "",
             extract_audio: bool = False,
-            upload_log: bool = False,
     ):
         """Downloads a video using youtube-dl"""
         await ctx.defer()
-        compress_if_possible = False
         formats = await self.list_formats(url)
-        if list_formats:
-            embeds = []
-            for fmt in formats.keys():
-                fs = formats[fmt].get("filesize", 0.1) or 0.1
-                if fs == float("inf"):
-                    fs = 0
-                    units = ["B"]
-                else:
-                    units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
-                    while fs > 1024:
-                        fs /= 1024
-                        units.pop(0)
-                embeds.append(
-                    discord.Embed(
-                        title=fmt,
-                        description="- Encoding: {3} + {2}\n"
-                                    "- Extension: `.{0[ext]}`\n"
-                                    "- Resolution: {0[resolution]}\n"
-                                    "- Filesize: {1}\n"
-                                    "- Protocol: {0[protocol]}\n".format(
-                                        formats[fmt],
-                                        formats[fmt].get("acodec", 'N/A'),
-                                        formats[fmt].get("vcodec", 'N/A'),
-                                        f"{round(fs, 2)}{units[0]}"
-                        ),
-                        colour=discord.Colour.blurple()
-                    ).add_field(
-                        name="Download:",
-                        value="{} url:{} video_format:{}".format(
-                            self.bot.get_application_command("yt-dl-beta").mention,
-                            url,
-                            fmt
-                        )
-                    )
-                )
-            _paginator = pages.Paginator(embeds, loop_pages=True)
-            # await ctx.delete(delay=0.1)
-            return await _paginator.respond(ctx.interaction)
-
         if _format:
             _fmt = _format
             for fmt in formats.keys():
@@ -985,7 +942,9 @@ class OtherCog(commands.Cog):
                 "outtmpl": f"{ctx.user.id}-%(title).50s.%(ext)s",
                 "trim_file_name": 128,
                 "extract_audio": extract_audio,
-                "format_sort": ["codec:h264", "ext"]
+                "format_sort": ["codec:h264", "ext"],
+                "merge_format": "webm,mp4,mov,mkv,m4a,ogg,mp3",
+                "merge_output_format": "webm,mp4,mov,mkv,m4a,ogg,mp3",
             }
             if extract_audio:
                 args["postprocessors"] = [
@@ -998,10 +957,8 @@ class OtherCog(commands.Cog):
                 args["format"] = args["format"] or f"(ba/b)[filesize<={MAX_SIZE_MB}M]"
 
             if args["format"] is None:
-                args["format"] = f"(bv*+ba/bv/ba/b)[filesize<={MAX_SIZE_MB}M]"
-            
-            if force_compatibility:
-                args["format"] = f"(bv[ext=mp4]+ba[ext=m4a]/best[ext=mp4])[filesize<={MAX_SIZE_MB}M]"
+                args["format"] = f"(bv+ba/b)[vcodec!=h265][filesize<={MAX_SIZE_MB}M]/b"
+
             with yt_dlp.YoutubeDL(args) as downloader:
                 try:
                     await ctx.respond(
