@@ -325,7 +325,10 @@ class Events(commands.Cog):
             lines = 0
 
             for file in root_files:
-                code = file.read_text()
+                try:
+                    code = file.read_text()
+                except (UnicodeDecodeError, IOError, SystemError):
+                    continue
                 for line in code.splitlines():
                     line = line.strip()
                     if not line or line.startswith("#"):
