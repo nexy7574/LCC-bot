@@ -913,9 +913,8 @@ class OtherCog(commands.Cog):
                             self.bot.get_application_command("yt-dl-beta").mention,
                             url,
                             fmt
-                        )
+                        )   
                     )
-                )
             _paginator = pages.Paginator(embeds, loop_pages=True)
             # await ctx.delete(delay=0.1)
             return await _paginator.respond(ctx.interaction)
