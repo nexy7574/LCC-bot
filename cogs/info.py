@@ -103,6 +103,7 @@ class InfoCog(commands.Cog):
             )
 
         if not embed.fields:
+            await user.delete()
             embed.description = "No data found. You may need to [reauthenticate.](%s)" % OAUTH_REDIRECT_URI
             embed.url = OAUTH_REDIRECT_URI
             embed.colour = discord.Color.red()
