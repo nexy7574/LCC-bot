@@ -9,6 +9,7 @@ import asyncio
 import textwrap
 import subprocess
 import traceback
+import glob
 import warnings
 from datetime import datetime, timezone, timedelta
 from bs4 import BeautifulSoup
@@ -19,7 +20,6 @@ import httpx
 from discord.ext import commands, pages, tasks
 from utils import Student, get_or_none, console
 from config import guilds
-from utils.db import AccessTokens
 try:
     from config import dev
 except ImportError:
@@ -318,6 +318,21 @@ class Events(commands.Cog):
                 )
                 await message.reply(_content, allowed_mentions=discord.AllowedMentions.none())
 
+        def get_sloc_count():
+            root = Path.cwd()
+            root_files = list(root.glob("**/*.py"))
+            root_files.append(root / "main.py")
+            lines = 0
+
+            for file in root_files:
+                code = file.read_text()
+                for line in code.splitlines():
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    lines += 1
+            return lines
+
         if not message.guild:
             return
 
@@ -448,6 +463,9 @@ class Events(commands.Cog):
                 },
                 r"(bor(r)?is|johnson)": {
                     "file": discord.File(assets / "boris.jpeg")
+                },
+                r"\W?(s(ource\w)?)?l(ines\s)?o(f\s)?c(ode)?(\W)?": {
+                    "content": lambda: "I have {:,} lines of source code!".format(get_sloc_count())
                 }
             }
             # Stop responding to any bots
