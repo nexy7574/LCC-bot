@@ -322,6 +322,12 @@ class Events(commands.Cog):
             root = Path.cwd()
             root_files = list(root.glob("**/*.py"))
             root_files.append(root / "main.py")
+            root_files = list(
+                filter(
+                    lambda f: "venv" not in f.parents and "venv" not in f.parts,
+                    root_files
+                )
+            )
             lines = 0
 
             for file in root_files:
@@ -334,7 +340,7 @@ class Events(commands.Cog):
                     if not line or line.startswith("#"):
                         continue
                     lines += 1
-            return lines
+            return lines, len(root_files)
 
         if not message.guild:
             return
@@ -468,7 +474,7 @@ class Events(commands.Cog):
                     "file": discord.File(assets / "boris.jpeg")
                 },
                 r"\W?(s(ource\w)?)?l(ines\s)?o(f\s)?c(ode)?(\W)?": {
-                    "content": lambda: "I have {:,} lines of source code!".format(get_sloc_count())
+                    "content": lambda: "I have {:,} lines of source code across {:,} files!".format(*get_sloc_count())
                 }
             }
             # Stop responding to any bots
