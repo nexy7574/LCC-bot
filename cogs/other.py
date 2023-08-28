@@ -983,13 +983,6 @@ class OtherCog(commands.Cog):
                     )
                     del logger
                     files = []
-                    if upload_log:
-                        if out_size := stdout.stat().st_size:
-                            files.append(discord.File(stdout, "stdout.txt"))
-                            BYTES_REMAINING -= out_size
-                        if err_size := stderr.stat().st_size:
-                            files.append(discord.File(stderr, "stderr.txt"))
-                            BYTES_REMAINING -= err_size
 
                     for file in tempdir.glob(f"{ctx.user.id}-*"):
                         if file.stat().st_size == 0:
