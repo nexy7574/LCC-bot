@@ -1,16 +1,17 @@
 import asyncio
+import functools
 import glob
+import hashlib
 import io
 import json
+import math
 import os
 import shutil
-import subprocess
 import random
 import re
+import sys
 import tempfile
 import textwrap
-import gzip
-from datetime import timedelta
 from functools import partial
 from io import BytesIO
 
@@ -52,10 +53,15 @@ except ImportError:
     else:
         proxies = []
 
-_engine = pyttsx3.init()
-# noinspection PyTypeChecker
-VOICES = [x.id for x in _engine.getProperty("voices")]
-del _engine
+try:
+    _engine = pyttsx3.init()
+    # noinspection PyTypeChecker
+    VOICES = [x.id for x in _engine.getProperty("voices")]
+    del _engine
+except Exception as _pyttsx3_err:
+    print("Failed to load pyttsx3:", _pyttsx3_err, file=sys.stderr)
+    pyttsx3 = None
+    VOICES = []
 
 
 def format_autocomplete(ctx: discord.AutocompleteContext):
@@ -1121,6 +1127,7 @@ class OtherCog(commands.Cog):
 
             async def callback(self, interaction: discord.Interaction):
                 def _convert(text: str) -> Tuple[BytesIO, int]:
+                    assert pyttsx3
                     tmp_dir = tempfile.gettempdir()
                     target_fn = Path(tmp_dir) / f"jimmy-tts-{ctx.user.id}-{ctx.interaction.id}.mp3"
                     target_fn = str(target_fn)
@@ -1453,6 +1460,8 @@ class OtherCog(commands.Cog):
             use_tor: bool = False
     ):
         """Sherlocks a username."""
+        # git clone https://github.com/sherlock-project/sherlock.git && cd sherlock && docker build -t sherlock .
+
         if re.search(r"\s", username) is not None:
             return await ctx.respond("Username cannot contain spaces.")
 
@@ -1545,6 +1554,152 @@ class OtherCog(commands.Cog):
             ),
         )
         shutil.rmtree(tempdir, ignore_errors=True)
+
+    @commands.slash_command()
+    @discord.guild_only()
+    async def opusinate(self, ctx: discord.ApplicationContext, file: discord.Attachment, size_mb: float = 8):
+        """Converts the given file into opus with the given size."""
+        def humanise(v: int) -> str:
+            units = ["B", "KB", "MB", "GB", "TB", "PB", "EB"]
+            while v > 1024:
+                v /= 1024
+                units.pop(0)
+            n = round(v, 2) if v % 1 else v
+            return "%s%s" % (n, units[0])
+
+        await ctx.defer()
+        size_bytes = size_mb * 1024 * 1024
+        max_size = ctx.guild.filesize_limit if ctx.guild else 8 * 1024 * 1024
+        share = False
+        if os.path.exists("/mnt/vol/share/droplet.secret"):
+            share = True
+
+        if size_bytes > max_size or share is False or (share is True and size_mb >= 250):
+            return await ctx.respond(":x: Max file size is %dMB" % round(max_size / 1024 / 1024))
+
+        ct, suffix = file.content_type.split("/")
+        if ct not in ("audio", "video"):
+            return await ctx.respond(":x: Only audio or video please.")
+        with tempfile.NamedTemporaryFile(suffix="." + suffix) as raw_file:
+            location = Path(raw_file.name)
+            location.write_bytes(await file.read(use_cached=False))
+
+            process = await asyncio.create_subprocess_exec(
+                "ffprobe",
+                "-v",
+                "error",
+                "-of",
+                "json",
+                "-show_entries",
+                "format=duration,bit_rate,channels",
+                "-show_streams",
+                "-select_streams",
+                "a",  # select audio-nly
+                str(location),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            stdout, stderr = await process.communicate()
+            if process.returncode != 0:
+                return await ctx.respond(
+                    ":x: Error gathering metadata.\n```\n%s\n```" % discord.utils.escape_markdown(stderr.decode())
+                )
+
+            metadata = json.loads(stdout.decode())
+            try:
+                stream = metadata["streams"].pop()
+            except IndexError:
+                return await ctx.respond(
+                    ":x: No audio streams to transcode."
+                )
+            duration = float(metadata["format"]["duration"])
+            bit_rate = math.floor(int(metadata["format"]["bit_rate"]) / 1024)
+            channels = int(stream["channels"])
+            codec = stream["codec_name"]
+
+            target_bitrate = math.floor((size_mb * 8192) / duration)
+            if target_bitrate <= 0:
+                return await ctx.respond(
+                    ":x: Target size too small (would've had a negative bitrate of %d)" % target_bitrate
+                )
+            br_ceiling = 255 * channels
+            end_br = min(bit_rate, target_bitrate, br_ceiling)
+
+            with tempfile.NamedTemporaryFile(suffix=".ogg", prefix=file.filename) as output_file:
+                command = [
+                    "ffmpeg",
+                    "-i",
+                    str(location),
+                    "-v",
+                    "error",
+                    "-vn",
+                    "-sn",
+                    "-c:a",
+                    "libopus",
+                    "-b:a",
+                    "%sK" % end_br,
+                    "-y",
+                    output_file.name
+                ]
+                process = await asyncio.create_subprocess_exec(
+                    command[0],
+                    *command[1:],
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
+                stdout, stderr = await process.communicate()
+
+                if process.returncode != 0:
+                    return await ctx.respond(
+                        ":x: There was an error while transcoding:\n```\n%s\n```" % discord.utils.escape_markdown(
+                            stderr.decode()
+                        )
+                    )
+
+                output_location = Path(output_file.name)
+                stat = output_location.stat()
+                content = ("\N{white heavy check mark} Transcoded from %r to opus @ %dkbps.\n\n"
+                           "* Source: %dKbps\n* Target: %dKbps\n* Ceiling: %dKbps\n* Calculated: %dKbps\n"
+                           "* Duration: %.1f seconds\n* Input size: %s\n* Output size: %s\n* Difference: %s"
+                           " (%dKbps)") % (
+                    codec,
+                    end_br,
+                    bit_rate,
+                    target_bitrate,
+                    br_ceiling,
+                    end_br,
+                    duration,
+                    humanise(file.size),
+                    humanise(stat.st_size),
+                    humanise(file.size - stat.st_size, )
+                )
+                if stat.st_size <= max_size or share is False:
+                    if stat.st_size >= (size_bytes - 100):
+                        return await ctx.respond(
+                            ":x: File was too large."
+                        )
+                    return await ctx.respond(
+                        content,
+                        file=discord.File(output_location)
+                    )
+                else:
+                    share_location = Path("/mnt/vol/share/tmp/") / output_location.name
+                    share_location.touch(0o755)
+                    await self.bot.loop.run_in_executor(
+                        None,
+                        functools.partial(
+                            shutil.copy,
+                            output_location,
+                            share_location
+                        )
+                    )
+                    return await ctx.respond(
+                        "%s\n* [Download](https://droplet.nexy7574.co.uk/share/tmp/%s)" % (
+                            content,
+                            output_location.name
+                        )
+                    )
 
 
 def setup(bot):

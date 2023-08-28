@@ -1,5 +1,7 @@
+import asyncio
 import ipaddress
 import sys
+import textwrap
 
 import discord
 import os
@@ -8,9 +10,12 @@ from pathlib import Path
 from datetime import datetime, timezone
 from hashlib import sha512
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Header
 from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 from http import HTTPStatus
+
+from starlette.websockets import WebSocket, WebSocketDisconnect
+
 from utils import Student, get_or_none, VerifyCode, console, BannedStudentID
 from utils.db import AccessTokens
 from config import guilds
@@ -48,6 +53,8 @@ try:
     app.state.bot = bot
 except ImportError:
     bot = None
+app.state.last_sender = None
+app.state.last_sender_ts = datetime.utcnow()
 
 
 @app.middleware("http")
@@ -281,3 +288,89 @@ async def verify(code: str):
         GENERAL,
         status_code=308
     )
+
+
+@app.post("/bridge", include_in_schema=False, status_code=201)
+async def bridge(req: Request):
+    now = datetime.utcnow()
+    ts_diff = (now - app.state.last_sender_ts).total_seconds()
+    from discord.ext.commands import Paginator
+    body = await req.json()
+    if body["secret"] != app.state.bot.http.token:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid secret."
+        )
+
+    channel = app.state.bot.get_channel(1032974266527907901)  # type: discord.TextChannel | None
+    if not channel:
+        raise HTTPException(
+            status_code=404,
+            detail="Channel does not exist."
+        )
+
+    if len(body["message"]) > 6000:
+        raise HTTPException(
+            status_code=400,
+            detail="Message too long."
+        )
+    paginator = Paginator(prefix="", suffix="", max_size=1990)
+    for line in body["message"].splitlines():
+        try:
+            paginator.add_line(line)
+        except ValueError:
+            paginator.add_line(textwrap.shorten(line, width=1900, placeholder="<...>"))
+    if len(paginator.pages) > 1:
+        msg = None
+        if app.state.last_sender != body["sender"] or ts_diff >= 600:
+            msg = await channel.send(
+                f"**{body['sender']}**:"
+            )
+        m = len(paginator.pages)
+        for n, page in enumerate(paginator.pages, 1):
+            await channel.send(
+                f"[{n}/{m}]\n>>> {page}",
+                allowed_mentions=discord.AllowedMentions.none(),
+                reference=msg,
+                silent=True,
+                suppress=n != m
+            )
+            app.state.last_sender = body["sender"]
+    else:
+        content = f"**{body['sender']}**:\n>>> {body['message']}"
+        if app.state.last_sender == body["sender"] and ts_diff < 600:
+            content = f">>> {body['message']}"
+        await channel.send(
+            content,
+            allowed_mentions=discord.AllowedMentions.none(),
+            silent=True,
+            suppress=False
+        )
+        app.state.last_sender = body["sender"]
+    app.state.last_sender_ts = now
+    return {"status": "ok", "pages": len(paginator.pages)}
+
+
+@app.websocket('/bridge/recv')
+async def bridge_recv(ws: WebSocket, secret: str = Header(None)):
+    if secret != app.state.bot.http.token:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid secret."
+        )
+    queue: asyncio.Queue = app.state.bot.bridge_queue
+
+    await ws.accept()
+    while True:
+        try:
+            data = queue.get_nowait()
+        except asyncio.QueueEmpty:
+            await asyncio.sleep(0.5)
+            continue
+
+        try:
+            await ws.send_json(data)
+        except WebSocketDisconnect:
+            break
+        finally:
+            queue.task_done()
