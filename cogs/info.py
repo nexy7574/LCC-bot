@@ -102,6 +102,11 @@ class InfoCog(commands.Cog):
                 value="\n".join(f"{connection['type'].title()} ({connection['id']})" for connection in connections),
             )
 
+        if not embed.fields:
+            embed.description = "No data found. You may need to [reauthenticate.](%s)" % OAUTH_REDIRECT_URI
+            embed.url = OAUTH_REDIRECT_URI
+            embed.colour = discord.Color.red()
+
         await ctx.respond(embed=embed)
 
 
