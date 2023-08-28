@@ -473,7 +473,7 @@ class Events(commands.Cog):
                 r"(bor(r)?is|johnson)": {
                     "file": discord.File(assets / "boris.jpeg")
                 },
-                r"\W?(s(ource\w)?)?l(ines\s)?o(f\s)?c(ode)?(\W)?": {
+                r"\W?(s(ource\w)?)?l(ines\s)?o(f\s)?c(ode)?(\W)?$": {
                     "content": lambda: "I have {:,} lines of source code across {:,} files!".format(*get_sloc_count())
                 }
             }
