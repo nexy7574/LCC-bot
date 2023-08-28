@@ -943,8 +943,7 @@ class OtherCog(commands.Cog):
                 "trim_file_name": 128,
                 "extract_audio": extract_audio,
                 "format_sort": ["codec:h264", "ext"],
-                "merge_format": "webm,mp4,mov,mkv,m4a,ogg,mp3",
-                "merge_output_format": "webm,mp4,mov,mkv,m4a,ogg,mp3",
+                "merge_output_format": "webm/mp4/mov/mkv/m4a/ogg/mp3",
             }
             if extract_audio:
                 args["postprocessors"] = [
