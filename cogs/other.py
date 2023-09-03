@@ -240,7 +240,6 @@ class OtherCog(commands.Cog):
             if driver == "chrome":
                 options = ChromeOptions()
                 options.add_argument("--headless")
-                options.add_argument("--no-sandbox")
                 options.add_argument("--disable-dev-shm-usage")
                 options.add_argument("--disable-gpu")
                 options.add_argument("--disable-extensions")
@@ -774,7 +773,6 @@ class OtherCog(commands.Cog):
                 f" ({result!r})"
             )
 
-        await asyncio.sleep(1)
         await ctx.edit(content=f"Preparing to screenshot <{friendly_url}>... (16%, checking filters)")
         okay = await (pending or done_tasks).pop()
         if not okay:
@@ -783,7 +781,6 @@ class OtherCog(commands.Cog):
                 f" ({okay!r})"
             )
 
-        await asyncio.sleep(1)
         await ctx.edit(content=f"Screenshotting {textwrap.shorten(url.geturl(), 100)}... (33%, initializing browser)")
         try:
             async with self.lock:
@@ -812,16 +809,15 @@ class OtherCog(commands.Cog):
             return await ctx.edit(content=f"Failed: {e}", delete_after=30)
         else:
             await ctx.edit(content=f"Screenshotting <{friendly_url}>... (99%, uploading image)")
-            await asyncio.sleep(0.5)
             await ctx.edit(
                 content="Here's your screenshot!\n"
                 "Details:\n"
-                f"\\* Browser: {driver}\n"
-                f"\\* Resolution: {window_height}x{window_width} ({window_width*window_height:,} pixels)\n"
-                f"\\* URL: <{friendly_url}>\n"
-                f"\\* Load time: {fetch_time:.2f}ms\n"
-                f"\\* Screenshot render time: {screenshot_time:.2f}ms\n"
-                f"\\* Total time: {(fetch_time + screenshot_time):.2f}ms\n" +
+                f"* Browser: {driver}\n"
+                f"* Resolution: {window_height}x{window_width} ({window_width*window_height:,} pixels)\n"
+                f"* URL: <{friendly_url}>\n"
+                f"* Load time: {fetch_time:.2f}ms\n"
+                f"* Screenshot render time: {screenshot_time:.2f}ms\n"
+                f"* Total time: {(fetch_time + screenshot_time):.2f}ms\n" +
                 (
                     '* Probability of being scat or something else horrifying: 100%'
                     if ctx.user.id == 1019233057519177778 else ''
