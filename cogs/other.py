@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+import traceback
 from functools import partial
 from io import BytesIO
 
