@@ -966,6 +966,7 @@ class OtherCog(commands.Cog):
                     )
                     await self.bot.loop.run_in_executor(None, partial(downloader.download, [url]))
                 except yt_dlp.utils.DownloadError as e:
+                    traceback.print_exc()
                     return await ctx.edit(
                         embed=discord.Embed(
                             title="Error",
@@ -1011,6 +1012,7 @@ class OtherCog(commands.Cog):
                                 )
                                 shutil.move(str(bak), str(file))
                             except subprocess.CalledProcessError as e:
+                                traceback.print_exc()
                                 return await ctx.edit(
                                     embed=discord.Embed(
                                         title="Error",
