@@ -979,7 +979,7 @@ class OtherCog(commands.Cog):
                     )
                 else:
                     parsed_qs = parse_qs(url)
-                    if 't' in parsed_qs and parsed_qs['t'].isdigit():
+                    if 't' in parsed_qs and parsed_qs['t'] and parsed_qs['t'][0].isdigit():
                         # Assume is timestamp
                         timestamp = round(float(parsed_qs['t'][0]))
                         embed = discord.Embed(
