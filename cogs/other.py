@@ -1001,6 +1001,8 @@ class OtherCog(commands.Cog):
                                 bak = file.with_name(file.name + "-" + os.urandom(4).hex())
                                 shutil.copy(str(file), str(bak))
                                 file.unlink()
+                                minutes, seconds = divmod(timestamp, 60)
+                                hours, minutes = divmod(minutes, 60)
                                 await self.bot.loop.run_in_executor(
                                     None,
                                     partial(
@@ -1010,9 +1012,9 @@ class OtherCog(commands.Cog):
                                             "-i",
                                             str(bak),
                                             "-ss",
-                                            str(timestamp),
-                                            "-c",
-                                            "copy",
+                                            "%d:%d:%d" % map(round, (hours, minutes, seconds)),
+                                            # "-c",
+                                            # "copy",
                                             "-y",
                                             str(file)
                                         ],
