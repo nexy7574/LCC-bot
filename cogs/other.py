@@ -941,8 +941,17 @@ class OtherCog(commands.Cog):
                 "outtmpl": f"{ctx.user.id}-%(title).50s.%(ext)s",
                 "trim_file_name": 128,
                 "extract_audio": extract_audio,
-                "format_sort": ["codec:h264", "ext"],
-                "merge_output_format": "webm/mp4/mov/flv/avi/mkv/ogg/m4a/wav/mp3/mka/opus",
+                "format_sort": [
+                    "vcodec:h264", 
+                    "acodec:aac", 
+                    "vcodec:vp9", 
+                    "acodec:opus", 
+                    "acodec:vorbis",
+                    "vcodec:vp8", 
+                    "vcodec:av1", 
+                    "ext"
+                ],
+                "merge_output_format": "webm/mp4/mov/flv/avi/ogg/m4a/wav/mp3/opus/mka/mkv",
                 "source_address": "0.0.0.0",
             }
             if extract_audio:
