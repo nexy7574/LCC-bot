@@ -1021,6 +1021,8 @@ class OtherCog(commands.Cog):
                                     "-ss",
                                     "{!s}:{!s}:{!s}".format(*map(round, (hours, minutes, seconds))),
                                     "-y",
+                                    "-c",
+                                    "copy",
                                     str(file)
                                 ]
                                 if end_timestamp is not None:
