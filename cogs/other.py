@@ -1024,12 +1024,17 @@ class OtherCog(commands.Cog):
                                     "-y",
                                     str(file)
                                 ]
+                                if end_timestamp is not None:
+                                    minutes, seconds = divmod(end_timestamp, 60)
+                                    hours, minutes = divmod(minutes, 60)
+                                    _args.insert(5, "-to")
+                                    _args.insert(6, "{!s}:{!s}:{!s}".format(*map(round, (hours, minutes, seconds))))
 
                                 await self.bot.loop.run_in_executor(
                                     None,
                                     partial(
                                         subprocess.run,
-                                        ,
+                                        _args,
                                         check=True,
                                         capture_output=True
                                     )
