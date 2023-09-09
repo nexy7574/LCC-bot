@@ -9,6 +9,7 @@ import os
 import shutil
 import random
 import re
+import subprocess
 import sys
 import tempfile
 import textwrap
@@ -871,6 +872,7 @@ class OtherCog(commands.Cog):
     ):
         """Downloads a video using youtube-dl"""
         await ctx.defer()
+        from urllib.parse import urlparse, parse_qs
         formats = await self.list_formats(url)
         if _format:
             _fmt = _format
@@ -947,7 +949,7 @@ class OtherCog(commands.Cog):
                     {
                         "key": "FFmpegExtractAudio",
                         "preferredquality": "48",
-                        "preferredcodec": "vorbis"
+                        "preferredcodec": "opus"
                     }
                 ]
                 args["format"] = args["format"] or f"(ba/b)[filesize<={MAX_SIZE_MB}M]"
@@ -960,7 +962,7 @@ class OtherCog(commands.Cog):
                     await ctx.respond(
                         embed=discord.Embed(
                             title="Downloading...", colour=discord.Colour.blurple()
-                        ).set_footer(text="Warning: forced compatibility, download may be too large.")
+                        )
                     )
                     await self.bot.loop.run_in_executor(None, partial(downloader.download, [url]))
                 except yt_dlp.utils.DownloadError as e:
@@ -969,10 +971,55 @@ class OtherCog(commands.Cog):
                             title="Error",
                             description=f"Download failed:\n```\n{e}\n```",
                             colour=discord.Colour.red()
-                        ).set_footer(text="Warning: forced compatibility, download may be too large."),
+                        ),
                         delete_after=30
                     )
                 else:
+                    parsed_qs = parse_qs(url)
+                    if 't' in parsed_qs and parsed_qs['t'].isdigit():
+                        # Assume is timestamp
+                        timestamp = round(float(parsed_qs['t'][0]))
+                        embed = discord.Embed(
+                            title="Trimming...",
+                            description=f"Trimming from {timestamp} seconds onward",
+                            colour=discord.Colour.blurple()
+                        )
+                        await ctx.edit(embed=embed)
+                        for file in tempdir.glob("%s-*" % ctx.user.id):
+                            try:
+                                bak = file.with_suffix(file.suffix + ".bak")
+                                shutil.copy(str(file), str(bak))
+                                file.unlink()
+                                await self.bot.loop.run_in_executor(
+                                    None,
+                                    partial(
+                                        subprocess.run,
+                                        [
+                                            "ffmpeg",
+                                            "-i",
+                                            str(bak),
+                                            "-ss",
+                                            str(timestamp),
+                                            "-c",
+                                            "copy",
+                                            "-y",
+                                            str(file)
+                                        ],
+                                        check=True,
+                                        capture_output=True
+                                    )
+                                )
+                                shutil.move(str(bak), str(file))
+                            except subprocess.CalledProcessError as e:
+                                return await ctx.edit(
+                                    embed=discord.Embed(
+                                        title="Error",
+                                        description=f"Trimming failed:\n```\n{e}\n```",
+                                        colour=discord.Colour.red()
+                                    ),
+                                    delete_after=30
+                                )
+
                     embed = discord.Embed(
                         title="Downloaded!",
                         description="",
@@ -986,7 +1033,6 @@ class OtherCog(commands.Cog):
                             embed.description += f"\N{warning sign}\ufe0f {file.name} is empty.\n"
                             continue
                         st = file.stat().st_size
-                        COMPRESS_FAILED = False
                         if st / 1024 / 1024 >= MAX_SIZE_MB or st >= BYTES_REMAINING:
                             units = ["B", "KB", "MB", "GB", "TB"]
                             st_r = st
