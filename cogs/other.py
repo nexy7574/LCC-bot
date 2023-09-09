@@ -998,7 +998,7 @@ class OtherCog(commands.Cog):
                         await ctx.edit(embed=embed)
                         for file in tempdir.glob("%s-*" % ctx.user.id):
                             try:
-                                bak = file.with_suffix(file.suffix + ".bak")
+                                bak = file.with_name(file.name + "-" + os.urandom(4).hex())
                                 shutil.copy(str(file), str(bak))
                                 file.unlink()
                                 await self.bot.loop.run_in_executor(
@@ -1058,7 +1058,6 @@ class OtherCog(commands.Cog):
                                                      units[0],
                                                      MAX_SIZE_MB,
                                                  )
-                            embed.set_footer(text="Warning: forced compatibility, download may be too large.")
                             continue
                         else:
                             files.append(discord.File(file, file.name))
@@ -1071,8 +1070,9 @@ class OtherCog(commands.Cog):
                         return await ctx.edit(embed=embed)
                     else:
                         _desc = embed.description
-                        embed.description += f"Uploading {len(files)} file(s)..."
-                        embed.set_footer(text="Warning: forced compatibility, download may be too large.")
+                        embed.description += f"Uploading {len(files)} file(s):\n%s" % (
+                            "\n".join('* `%s`' % f.filename for f in files)
+                        )
                         await ctx.edit(embed=embed)
                         await ctx.channel.trigger_typing()
                         embed.description = _desc
