@@ -948,7 +948,6 @@ class OtherCog(commands.Cog):
                     "acodec:opus", 
                     "acodec:vorbis",
                     "vcodec:vp8", 
-                    "vcodec:av1", 
                     "ext"
                 ],
                 "merge_output_format": "webm/mp4/mov/flv/avi/ogg/m4a/wav/mp3/opus/mka/mkv",
@@ -965,7 +964,7 @@ class OtherCog(commands.Cog):
                 args["format"] = args["format"] or f"(ba/b)[filesize<={MAX_SIZE_MB}M]"
 
             if args["format"] is None:
-                args["format"] = f"(bv+ba/b)[vcodec!=h265][filesize<={MAX_SIZE_MB}M]/b"
+                args["format"] = f"(bv+ba/b)[vcodec!=h265][vcodec!=av01][filesize<={MAX_SIZE_MB}M]/b"
 
             with yt_dlp.YoutubeDL(args) as downloader:
                 try:
@@ -990,9 +989,22 @@ class OtherCog(commands.Cog):
                     if 't' in parsed_qs and parsed_qs['t'] and parsed_qs['t'][0].isdigit():
                         # Assume is timestamp
                         timestamp = round(float(parsed_qs['t'][0]))
+                        end_timestamp = None
+                        if len(parsed_qs["t"]) == 2:
+                            end_timestamp = round(float(parsed_qs['t'][1]))
+                            if end_timestamp < timestamp:
+                                return await ctx.edit(
+                                    embed=discord.Embed(
+                                        title="Error",
+                                        description="End timestamp must be greater than start timestamp.",
+                                        colour=discord.Colour.red()
+                                    ),
+                                    delete_after=30
+                                )
+                        _end = "to %s" % end_timestamp if len(parsed_qs["t"]) == 2 else "onward"
                         embed = discord.Embed(
                             title="Trimming...",
-                            description=f"Trimming from {timestamp} seconds onward",
+                            description=f"Trimming from {timestamp} seconds {_end}.\nThis may take a while.",
                             colour=discord.Colour.blurple()
                         )
                         await ctx.edit(embed=embed)
@@ -1003,21 +1015,21 @@ class OtherCog(commands.Cog):
                                 file.unlink()
                                 minutes, seconds = divmod(timestamp, 60)
                                 hours, minutes = divmod(minutes, 60)
+                                _args = [
+                                    "ffmpeg",
+                                    "-i",
+                                    str(bak),
+                                    "-ss",
+                                    "{!s}:{!s}:{!s}".format(*map(round, (hours, minutes, seconds))),
+                                    "-y",
+                                    str(file)
+                                ]
+
                                 await self.bot.loop.run_in_executor(
                                     None,
                                     partial(
                                         subprocess.run,
-                                        [
-                                            "ffmpeg",
-                                            "-i",
-                                            str(bak),
-                                            "-ss",
-                                            "{!s}:{!s}:{!s}".format(*map(round, (hours, minutes, seconds))),
-                                            # "-c",
-                                            # "copy",
-                                            "-y",
-                                            str(file)
-                                        ],
+                                        ,
                                         check=True,
                                         capture_output=True
                                     )
