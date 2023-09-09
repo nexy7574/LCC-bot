@@ -1012,7 +1012,6 @@ class OtherCog(commands.Cog):
                             try:
                                 bak = file.with_name(file.name + "-" + os.urandom(4).hex())
                                 shutil.copy(str(file), str(bak))
-                                file.unlink()
                                 minutes, seconds = divmod(timestamp, 60)
                                 hours, minutes = divmod(minutes, 60)
                                 _args = [
@@ -1039,7 +1038,7 @@ class OtherCog(commands.Cog):
                                         capture_output=True
                                     )
                                 )
-                                shutil.move(str(bak), str(file))
+                                bak.unlink(True)
                             except subprocess.CalledProcessError as e:
                                 traceback.print_exc()
                                 return await ctx.edit(
