@@ -1012,7 +1012,7 @@ class OtherCog(commands.Cog):
                                             "-i",
                                             str(bak),
                                             "-ss",
-                                            "%d:%d:%d" % map(round, (hours, minutes, seconds)),
+                                            "{!s}:{!s}:{!s}".format(*map(round, (hours, minutes, seconds))),
                                             # "-c",
                                             # "copy",
                                             "-y",
