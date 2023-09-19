@@ -51,6 +51,9 @@ class TimeTableCog(commands.Cog):
 
         blocks = [f"```\nTimetable for {date.strftime('%A')} ({date.strftime('%d/%m/%Y')}):\n```"]
         for lesson in lessons:
+            lesson.setdefault("name", "unknown")
+            lesson.setdefault("tutor", "unknown")
+            lesson.setdefault("room", "unknown")
             start_datetime = date.replace(hour=lesson["start"][0], minute=lesson["start"][1])
             end_datetime = date.replace(hour=lesson["end"][0], minute=lesson["end"][1])
             text = (
@@ -134,6 +137,10 @@ class TimeTableCog(commands.Cog):
         _break = self.are_on_break(date)
         if _break is not None:
             next_lesson = self.absolute_next_lesson(date + timedelta(days=1))
+            next_lesson.setdefault("name", "unknown")
+            next_lesson.setdefault("tutor", "unknown")
+            next_lesson.setdefault("room", "unknown")
+            next_lesson.setdefault("start_datetime", discord.utils.utcnow())
             text = (
                 "[tt] On break {!r} from {} until {}. Break ends {}, and the first lesson back is "
                 "{lesson[name]!r} with {lesson[tutor]} in {lesson[room]}.".format(
@@ -148,8 +155,12 @@ class TimeTableCog(commands.Cog):
             lesson = self.current_lesson(date)
             if not lesson:
                 next_lesson = self.next_lesson(date)
-                if not next_lesson:
-                    next_lesson = self.absolute_next_lesson()
+                if next_lesson is None:
+                    try:
+                        next_lesson = self.absolute_next_lesson()
+                    except RuntimeError:
+                        print("Failed to fetch absolute next lesson. Is this the end?")
+                        return
                     next_lesson.setdefault("name", "unknown")
                     next_lesson.setdefault("tutor", "unknown")
                     next_lesson.setdefault("room", "unknown")
@@ -167,7 +178,7 @@ class TimeTableCog(commands.Cog):
                     next_lesson.setdefault("room", "unknown")
                     next_lesson.setdefault("start_datetime", discord.utils.utcnow())
                     text = "[tt] Next Lesson: {0[name]!r} with {0[tutor]} in {0[room]} - Starts {1}".format(
-                        lesson,
+                        next_lesson,
                         discord.utils.format_dt(next_lesson['start_datetime'], 'R')
                     )
             else:
