@@ -157,7 +157,7 @@ class TimeTableCog(commands.Cog):
                 next_lesson = self.next_lesson(date)
                 if next_lesson is None:
                     try:
-                        next_lesson = self.absolute_next_lesson()
+                        next_lesson = self.absolute_next_lesson(date + timedelta(days=1))
                     except RuntimeError:
                         print("Failed to fetch absolute next lesson. Is this the end?")
                         return
@@ -199,7 +199,6 @@ class TimeTableCog(commands.Cog):
                     )
                 next_lesson = self.next_lesson(date)
                 if next_lesson:
-                    next_lesson = self.absolute_next_lesson()
                     next_lesson.setdefault("name", "unknown")
                     next_lesson.setdefault("tutor", "unknown")
                     next_lesson.setdefault("room", "unknown")
