@@ -187,7 +187,7 @@ class TimeTableCog(commands.Cog):
                 lesson.setdefault("room", "unknown")
                 lesson.setdefault("start_datetime", discord.utils.utcnow())
                 if lesson["name"].lower() != "lunch":
-                    text = "[tt] Current Lesson: {0['name']!r} with {0['tutor']} in {0['room']} - ends {1}".format(
+                    text = "[tt] Current Lesson: {0[name]!r} with {0[tutor]} in {0[room]} - ends {1}".format(
                         lesson,
                         discord.utils.format_dt(lesson['end_datetime'], 'R')
                     )
