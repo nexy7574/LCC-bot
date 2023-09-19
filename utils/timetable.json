@@ -1,7 +1,7 @@
 {
     "monday": [
         {
-            "name": "???",
+            "name": "Digital Security",
             "start": [
                 9,
                 0
@@ -10,11 +10,11 @@
                 10,
                 15
             ],
-            "tutor": "Other",
-            "room": "A145"
+            "tutor": "Raphael",
+            "room": "A132"
         },
         {
-            "name": "???",
+            "name": "Digital Security",
             "start": [
                 10,
                 30
@@ -23,26 +23,13 @@
                 11,
                 45
             ],
-            "tutor": "Other",
-            "room": "A145"
+            "tutor": "Raphael",
+            "room": "A132"
         }
     ],
     "tuesday": [
         {
-            "name": "???",
-            "start": [
-                9,
-                0
-            ],
-            "end": [
-                10,
-                15
-            ],
-            "tutor": "Other",
-            "room": "A144"
-        },
-        {
-            "name": "???",
+            "name": "Managing Infrastructure",
             "start": [
                 10,
                 30
@@ -51,11 +38,11 @@
                 11,
                 45
             ],
-            "tutor": "Other",
-            "room": "A047"
+            "tutor": "Rebecca",
+            "room": "A132"
         },
         {
-            "name": "???",
+            "name": "Digital Security",
             "start": [
                 11,
                 45
@@ -64,11 +51,22 @@
                 13,
                 0
             ],
-            "tutor": "Other",
-            "room": "A145"
+            "tutor": "Raphael",
+            "room": "A132"
         },
         {
-            "name": "???",
+            "name": "Lunch",
+            "start": [
+                13,
+                0
+            ],
+            "end": [
+                14,
+                0
+            ]
+        },
+        {
+            "name": "Digital Security",
             "start": [
                 14,
                 0
@@ -77,39 +75,26 @@
                 15,
                 15
             ],
-            "tutor": "Other",
-            "room": "A047"
+            "tutor": "Raphael",
+            "room": "A132"
         }
     ],
     "wednesday": [
         {
-            "name": "???",
+            "name": "Managing Infrastructure",
             "start": [
                 9,
                 0
             ],
             "end": [
-                10,
-                15
-            ],
-            "tutor": "Other",
-            "room": "A145"
-        },
-        {
-            "name": "???",
-            "start": [
-                10,
-                30
-            ],
-            "end": [
                 11,
                 45
             ],
-            "tutor": "Other",
-            "room": "A145"
+            "tutor": "Rebecca",
+            "room": "A132"
         },
         {
-            "name": "???",
+            "name": "Digital Security",
             "start": [
                 11,
                 45
@@ -118,11 +103,22 @@
                 13,
                 0
             ],
-            "tutor": "Other",
-            "room": "A145"
+            "tutor": "Raphael",
+            "room": "A132"
         },
         {
-            "name": "???",
+            "name": "Lunch",
+            "start": [
+                13,
+                0
+            ],
+            "end": [
+                14,
+                0
+            ]
+        },
+        {
+            "name": "Digital Security",
             "start": [
                 14,
                 0
@@ -131,62 +127,47 @@
                 15,
                 15
             ],
-            "tutor": "Other",
-            "room": "A145"
-        },
-        {
-            "name": "???",
-            "start": [
-                15,
-                30
-            ],
-            "end": [
-                16,
-                45
-            ],
-            "tutor": "Other",
-            "room": "A145"
+            "tutor": "Raphael",
+            "room": "A132"
         }
     ],
     "thursday": [
         {
-            "name": "???",
+            "name": "Research & Evaluation",
             "start": [
                 9,
                 0
             ],
             "end": [
-                10,
-                15
-            ],
-            "tutor": "Other",
-            "room": "A145"
-        },
-        {
-            "name": "???",
-            "start": [
-                10,
-                30
-            ],
-            "end": [
                 11,
                 45
             ],
-            "tutor": "Other",
-            "room": "A145"
+            "tutor": "Zach",
+            "room": "A132"
         },
         {
-            "name": "???",
+            "name": "Lunch",
             "start": [
                 11,
                 45
             ],
             "end": [
-                13,
+                12,
+                45
+            ]
+        },
+        {
+            "name": "Research & Evaluation",
+            "start": [
+                12,
+                45
+            ],
+            "end": [
+                14,
                 0
             ],
-            "tutor": "Other",
-            "room": "A145"
+            "tutor": "Zach",
+            "room": "A132"
         },
         {
             "name": "Fundamentals",
@@ -199,20 +180,7 @@
                 15
             ],
             "tutor": "Steven",
-            "room": "A145"
-        },
-        {
-            "name": "Fundamentals",
-            "start": [
-                15,
-                30
-            ],
-            "end": [
-                16,
-                45
-            ],
-            "tutor": "Steven",
-            "room": "A145"
+            "room": "A132"
         }
     ],
     "friday": [],

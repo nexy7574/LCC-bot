@@ -1372,6 +1372,7 @@ class OtherCog(commands.Cog):
                 discord.SlashCommandOptionType.attachment,
                 description="Image to perform OCR on",
             )
+
     ):
         """OCRs an image"""
         await ctx.defer()
