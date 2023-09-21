@@ -1,6 +1,4 @@
 import random
-import sys
-import asyncio
 from typing import Optional, Union, Dict
 
 import discord
@@ -53,6 +51,9 @@ class TimeTableCog(commands.Cog):
 
         blocks = [f"```\nTimetable for {date.strftime('%A')} ({date.strftime('%d/%m/%Y')}):\n```"]
         for lesson in lessons:
+            lesson.setdefault("name", "unknown")
+            lesson.setdefault("tutor", "unknown")
+            lesson.setdefault("room", "unknown")
             start_datetime = date.replace(hour=lesson["start"][0], minute=lesson["start"][1])
             end_datetime = date.replace(hour=lesson["end"][0], minute=lesson["end"][1])
             text = (
@@ -136,6 +137,10 @@ class TimeTableCog(commands.Cog):
         _break = self.are_on_break(date)
         if _break is not None:
             next_lesson = self.absolute_next_lesson(date + timedelta(days=1))
+            next_lesson.setdefault("name", "unknown")
+            next_lesson.setdefault("tutor", "unknown")
+            next_lesson.setdefault("room", "unknown")
+            next_lesson.setdefault("start_datetime", discord.utils.utcnow())
             text = (
                 "[tt] On break {!r} from {} until {}. Break ends {}, and the first lesson back is "
                 "{lesson[name]!r} with {lesson[tutor]} in {lesson[room]}.".format(
@@ -150,8 +155,16 @@ class TimeTableCog(commands.Cog):
             lesson = self.current_lesson(date)
             if not lesson:
                 next_lesson = self.next_lesson(date)
-                if not next_lesson:
-                    next_lesson = self.absolute_next_lesson()
+                if next_lesson is None:
+                    try:
+                        next_lesson = self.absolute_next_lesson(date + timedelta(days=1))
+                    except RuntimeError:
+                        print("Failed to fetch absolute next lesson. Is this the end?")
+                        return
+                    next_lesson.setdefault("name", "unknown")
+                    next_lesson.setdefault("tutor", "unknown")
+                    next_lesson.setdefault("room", "unknown")
+                    next_lesson.setdefault("start_datetime", discord.utils.utcnow())
                     text = (
                         "[tt] No more lessons today!\n"
                         f"[tt] Next Lesson: {next_lesson['name']!r} with {next_lesson['tutor']} in "
@@ -160,20 +173,45 @@ class TimeTableCog(commands.Cog):
                     )
 
                 else:
-                    text = (
-                        f"[tt] Next Lesson: {next_lesson['name']!r} with {next_lesson['tutor']} in "
-                        f"{next_lesson['room']} - Starts {discord.utils.format_dt(next_lesson['start_datetime'], 'R')}"
+                    next_lesson.setdefault("name", "unknown")
+                    next_lesson.setdefault("tutor", "unknown")
+                    next_lesson.setdefault("room", "unknown")
+                    next_lesson.setdefault("start_datetime", discord.utils.utcnow())
+                    text = "[tt] Next Lesson: {0[name]!r} with {0[tutor]} in {0[room]} - Starts {1}".format(
+                        next_lesson,
+                        discord.utils.format_dt(next_lesson['start_datetime'], 'R')
                     )
             else:
-                text = (
-                    f"[tt] Current Lesson: {lesson['name']!r} with {lesson['tutor']} in {lesson['room']} - "
-                    f"ends {discord.utils.format_dt(lesson['end_datetime'], 'R')}"
-                )
+                lesson.setdefault("name", "unknown")
+                lesson.setdefault("tutor", "unknown")
+                lesson.setdefault("room", "unknown")
+                lesson.setdefault("start_datetime", discord.utils.utcnow())
+                if lesson["name"].lower() != "lunch":
+                    text = "[tt] Current Lesson: {0[name]!r} with {0[tutor]} in {0[room]} - ends {1}".format(
+                        lesson,
+                        discord.utils.format_dt(lesson['end_datetime'], 'R')
+                    )
+                else:
+                    text = "[tt] \U0001f37d\U0000fe0f Lunch! {0}-{1}, ends in {2}".format(
+                        discord.utils.format_dt(lesson['start_datetime'], 't'),
+                        discord.utils.format_dt(lesson['end_datetime'], 't'),
+                        discord.utils.format_dt(lesson['end_datetime'], 'R')
+                    )
                 next_lesson = self.next_lesson(date)
                 if next_lesson:
-                    text += "\n[tt] Next lesson: {0[name]!r} with {0[tutor]} in {0[room]} - starts {1}".format(
-                        next_lesson, discord.utils.format_dt(next_lesson["start_datetime"], "R")
-                    )
+                    next_lesson.setdefault("name", "unknown")
+                    next_lesson.setdefault("tutor", "unknown")
+                    next_lesson.setdefault("room", "unknown")
+                    next_lesson.setdefault("start_datetime", discord.utils.utcnow())
+                    if lesson["name"].lower() != "lunch":
+                        text += "\n[tt] Next lesson: {0[name]!r} with {0[tutor]} in {0[room]} - starts {1}".format(
+                            next_lesson, discord.utils.format_dt(next_lesson["start_datetime"], "R")
+                        )
+                    else:
+                        text = "[tt] \U0001f37d\U0000fe0f Lunch! {0}-{1}.".format(
+                            discord.utils.format_dt(lesson['start_datetime'], 't'),
+                            discord.utils.format_dt(lesson['end_datetime'], 't'),
+                        )
 
         if no_prefix:
             text = text.replace("[tt] ", "")
@@ -225,7 +263,7 @@ class TimeTableCog(commands.Cog):
         await ctx.defer()
         await self.update_timetable_message(ctx, date, no_prefix=True)
         if random.randint(1, 10) == 1:
-            end_date = datetime(2023, 7, 13, 0, 0, 0, tzinfo=timezone.utc)
+            end_date = datetime(2024, 7, 13, 0, 0, 0, tzinfo=timezone.utc)
             days_left = (end_date - discord.utils.utcnow()).days
             await ctx.respond("There are only {:,} days left of this academic year.".format(days_left))
 

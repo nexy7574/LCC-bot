@@ -990,16 +990,11 @@ class OtherCog(commands.Cog):
                         # Assume is timestamp
                         timestamp = round(float(parsed_qs['t'][0]))
                         end_timestamp = None
-                        if len(parsed_qs["t"]) == 2:
+                        if len(parsed_qs["t"]) >= 2:
                             end_timestamp = round(float(parsed_qs['t'][1]))
                             if end_timestamp < timestamp:
-                                return await ctx.edit(
-                                    embed=discord.Embed(
-                                        title="Error",
-                                        description="End timestamp must be greater than start timestamp.",
-                                        colour=discord.Colour.red()
-                                    ),
-                                    delete_after=30
+                                end_timestamp, timestamp = reversed(
+                                    (end_timestamp, timestamp)
                                 )
                         _end = "to %s" % end_timestamp if len(parsed_qs["t"]) == 2 else "onward"
                         embed = discord.Embed(
@@ -1377,6 +1372,7 @@ class OtherCog(commands.Cog):
                 discord.SlashCommandOptionType.attachment,
                 description="Image to perform OCR on",
             )
+
     ):
         """OCRs an image"""
         await ctx.defer()
