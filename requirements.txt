@@ -20,3 +20,4 @@ lxml>=4.9.2
 pytesseract>=0.3.10
 pillow>=9.5.0
 humanize>=4.6.0
+blend-modes>=2.1.0
