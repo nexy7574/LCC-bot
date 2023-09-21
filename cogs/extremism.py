@@ -72,11 +72,16 @@ class Extremism(commands.Cog):
         self.bot = bot
     
     @commands.slash_command(name="radicalise")
-    async def radicalise(self, ctx, image: discord.Attachment):
+    async def radicalise(self, ctx, image: discord.Attachment = None, user: discord.User = None):
         """Makes an image extremely radical."""
-        if not image.content_type.startswith("image/"):
-            await ctx.send("That's not an image!")
-            return
+        if image is None:
+            if user is None:
+                user = ctx.author
+            image = user.avatar.with_format("png")
+        else:
+            if not image.content_type.startswith("image/"):
+                await ctx.send("That's not an image!")
+                return
         await ctx.defer()
         # Download the image
         _img_bytes = await image.read()
