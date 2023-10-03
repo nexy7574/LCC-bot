@@ -1691,7 +1691,8 @@ class OtherCog(commands.Cog):
                     duration,
                     humanise(file.size),
                     humanise(stat.st_size),
-                    humanise(file.size - stat.st_size, )
+                    humanise(file.size - stat.st_size),
+                    bit_rate - end_br
                 )
                 if stat.st_size <= max_size or share is False:
                     if stat.st_size >= (size_bytes - 100):
