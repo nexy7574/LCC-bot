@@ -475,6 +475,9 @@ class Events(commands.Cog):
                 },
                 r"\W?(s(ource\w)?)?l(ines\s)?o(f\s)?c(ode)?(\W)?$": {
                     "content": lambda: "I have {:,} lines of source code across {:,} files!".format(*get_sloc_count())
+                },
+                r"t(ry\s)?i(t\s)?a(nd\s)?see.*": {
+                    "content": "https://tryitands.ee"
                 }
             }
             # Stop responding to any bots
