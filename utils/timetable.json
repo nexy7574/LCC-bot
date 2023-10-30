@@ -1,48 +1,22 @@
 {
-    "monday": [
-        {
-            "name": "Digital Security",
-            "start": [
-                9,
-                0
-            ],
-            "end": [
-                10,
-                15
-            ],
-            "tutor": "Raphael",
-            "room": "A132"
-        },
-        {
-            "name": "Digital Security",
-            "start": [
-                10,
-                30
-            ],
-            "end": [
-                11,
-                45
-            ],
-            "tutor": "Raphael",
-            "room": "A132"
-        }
-    ],
+    "monday": [],
     "tuesday": [
         {
-            "name": "Managing Infrastructure",
-            "start": [
-                10,
-                30
-            ],
-            "end": [
-                11,
-                45
-            ],
-            "tutor": "Rebecca",
+            "name": "Digital Security",
+            "start": [9, 0],
+            "end": [10, 15],
+            "tutor": "Raphael",
             "room": "A132"
         },
         {
             "name": "Digital Security",
+            "start": [10, 30],
+            "end": [11, 45],
+            "tutor": "Raphael",
+            "room": "A132"
+        },
+        {
+            "name": "1:1 Tutorial",
             "start": [
                 11,
                 45
@@ -51,7 +25,7 @@
                 13,
                 0
             ],
-            "tutor": "Raphael",
+            "tutor": "Zach",
             "room": "A132"
         },
         {
@@ -66,7 +40,7 @@
             ]
         },
         {
-            "name": "Digital Security",
+            "name": "Managing Infrastructure",
             "start": [
                 14,
                 0
@@ -75,7 +49,7 @@
                 15,
                 15
             ],
-            "tutor": "Raphael",
+            "tutor": "Rebecca",
             "room": "A132"
         }
     ],
@@ -129,6 +103,19 @@
             ],
             "tutor": "Raphael",
             "room": "A132"
+        },
+        {
+            "name": "Digital Security",
+            "start": [
+                15,
+                30
+            ],
+            "end": [
+                16,
+                45
+            ],
+            "tutor": "Raphael",
+            "room": "A132"
         }
     ],
     "thursday": [
@@ -157,7 +144,7 @@
             ]
         },
         {
-            "name": "Research & Evaluation",
+            "name": "Digital Security",
             "start": [
                 12,
                 45
@@ -166,11 +153,11 @@
                 14,
                 0
             ],
-            "tutor": "Zach",
+            "tutor": "Raphael",
             "room": "A132"
         },
         {
-            "name": "Fundamentals",
+            "name": "Research & Evaluation",
             "start": [
                 14,
                 0
@@ -179,8 +166,21 @@
                 15,
                 15
             ],
-            "tutor": "Steven",
+            "tutor": "Zach",
             "room": "A132"
+        },
+        {
+            "name": "Fundamentals",
+            "start": [
+                15,
+                30
+            ],
+            "end": [
+                16,
+                45
+            ],
+            "tutor": "Steven",
+            "room": "Oracle"
         }
     ],
     "friday": [],
@@ -210,8 +210,8 @@
             "end": "03/06/2024"
         },
         "end of year": {
-            "start": "13/07/2022",
-            "end": "12/09/2023"
+            "start": "13/07/2024",
+            "end": "12/09/9000"
         }
     }
 }
