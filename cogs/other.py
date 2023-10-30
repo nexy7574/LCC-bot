@@ -871,7 +871,7 @@ class OtherCog(commands.Cog):
                 default=""
             ) = "",
             extract_audio: bool = False,
-            cookies_txt: discord.Attachment = None
+            cookies_txt: discord.Attachment = None,
             proxy_via_nexbox: discord.Option(
                 name="proxy-via-nexbox",
                 description="Proxies via nexbox, circumventing some blocks. Very Slow.",
