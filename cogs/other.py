@@ -871,12 +871,7 @@ class OtherCog(commands.Cog):
                 default=""
             ) = "",
             extract_audio: bool = False,
-            cookies_txt: discord.Option(
-                name="cookies.txt",
-                description="Your cookies.txt file.",
-                type=discord.Attachment,
-                default=None
-            )
+            cookies_txt: discord.Attachment = None
     ):
         """Downloads a video using youtube-dl"""
         cookies = io.StringIO()
