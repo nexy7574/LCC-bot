@@ -872,6 +872,12 @@ class OtherCog(commands.Cog):
             ) = "",
             extract_audio: bool = False,
             cookies_txt: discord.Attachment = None
+            proxy_via_nexbox: discord.Option(
+                name="proxy-via-nexbox",
+                description="Proxies via nexbox, circumventing some blocks. Very Slow.",
+                type=bool,
+                default=False
+            ) = False
     ):
         """Downloads a video using youtube-dl"""
         cookies = io.StringIO()
@@ -967,6 +973,8 @@ class OtherCog(commands.Cog):
                 "source_address": "0.0.0.0",
                 "cookiefile": str(real_cookies_txt.resolve().absolute())
             }
+            if proxy_via_nexbox:
+                args["proxy"] = "socks5h://localhost:1080"
             if extract_audio:
                 args["postprocessors"] = [
                     {
@@ -975,7 +983,7 @@ class OtherCog(commands.Cog):
                         "preferredcodec": "opus"
                     }
                 ]
-                args["format"] = args["format"] or f"(ba/b)[filesize<={MAX_SIZE_MB}M]"
+                args["format"] = args["format"] or f"(ba/b)[filesize<={MAX_SIZE_MB}M]/ba/b"
 
             if args["format"] is None:
                 args["format"] = f"(bv+ba/b)[vcodec!=h265][vcodec!=av01][filesize<={MAX_SIZE_MB}M]/b"
