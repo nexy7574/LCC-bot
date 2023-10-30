@@ -138,6 +138,7 @@ class OtherCog(commands.Cog):
                         "noprogress": True,
                         "logger": NullLogger(),
                         "paths": {"home": tempdir, "temp": tempdir},
+                        "cookiefile": Path(__file__).parent.parent / "jimmy-cookies.txt"
                     }
             ) as downloader:
                 try:
@@ -870,8 +871,26 @@ class OtherCog(commands.Cog):
                 default=""
             ) = "",
             extract_audio: bool = False,
+            cookies_txt: discord.Option(
+                name="cookies.txt",
+                description="Your cookies.txt file.",
+                type=discord.Attachment,
+                default=None
+            )
     ):
         """Downloads a video using youtube-dl"""
+        cookies = io.StringIO()
+        if cookies_txt is None:
+            p = (Path(__file__).parent.parent / "cookies.txt")
+            if p.exists():
+                with p.open("r") as f:
+                    cookies.write(f.read())
+            else:
+                cookies.write("# No cookies.txt file found.")
+        else:
+            cookies.write(await cookies_txt.read())
+        cookies.seek(0)
+
         await ctx.defer()
         from urllib.parse import urlparse, parse_qs
         formats = await self.list_formats(url)
@@ -952,6 +971,7 @@ class OtherCog(commands.Cog):
                 ],
                 "merge_output_format": "webm/mp4/mov/flv/avi/ogg/m4a/wav/mp3/opus/mka/mkv",
                 "source_address": "0.0.0.0",
+                "cookiesfile": cookies
             }
             if extract_audio:
                 args["postprocessors"] = [
