@@ -965,7 +965,7 @@ class OtherCog(commands.Cog):
                 ],
                 "merge_output_format": "webm/mp4/mov/flv/avi/ogg/m4a/wav/mp3/opus/mka/mkv",
                 "source_address": "0.0.0.0",
-                "cookiesfile": str(real_cookies_txt)
+                "cookiefile": str(real_cookies_txt.resolve().absolute())
             }
             if extract_audio:
                 args["postprocessors"] = [
