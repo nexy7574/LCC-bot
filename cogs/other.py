@@ -875,7 +875,7 @@ class OtherCog(commands.Cog):
             proxy_via_nexbox: discord.Option(
                 name="proxy-via-nexbox",
                 description="Proxies via nexbox, circumventing some blocks. Very Slow.",
-                type=bool,
+                type=discord.SlashCommandOptionType.boolean,
                 default=False
             ) = False
     ):
