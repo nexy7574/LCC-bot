@@ -40,7 +40,7 @@ def overlay_logo(img: PIL.Image.Image) -> PIL.Image.Image:
     logo.load()
     logo = logo.resize((1024, 1024))
     img = img.resize((1024, 1024))
-    
+
     img = _overlay_images(img, logo, blend_modes.lighten_only, 1)
     return img
 

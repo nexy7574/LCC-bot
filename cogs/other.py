@@ -875,15 +875,6 @@ class OtherCog(commands.Cog):
     ):
         """Downloads a video using youtube-dl"""
         cookies = io.StringIO()
-        if cookies_txt is None:
-            p = (Path(__file__).parent.parent / "cookies.txt")
-            if p.exists():
-                with p.open("r") as f:
-                    cookies.write(f.read())
-            else:
-                cookies.write("# No cookies.txt file found.")
-        else:
-            cookies.write(await cookies_txt.read())
         cookies.seek(0)
 
         await ctx.defer()
@@ -906,6 +897,14 @@ class OtherCog(commands.Cog):
             tempdir = Path(tempdir_str).resolve()
             stdout = tempdir / "stdout.txt"
             stderr = tempdir / "stderr.txt"
+
+            default_cookies_txt = (Path.cwd() / "jimmy-cookies.txt")
+            real_cookies_txt = tempdir / "cookies.txt"
+            if cookies_txt is not None:
+                await cookies_txt.save(fp=real_cookies_txt)
+            else:
+                default_cookies_txt.touch()
+                shutil.copy(default_cookies_txt, real_cookies_txt)
 
             class Logger:
                 def __init__(self):
@@ -966,7 +965,7 @@ class OtherCog(commands.Cog):
                 ],
                 "merge_output_format": "webm/mp4/mov/flv/avi/ogg/m4a/wav/mp3/opus/mka/mkv",
                 "source_address": "0.0.0.0",
-                "cookiesfile": cookies
+                "cookiesfile": real_cookies_txt
             }
             if extract_audio:
                 args["postprocessors"] = [
