@@ -1,7 +1,7 @@
 py-cord[voice]>=2.4.0
 aiosmtplib>=1.1.7
 orm[sqlite]>=0.3.1
-httpx>=0.23.0
+httpx[http2,brotli,socks]>=0.23.0
 jishkucord>=2.5.2
 rich>=12.5.1
 nltk>=3.7

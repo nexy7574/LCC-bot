@@ -854,6 +854,32 @@ class OtherCog(commands.Cog):
                     await blacklist.write(line)
         await ctx.respond("Removed domain from blacklist.")
 
+    @staticmethod
+    async def check_proxy(self, url: str = "socks5h://localhost:1090"):
+        async with httpx.AsyncClient(
+            http2=True
+        ) as client:
+            my_ip64 = (await client.get("https://api64.ipify.org")).text
+            my_ip4 = (await client.get("https://api.ipify.org")).text
+            real_ips = [my_ip64, my_ip4]
+
+        # Check the proxy
+        with httpx.AsyncClient(
+            proxies=url
+        ) as client:
+            try:
+                response = await client.get(
+                    "https://1.1.1.1/cdn-cgi/trace",
+                )
+                response.raise_for_status()
+                for line in response.text.splitlines():
+                    if line.startswith("ip"):
+                        if any(x in line for x in real_ips):
+                            return 1
+            except (httpx.TransportError, httpx.HTTPStatusError):
+                return 2
+
+
     @commands.slash_command(name="yt-dl")
     @commands.max_concurrency(1, commands.BucketType.user)
     async def yt_dl_2(
@@ -872,19 +898,14 @@ class OtherCog(commands.Cog):
             ) = "",
             extract_audio: bool = False,
             cookies_txt: discord.Attachment = None,
-            proxy_via_nexbox: discord.Option(
-                name="proxy-via-nexbox",
-                description="Proxies via nexbox, circumventing some blocks. Very Slow.",
-                type=discord.SlashCommandOptionType.boolean,
-                default=False
-            ) = False
+            disable_filesize_buffer: bool = False
     ):
         """Downloads a video using youtube-dl"""
         cookies = io.StringIO()
         cookies.seek(0)
 
         await ctx.defer()
-        from urllib.parse import urlparse, parse_qs
+        from urllib.parse import parse_qs
         formats = await self.list_formats(url)
         if _format:
             _fmt = _format
@@ -896,6 +917,9 @@ class OtherCog(commands.Cog):
         MAX_SIZE_MB = ctx.guild.filesize_limit / 1024 / 1024
         if MAX_SIZE_MB == 8.0:
             MAX_SIZE_MB = 25.0
+
+        if disable_filesize_buffer is False:
+            MAX_SIZE_MB *= 0.9
         BYTES_REMAINING = (MAX_SIZE_MB - 0.256) * 1024 * 1024
         import yt_dlp
 
@@ -973,8 +997,34 @@ class OtherCog(commands.Cog):
                 "source_address": "0.0.0.0",
                 "cookiefile": str(real_cookies_txt.resolve().absolute())
             }
-            if proxy_via_nexbox:
-                args["proxy"] = "socks5h://localhost:1080"
+            description = ""
+            proxy_url = "socks5h://localhost:1090"
+            try:
+                proxy_down = await self.check_proxy("socks5h://localhost:1090")
+                if proxy_down > 0:
+                    if proxy_down == 1:
+                        description += ":warning: (SHRoNK) Proxy check leaked IP - trying backup proxy\n"
+                    elif proxy_down == 2:
+                        description += ":warning: (SHRoNK) Proxy connection failed - trying backup proxy\n"
+                    else:
+                        description += ":warning: (SHRoNK) Unknown proxy error - trying backup proxy\n"
+
+                    proxy_down = await self.check_proxy("socks5h://localhost:1080")
+                    if proxy_down > 0:
+                        if proxy_down == 1:
+                            description += ":warning: (NexBox) Proxy check leaked IP.\n"
+                        elif proxy_down == 2:
+                            description += ":warning: (NexBox) Proxy connection failed\n"
+                        else:
+                            description += ":warning: (NexBox) Unknown proxy error\n"
+                        proxy_url = None
+                    else:
+                        proxy_url = "socks5h://localhost:1080"
+            except Exception as e:
+                traceback.print_exc()
+                description += f":warning: Failed to check proxy (`{e}`). Going unproxied."
+            if proxy_url:
+                args["proxy"] = proxy_url
             if extract_audio:
                 args["postprocessors"] = [
                     {
@@ -992,7 +1042,7 @@ class OtherCog(commands.Cog):
                 try:
                     await ctx.respond(
                         embed=discord.Embed(
-                            title="Downloading...", colour=discord.Colour.blurple()
+                            title="Downloading...", description=description, colour=discord.Colour.blurple()
                         )
                     )
                     await self.bot.loop.run_in_executor(None, partial(downloader.download, [url]))
@@ -1004,7 +1054,7 @@ class OtherCog(commands.Cog):
                             description=f"Download failed:\n```\n{e}\n```",
                             colour=discord.Colour.red()
                         ),
-                        delete_after=30
+                        delete_after=60
                     )
                 else:
                     parsed_qs = parse_qs(url)
