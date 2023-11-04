@@ -897,7 +897,7 @@ class OtherCog(commands.Cog):
 
         MAX_SIZE_MB = ctx.guild.filesize_limit / 1024 / 1024
         if MAX_SIZE_MB == 8.0:
-            MAX_SIZE_MB = 25.0
+            MAX_SIZE_MB = 20
         REAL_MAX_SIZE_MB = MAX_SIZE_MB
         if disable_filesize_buffer is False:
             MAX_SIZE_MB *= 0.8
