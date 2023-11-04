@@ -855,30 +855,27 @@ class OtherCog(commands.Cog):
         await ctx.respond("Removed domain from blacklist.")
 
     @staticmethod
-    async def check_proxy(self, url: str = "socks5://localhost:1090"):
-        async with httpx.AsyncClient(
-            http2=True
-        ) as client:
-            my_ip64 = (await client.get("https://api64.ipify.org")).text
-            my_ip4 = (await client.get("https://api.ipify.org")).text
-            real_ips = [my_ip64, my_ip4]
+    async def check_proxy(url: str = "socks5://localhost:1090"):
+        client = httpx.AsyncClient(http2=True)
+        my_ip64 = (await client.get("https://api64.ipify.org")).text
+        my_ip4 = (await client.get("https://api.ipify.org")).text
+        real_ips = [my_ip64, my_ip4]
+        await client.aclose()
 
         # Check the proxy
-        with httpx.AsyncClient(
-            proxies=url
-        ) as client:
-            try:
-                response = await client.get(
-                    "https://1.1.1.1/cdn-cgi/trace",
-                )
-                response.raise_for_status()
-                for line in response.text.splitlines():
-                    if line.startswith("ip"):
-                        if any(x in line for x in real_ips):
-                            return 1
-            except (httpx.TransportError, httpx.HTTPStatusError):
-                return 2
-
+        client = httpx.AsyncClient(http2=True, proxies=url)
+        try:
+            response = await client.get(
+                "https://1.1.1.1/cdn-cgi/trace",
+            )
+            response.raise_for_status()
+            for line in response.text.splitlines():
+                if line.startswith("ip"):
+                    if any(x in line for x in real_ips):
+                        return 1
+        except (httpx.TransportError, httpx.HTTPStatusError):
+            return 2
+        await client.aclose()
 
     @commands.slash_command(name="yt-dl")
     @commands.max_concurrency(1, commands.BucketType.user)
