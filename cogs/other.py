@@ -857,9 +857,8 @@ class OtherCog(commands.Cog):
     @staticmethod
     async def check_proxy(url: str = "socks5://localhost:1090"):
         client = httpx.AsyncClient(http2=True)
-        my_ip64 = (await client.get("https://api64.ipify.org")).text
         my_ip4 = (await client.get("https://api.ipify.org")).text
-        real_ips = [my_ip64, my_ip4]
+        real_ips = [my_ip4]
         await client.aclose()
 
         # Check the proxy
