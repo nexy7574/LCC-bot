@@ -909,6 +909,7 @@ class OtherCog(commands.Cog):
         REAL_MAX_SIZE_MB = MAX_SIZE_MB
         if disable_filesize_buffer is False:
             MAX_SIZE_MB *= 0.9
+            MAX_SIZE_MB -= 1
         BYTES_REMAINING = (MAX_SIZE_MB - 0.256) * 1024 * 1024
         import yt_dlp
 
