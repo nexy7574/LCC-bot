@@ -876,6 +876,7 @@ class OtherCog(commands.Cog):
         except (httpx.TransportError, httpx.HTTPStatusError):
             return 2
         await client.aclose()
+        return 0
 
     @commands.slash_command(name="yt-dl")
     @commands.max_concurrency(1, commands.BucketType.user)
