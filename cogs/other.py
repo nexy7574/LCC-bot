@@ -914,7 +914,7 @@ class OtherCog(commands.Cog):
         MAX_SIZE_MB = ctx.guild.filesize_limit / 1024 / 1024
         if MAX_SIZE_MB == 8.0:
             MAX_SIZE_MB = 25.0
-
+        REAL_MAX_SIZE_MB = MAX_SIZE_MB
         if disable_filesize_buffer is False:
             MAX_SIZE_MB *= 0.9
         BYTES_REMAINING = (MAX_SIZE_MB - 0.256) * 1024 * 1024
@@ -1129,7 +1129,7 @@ class OtherCog(commands.Cog):
                             embed.description += f"\N{warning sign}\ufe0f {file.name} is empty.\n"
                             continue
                         st = file.stat().st_size
-                        if st / 1024 / 1024 >= MAX_SIZE_MB or st >= BYTES_REMAINING:
+                        if st / 1024 / 1024 >= REAL_MAX_SIZE_MB:
                             units = ["B", "KB", "MB", "GB", "TB"]
                             st_r = st
                             while st_r > 1024:
@@ -1140,7 +1140,7 @@ class OtherCog(commands.Cog):
                                                      file.name,
                                                      round(st_r, 2),
                                                      units[0],
-                                                     MAX_SIZE_MB,
+                                                     REAL_MAX_SIZE_MB,
                                                  )
                             continue
                         else:
