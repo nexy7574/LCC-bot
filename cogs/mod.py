@@ -1,13 +1,15 @@
 from datetime import datetime
+from typing import Sized
 
 import discord
 from discord.ext import commands
-from utils import Student, get_or_none, BannedStudentID, owner_or_admin, JimmyBans
-from typing import Sized
+
+from utils import BannedStudentID, JimmyBans, Student, get_or_none, owner_or_admin
 
 
 class LimitedList(list):
     """FIFO Limited list"""
+
     def __init__(self, iterable: Sized = None, size: int = 5000):
         if iterable:
             assert len(iterable) <= size, "Initial iterable too big."
@@ -131,7 +133,7 @@ class Mod(commands.Cog):
             message: discord.Message
             if message.author == user:
                 query_ = query.lower() if query else None
-                content_ = str(message.clean_content or '').lower()
+                content_ = str(message.clean_content or "").lower()
                 if query_ is not None and (query_ in content_ or content_ in query_):
                     break
         else:
@@ -144,22 +146,15 @@ class Mod(commands.Cog):
                 colour=message.author.colour,
                 timestamp=message.created_at,
                 fields=[
-                    discord.EmbedField(
-                        "Attachment count",
-                        str(len(message.attachments)),
-                        False
-                    ),
-                    discord.EmbedField(
-                        "Location",
-                        str(message.channel.mention)
-                    ),
+                    discord.EmbedField("Attachment count", str(len(message.attachments)), False),
+                    discord.EmbedField("Location", str(message.channel.mention)),
                     discord.EmbedField(
                         "Times",
                         f"Created: {discord.utils.format_dt(message.created_at, 'R')} | Edited: "
-                        f"{'None' if message.edited_at is None else discord.utils.format_dt(message.edited_at, 'R')}"
-                    )
-                ]
-            ).set_author(name=message.author.display_name, icon_url=message.author.display_avatar.url)
+                        f"{'None' if message.edited_at is None else discord.utils.format_dt(message.edited_at, 'R')}",
+                    ),
+                ],
+            ).set_author(name=message.author.display_name, icon_url=message.author.display_avatar.url),
         ]
         await ctx.reply(embeds=embeds)
 

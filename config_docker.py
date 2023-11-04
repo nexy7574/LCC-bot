@@ -2,8 +2,8 @@
 # This format is very limited and environment variables were ditched very early on in favor of a config file
 # Do feel free to overwrite this file and re-build the docker image - this is effectively a stub.
 
-import os
 import datetime
+import os
 
 # A few defaults that can't be set in the environment
 reminders = {

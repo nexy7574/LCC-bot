@@ -1,10 +1,9 @@
 import secrets
-
-import discord
-
-import config
-import aiosmtplib as smtp
 from email.message import EmailMessage
+
+import aiosmtplib as smtp
+import config
+import discord
 
 gmail_cfg = {"addr": "smtp.gmail.com", "username": config.email, "password": config.email_password, "port": 465}
 TOKEN_LENGTH = 16

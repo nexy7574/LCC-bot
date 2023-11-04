@@ -1,14 +1,22 @@
 import random
+import re
 import secrets
+import typing
 from datetime import datetime, timedelta
 
 import discord
-import typing
-import re
 import orm
 from discord.ui import View
 
-from utils import send_verification_code, get_or_none, Student, VerifyCode, console, TOKEN_LENGTH, BannedStudentID
+from utils import (
+    TOKEN_LENGTH,
+    BannedStudentID,
+    Student,
+    VerifyCode,
+    console,
+    get_or_none,
+    send_verification_code,
+)
 
 if typing.TYPE_CHECKING:
     from cogs.timetable import TimeTableCog

@@ -1,20 +1,18 @@
 # You have been warned - this file is very EXTREME!
-import discord
 import asyncio
 import io
-import numpy
-import blend_modes
 from functools import partial
-from discord.ext import commands
+
+import blend_modes
+import discord
+import numpy
 import PIL.Image
+from discord.ext import commands
 from PIL import Image
 
 
 def _overlay_images(
-    background: PIL.Image.Image, 
-    foreground: PIL.Image.Image, 
-    mode=blend_modes.overlay,
-    opacity: float = 1.0
+    background: PIL.Image.Image, foreground: PIL.Image.Image, mode=blend_modes.overlay, opacity: float = 1.0
 ) -> PIL.Image.Image:
     background = background.convert("RGBA")
     foreground = foreground.convert("RGBA")
@@ -70,7 +68,7 @@ def extremify(img: PIL.Image.Image) -> PIL.Image.Image:
 class Extremism(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-    
+
     @commands.slash_command(name="radicalise")
     async def radicalise(self, ctx, image: discord.Attachment = None, user: discord.User = None):
         """Makes an image extremely radical."""

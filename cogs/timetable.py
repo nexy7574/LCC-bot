@@ -1,14 +1,14 @@
-import random
-from typing import Optional, Union, Dict
-
-import discord
-from discord.ext import commands, tasks
 import json
+import random
+from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
+from typing import Dict, Optional, Union
 
 import config
-from utils import console, TimeTableDaySwitcherView
-from datetime import time, datetime, timedelta, timezone
+import discord
+from discord.ext import commands, tasks
+
+from utils import TimeTableDaySwitcherView, console
 
 
 def schedule_times():
@@ -178,8 +178,7 @@ class TimeTableCog(commands.Cog):
                     next_lesson.setdefault("room", "unknown")
                     next_lesson.setdefault("start_datetime", discord.utils.utcnow())
                     text = "[tt] Next Lesson: {0[name]!r} with {0[tutor]} in {0[room]} - Starts {1}".format(
-                        next_lesson,
-                        discord.utils.format_dt(next_lesson['start_datetime'], 'R')
+                        next_lesson, discord.utils.format_dt(next_lesson["start_datetime"], "R")
                     )
             else:
                 lesson.setdefault("name", "unknown")
@@ -188,14 +187,13 @@ class TimeTableCog(commands.Cog):
                 lesson.setdefault("start_datetime", discord.utils.utcnow())
                 if lesson["name"].lower() != "lunch":
                     text = "[tt] Current Lesson: {0[name]!r} with {0[tutor]} in {0[room]} - ends {1}".format(
-                        lesson,
-                        discord.utils.format_dt(lesson['end_datetime'], 'R')
+                        lesson, discord.utils.format_dt(lesson["end_datetime"], "R")
                     )
                 else:
                     text = "[tt] \U0001f37d\U0000fe0f Lunch! {0}-{1}, ends in {2}".format(
-                        discord.utils.format_dt(lesson['start_datetime'], 't'),
-                        discord.utils.format_dt(lesson['end_datetime'], 't'),
-                        discord.utils.format_dt(lesson['end_datetime'], 'R')
+                        discord.utils.format_dt(lesson["start_datetime"], "t"),
+                        discord.utils.format_dt(lesson["end_datetime"], "t"),
+                        discord.utils.format_dt(lesson["end_datetime"], "R"),
                     )
                 next_lesson = self.next_lesson(date)
                 if next_lesson:
@@ -209,8 +207,8 @@ class TimeTableCog(commands.Cog):
                         )
                     else:
                         text = "[tt] \U0001f37d\U0000fe0f Lunch! {0}-{1}.".format(
-                            discord.utils.format_dt(lesson['start_datetime'], 't'),
-                            discord.utils.format_dt(lesson['end_datetime'], 't'),
+                            discord.utils.format_dt(lesson["start_datetime"], "t"),
+                            discord.utils.format_dt(lesson["end_datetime"], "t"),
                         )
 
         if no_prefix:
@@ -282,7 +280,7 @@ class TimeTableCog(commands.Cog):
         view = TimeTableDaySwitcherView(ctx.user, self, date)
         view.update_buttons()
         await ctx.respond(text, view=view)
-    
+
     @commands.slash_command(name="exams")
     async def _exams(self, ctx: discord.ApplicationContext):
         """Shows when exams are."""

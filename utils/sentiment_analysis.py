@@ -1,14 +1,15 @@
 # I have NO idea how this works
 # I copied it from the tutorial
 # However it works
+import random
 import re
 import string
-import random
-from nltk import FreqDist, classify, NaiveBayesClassifier
-from nltk.corpus import twitter_samples, stopwords, movie_reviews
-from nltk.tag import pos_tag
-from nltk.stem.wordnet import WordNetLemmatizer
+
+from nltk import FreqDist, NaiveBayesClassifier, classify
+from nltk.corpus import movie_reviews, stopwords, twitter_samples
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from nltk.stem.wordnet import WordNetLemmatizer
+from nltk.tag import pos_tag
 
 positive_tweets = twitter_samples.strings("positive_tweets.json")
 negative_tweets = twitter_samples.strings("negative_tweets.json")

@@ -1,14 +1,14 @@
 import asyncio
-import textwrap
 import io
+import textwrap
+from typing import Tuple
 from urllib.parse import urlparse
 
-import httpx
-from typing import Tuple
-
 import discord
+import httpx
 import orm
 from discord.ext import commands
+
 from utils.db import StarBoardMessage
 
 
@@ -22,7 +22,7 @@ class StarBoardCog(commands.Cog):
         async with httpx.AsyncClient(
             headers={
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.69; Win64; x64) "
-                              "LCC-Bot-Scraper/0 (https://github.com/EEKIM10/LCC-bot)"
+                "LCC-Bot-Scraper/0 (https://github.com/EEKIM10/LCC-bot)"
             }
         ) as session:
             image = starboard_message.embeds[0].image
@@ -46,10 +46,7 @@ class StarBoardCog(commands.Cog):
                     file.seek(0)
                     embed = starboard_message.embeds[0].copy()
                     embed.set_image(url="attachment://" + filename)
-                    embeds = [
-                        embed,
-                        *starboard_message.embeds[1:]
-                    ]
+                    embeds = [embed, *starboard_message.embeds[1:]]
                     await starboard_message.edit(embeds=embeds, file=discord.File(file, filename=filename))
 
     async def generate_starboard_embed(self, message: discord.Message) -> discord.Embed:

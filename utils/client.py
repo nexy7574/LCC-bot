@@ -1,19 +1,21 @@
 import asyncio
 import sys
-from pathlib import Path
-
-import discord
-import config
 from asyncio import Lock
-from discord.ext import commands
 from datetime import datetime, timezone
-from typing import Optional, Dict, TYPE_CHECKING, Union
+from pathlib import Path
+from typing import TYPE_CHECKING, Dict, Optional, Union
+
+import config
+import discord
+from discord.ext import commands
+
 if TYPE_CHECKING:
-    from uvicorn import Server, Config
     from asyncio import Task
 
+    from uvicorn import Config, Server
 
-__all__ = ("Bot", 'bot')
+
+__all__ = ("Bot", "bot")
 
 
 # noinspection PyAbstractClass
@@ -22,8 +24,9 @@ class Bot(commands.Bot):
         web: Optional[Dict[str, Union[Server, Config, Task]]]
 
     def __init__(self, intents: discord.Intents, guilds: list[int], extensions: list[str], prefixes: list[str]):
-        from .db import registry
         from .console import console
+        from .db import registry
+
         super().__init__(
             command_prefix=commands.when_mentioned_or(*prefixes),
             debug_guilds=guilds,
@@ -50,6 +53,7 @@ class Bot(commands.Bot):
                 console.log(f"Loaded extension [green]{ext}")
 
     if getattr(config, "CONNECT_MODE", None) == 2:
+
         async def connect(self, *, reconnect: bool = True) -> None:
             self.console.log("Exit target 2 reached, shutting down (not connecting to discord).")
             return
@@ -58,7 +62,7 @@ class Bot(commands.Bot):
         e_type, e, tb = sys.exc_info()
         if isinstance(e, discord.NotFound) and e.code == 10062:  # invalid interaction
             return
-        if isinstance(e, discord.CheckFailure) and 'The global check once functions failed.' in str(e):
+        if isinstance(e, discord.CheckFailure) and "The global check once functions failed." in str(e):
             return
         await super().on_error(event, *args, **kwargs)
 

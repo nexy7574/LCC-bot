@@ -1,8 +1,10 @@
 import discord
 import httpx
 from discord.ext import commands
+
 from utils import get_or_none
 from utils.db import AccessTokens
+
 try:
     from config import OAUTH_ID, OAUTH_REDIRECT_URI
 except ImportError:
@@ -13,7 +15,7 @@ class InfoCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.client = httpx.AsyncClient(base_url="https://discord.com/api")
-    
+
     async def get_user_info(self, token: str):
         try:
             response = await self.client.get("/users/@me", headers={"Authorization": f"Bearer {token}"})
@@ -21,7 +23,7 @@ class InfoCog(commands.Cog):
         except (httpx.HTTPError, httpx.RequestError, ConnectionError):
             return
         return response.json()
-    
+
     async def get_user_guilds(self, token: str):
         try:
             response = await self.client.get("/users/@me/guilds", headers={"Authorization": f"Bearer {token}"})
@@ -37,13 +39,13 @@ class InfoCog(commands.Cog):
         except (httpx.HTTPError, httpx.RequestError, ConnectionError):
             return
         return response.json()
-    
+
     @commands.slash_command()
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def me(self, ctx: discord.ApplicationCommand):
         """Displays oauth info about you"""
         await ctx.defer()
-        
+
         user = await get_or_none(AccessTokens, user_id=ctx.author.id)
         if not user:
             url = OAUTH_REDIRECT_URI
@@ -51,7 +53,7 @@ class InfoCog(commands.Cog):
                 embed=discord.Embed(
                     title="You must link your account first!",
                     description="Don't worry, [I only store your IP information. And the access token.](%s)" % url,
-                    url=url
+                    url=url,
                 )
             )
         user_data = await self.get_user_info(user.access_token)
@@ -61,8 +63,20 @@ class InfoCog(commands.Cog):
             title="Your info",
         )
         if user_data:
-            for field in ("bot", "system", "mfa_enabled", "banner", "accent_color", "mfa_enabled", "locale", 
-                          "verified", "email", "flags", "premium_type", "public_flags"):
+            for field in (
+                "bot",
+                "system",
+                "mfa_enabled",
+                "banner",
+                "accent_color",
+                "mfa_enabled",
+                "locale",
+                "verified",
+                "email",
+                "flags",
+                "premium_type",
+                "public_flags",
+            ):
                 user_data.setdefault(field, None)
             lines = [
                 "ID: {0[id]}",
@@ -88,14 +102,14 @@ class InfoCog(commands.Cog):
                 name="User Info",
                 value="\n".join(lines).format(user_data, email),
             )
-        
+
         if guilds:
             guilds = sorted(guilds, key=lambda x: x["name"])
             embed.add_field(
                 name="Guilds (%d):" % len(guilds),
                 value="\n".join(f"{guild['name']} ({guild['id']})" for guild in guilds),
             )
-        
+
         if connections:
             embed.add_field(
                 name="Connections (%d):" % len(connections),

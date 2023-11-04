@@ -1,14 +1,13 @@
 import asyncio
 import functools
 import glob
-import hashlib
 import io
 import json
 import math
 import os
-import shutil
 import random
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -16,24 +15,22 @@ import textwrap
 import traceback
 from functools import partial
 from io import BytesIO
-
-import dns.resolver
-import httpx
-from dns import asyncresolver
-import aiofiles
-import pyttsx3
-from time import time, time_ns, sleep
-from typing import Literal
-from typing import Tuple, Optional, Dict
 from pathlib import Path
+from time import sleep, time, time_ns
+from typing import Dict, Literal, Optional, Tuple
 from urllib.parse import urlparse
-from PIL import Image
-import pytesseract
 
+import aiofiles
 import aiohttp
 import discord
+import dns.resolver
+import httpx
 import psutil
+import pytesseract
+import pyttsx3
 from discord.ext import commands, pages
+from dns import asyncresolver
+from PIL import Image
 from rich.tree import Tree
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
@@ -41,7 +38,8 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
-from utils import console, Timer
+
+from utils import Timer, console
 
 try:
     from config import proxy
@@ -129,22 +127,21 @@ class OtherCog(commands.Cog):
 
         with tempfile.TemporaryDirectory(prefix="jimmy-ytdl", suffix="-info") as tempdir:
             with yt_dlp.YoutubeDL(
-                    {
-                        "windowsfilenames": True,
-                        "restrictfilenames": True,
-                        "noplaylist": True,
-                        "nocheckcertificate": True,
-                        "no_color": True,
-                        "noprogress": True,
-                        "logger": NullLogger(),
-                        "paths": {"home": tempdir, "temp": tempdir},
-                        "cookiefile": Path(__file__).parent.parent / "jimmy-cookies.txt"
-                    }
+                {
+                    "windowsfilenames": True,
+                    "restrictfilenames": True,
+                    "noplaylist": True,
+                    "nocheckcertificate": True,
+                    "no_color": True,
+                    "noprogress": True,
+                    "logger": NullLogger(),
+                    "paths": {"home": tempdir, "temp": tempdir},
+                    "cookiefile": Path(__file__).parent.parent / "jimmy-cookies.txt",
+                }
             ) as downloader:
                 try:
                     info = await self.bot.loop.run_in_executor(
-                        None,
-                        partial(downloader.extract_info, url, download=False)
+                        None, partial(downloader.extract_info, url, download=False)
                     )
                 except yt_dlp.utils.DownloadError:
                     return {}
@@ -157,8 +154,8 @@ class OtherCog(commands.Cog):
                         "acodec": fmt.get("acodec", "?"),
                         "vcodec": fmt.get("vcodec", "?"),
                         "resolution": fmt.get("resolution", "?x?"),
-                        "filesize": fmt.get("filesize", float('inf')),
-                        "format": fmt.get("format", '?'),
+                        "filesize": fmt.get("filesize", float("inf")),
+                        "format": fmt.get("format", "?"),
                     }
                     for fmt in info["formats"]
                 }
@@ -820,10 +817,11 @@ class OtherCog(commands.Cog):
                 f"* URL: <{friendly_url}>\n"
                 f"* Load time: {fetch_time:.2f}ms\n"
                 f"* Screenshot render time: {screenshot_time:.2f}ms\n"
-                f"* Total time: {(fetch_time + screenshot_time):.2f}ms\n" +
-                (
-                    '* Probability of being scat or something else horrifying: 100%'
-                    if ctx.user.id == 1019233057519177778 else ''
+                f"* Total time: {(fetch_time + screenshot_time):.2f}ms\n"
+                + (
+                    "* Probability of being scat or something else horrifying: 100%"
+                    if ctx.user.id == 1019233057519177778
+                    else ""
                 ),
                 file=screenshot,
             )
@@ -880,22 +878,15 @@ class OtherCog(commands.Cog):
     @commands.slash_command(name="yt-dl")
     @commands.max_concurrency(1, commands.BucketType.user)
     async def yt_dl_2(
-            self,
-            ctx: discord.ApplicationContext,
-            url: discord.Option(
-                description="The URL to download.",
-                type=str
-            ),
-            _format: discord.Option(
-                name="format",
-                description="The format to download.",
-                type=str,
-                autocomplete=format_autocomplete,
-                default=""
-            ) = "",
-            extract_audio: bool = False,
-            cookies_txt: discord.Attachment = None,
-            disable_filesize_buffer: bool = False
+        self,
+        ctx: discord.ApplicationContext,
+        url: discord.Option(description="The URL to download.", type=str),
+        _format: discord.Option(
+            name="format", description="The format to download.", type=str, autocomplete=format_autocomplete, default=""
+        ) = "",
+        extract_audio: bool = False,
+        cookies_txt: discord.Attachment = None,
+        disable_filesize_buffer: bool = False,
     ):
         """Downloads a video using youtube-dl"""
         cookies = io.StringIO()
@@ -903,6 +894,7 @@ class OtherCog(commands.Cog):
 
         await ctx.defer()
         from urllib.parse import parse_qs
+
         formats = await self.list_formats(url)
         if _format:
             _fmt = _format
@@ -925,7 +917,7 @@ class OtherCog(commands.Cog):
             stdout = tempdir / "stdout.txt"
             stderr = tempdir / "stderr.txt"
 
-            default_cookies_txt = (Path.cwd() / "jimmy-cookies.txt")
+            default_cookies_txt = Path.cwd() / "jimmy-cookies.txt"
             real_cookies_txt = tempdir / "cookies.txt"
             if cookies_txt is not None:
                 await cookies_txt.save(fp=real_cookies_txt)
@@ -982,17 +974,17 @@ class OtherCog(commands.Cog):
                 "trim_file_name": 128,
                 "extract_audio": extract_audio,
                 "format_sort": [
-                    "vcodec:h264", 
-                    "acodec:aac", 
-                    "vcodec:vp9", 
-                    "acodec:opus", 
+                    "vcodec:h264",
+                    "acodec:aac",
+                    "vcodec:vp9",
+                    "acodec:opus",
                     "acodec:vorbis",
-                    "vcodec:vp8", 
-                    "ext"
+                    "vcodec:vp8",
+                    "ext",
                 ],
                 "merge_output_format": "webm/mp4/mov/flv/avi/ogg/m4a/wav/mp3/opus/mka/mkv",
                 "source_address": "0.0.0.0",
-                "cookiefile": str(real_cookies_txt.resolve().absolute())
+                "cookiefile": str(real_cookies_txt.resolve().absolute()),
             }
             description = ""
             proxy_url = "socks5://localhost:1090"
@@ -1000,23 +992,26 @@ class OtherCog(commands.Cog):
                 proxy_down = await self.check_proxy("socks5://localhost:1090")
                 if proxy_down > 0:
                     if proxy_down == 1:
-                        description += ":warning: (SHRoNK) Proxy check leaked IP - trying backup proxy\n"
+                        description += ":warning: (SHRoNK) Proxy check leaked IP - trying backup proxy.\n"
                     elif proxy_down == 2:
-                        description += ":warning: (SHRoNK) Proxy connection failed - trying backup proxy\n"
+                        description += ":warning: (SHRoNK) Proxy connection failed - trying backup proxy.\n"
                     else:
-                        description += ":warning: (SHRoNK) Unknown proxy error - trying backup proxy\n"
+                        description += ":warning: (SHRoNK) Unknown proxy error - trying backup proxy.\n"
 
                     proxy_down = await self.check_proxy("socks5://localhost:1080")
                     if proxy_down > 0:
                         if proxy_down == 1:
-                            description += ":warning: (NexBox) Proxy check leaked IP.\n"
+                            description += ":warning: (NexBox) Proxy check leaked IP..\n"
                         elif proxy_down == 2:
-                            description += ":warning: (NexBox) Proxy connection failed\n"
+                            description += ":warning: (NexBox) Proxy connection failed.\n"
                         else:
-                            description += ":warning: (NexBox) Unknown proxy error\n"
+                            description += ":warning: (NexBox) Unknown proxy error.\n"
                         proxy_url = None
                     else:
                         proxy_url = "socks5://localhost:1080"
+                        description += "\N{white heavy check mark} Using fallback NexBox proxy."
+                else:
+                    description += "\N{white heavy check mark} Using the SHRoNK proxy."
             except Exception as e:
                 traceback.print_exc()
                 description += f":warning: Failed to check proxy (`{e}`). Going unproxied."
@@ -1024,11 +1019,7 @@ class OtherCog(commands.Cog):
                 args["proxy"] = proxy_url
             if extract_audio:
                 args["postprocessors"] = [
-                    {
-                        "key": "FFmpegExtractAudio",
-                        "preferredquality": "48",
-                        "preferredcodec": "opus"
-                    }
+                    {"key": "FFmpegExtractAudio", "preferredquality": "24", "preferredcodec": "opus"}
                 ]
                 args["format"] = args["format"] or f"(ba/b)[filesize<={MAX_SIZE_MB}M]/ba/b"
 
@@ -1037,11 +1028,22 @@ class OtherCog(commands.Cog):
 
             with yt_dlp.YoutubeDL(args) as downloader:
                 try:
-                    await ctx.respond(
-                        embed=discord.Embed(
-                            title="Downloading...", description=description, colour=discord.Colour.blurple()
-                        )
+                    extracted_info = downloader.extract_info(url, download=False)
+                except yt_dlp.utils.DownloadError:
+                    pass
+                else:
+                    title = extracted_info.get("title", url)
+                    thumbnail_url = extracted_info.get("thumbnail") or discord.Embed.Empty
+                    webpage_url = extracted_info.get("webpage_url")
+                try:
+                    embed = discord.Embed(
+                        title="Downloading %r..." % title,
+                        description=description,
+                        colour=discord.Colour.blurple(),
+                        url=webpage_url,
                     )
+                    embed.set_thumbnail(url=thumbnail_url)
+                    await ctx.respond(embed=embed)
                     await self.bot.loop.run_in_executor(None, partial(downloader.download, [url]))
                 except yt_dlp.utils.DownloadError as e:
                     traceback.print_exc()
@@ -1049,27 +1051,26 @@ class OtherCog(commands.Cog):
                         embed=discord.Embed(
                             title="Error",
                             description=f"Download failed:\n```\n{e}\n```",
-                            colour=discord.Colour.red()
+                            colour=discord.Colour.red(),
+                            url=webpage_url,
                         ),
-                        delete_after=60
+                        delete_after=60,
                     )
                 else:
                     parsed_qs = parse_qs(url)
-                    if 't' in parsed_qs and parsed_qs['t'] and parsed_qs['t'][0].isdigit():
+                    if "t" in parsed_qs and parsed_qs["t"] and parsed_qs["t"][0].isdigit():
                         # Assume is timestamp
-                        timestamp = round(float(parsed_qs['t'][0]))
+                        timestamp = round(float(parsed_qs["t"][0]))
                         end_timestamp = None
                         if len(parsed_qs["t"]) >= 2:
-                            end_timestamp = round(float(parsed_qs['t'][1]))
+                            end_timestamp = round(float(parsed_qs["t"][1]))
                             if end_timestamp < timestamp:
-                                end_timestamp, timestamp = reversed(
-                                    (end_timestamp, timestamp)
-                                )
+                                end_timestamp, timestamp = reversed((end_timestamp, timestamp))
                         _end = "to %s" % end_timestamp if len(parsed_qs["t"]) == 2 else "onward"
                         embed = discord.Embed(
                             title="Trimming...",
                             description=f"Trimming from {timestamp} seconds {_end}.\nThis may take a while.",
-                            colour=discord.Colour.blurple()
+                            colour=discord.Colour.blurple(),
                         )
                         await ctx.edit(embed=embed)
                         for file in tempdir.glob("%s-*" % ctx.user.id):
@@ -1087,7 +1088,7 @@ class OtherCog(commands.Cog):
                                     "-y",
                                     "-c",
                                     "copy",
-                                    str(file)
+                                    str(file),
                                 ]
                                 if end_timestamp is not None:
                                     minutes, seconds = divmod(end_timestamp, 60)
@@ -1096,13 +1097,7 @@ class OtherCog(commands.Cog):
                                     _args.insert(6, "{!s}:{!s}:{!s}".format(*map(round, (hours, minutes, seconds))))
 
                                 await self.bot.loop.run_in_executor(
-                                    None,
-                                    partial(
-                                        subprocess.run,
-                                        _args,
-                                        check=True,
-                                        capture_output=True
-                                    )
+                                    None, partial(subprocess.run, _args, check=True, capture_output=True)
                                 )
                                 bak.unlink(True)
                             except subprocess.CalledProcessError as e:
@@ -1111,16 +1106,15 @@ class OtherCog(commands.Cog):
                                     embed=discord.Embed(
                                         title="Error",
                                         description=f"Trimming failed:\n```\n{e}\n```",
-                                        colour=discord.Colour.red()
+                                        colour=discord.Colour.red(),
                                     ),
-                                    delete_after=30
+                                    delete_after=30,
                                 )
 
                     embed = discord.Embed(
-                        title="Downloaded!",
-                        description="",
-                        colour=discord.Colour.green()
+                        title="Downloaded %r!" % title, description="", colour=discord.Colour.green(), url=webpage_url
                     )
+                    embed.set_thumbnail(url=thumbnail_url)
                     del logger
                     files = []
 
@@ -1135,13 +1129,15 @@ class OtherCog(commands.Cog):
                             while st_r > 1024:
                                 st_r /= 1024
                                 units.pop(0)
-                            embed.description += "\N{warning sign}\ufe0f {} is too large to upload ({!s}{}" \
-                                                 ", max is {}MB).\n".format(
-                                                     file.name,
-                                                     round(st_r, 2),
-                                                     units[0],
-                                                     REAL_MAX_SIZE_MB,
-                                                 )
+                            embed.description += (
+                                "\N{warning sign}\ufe0f {} is too large to upload ({!s}{}"
+                                ", max is {}MB).\n".format(
+                                    file.name,
+                                    round(st_r, 2),
+                                    units[0],
+                                    REAL_MAX_SIZE_MB,
+                                )
+                            )
                             continue
                         else:
                             files.append(discord.File(file, file.name))
@@ -1149,13 +1145,13 @@ class OtherCog(commands.Cog):
 
                     if not files:
                         embed.description += "No files to upload. Directory list:\n%s" % (
-                            "\n".join(r'\* ' + f.name for f in tempdir.iterdir())
+                            "\n".join(r"\* " + f.name for f in tempdir.iterdir())
                         )
                         return await ctx.edit(embed=embed)
                     else:
                         _desc = embed.description
                         embed.description += f"Uploading {len(files)} file(s):\n%s" % (
-                            "\n".join('* `%s`' % f.filename for f in files)
+                            "\n".join("* `%s`" % f.filename for f in files)
                         )
                         await ctx.edit(embed=embed)
                         await ctx.channel.trigger_typing()
@@ -1172,25 +1168,21 @@ class OtherCog(commands.Cog):
                                 await ctx.edit(embed=None)
                             except discord.NotFound:
                                 pass
+
                         self.bot.loop.create_task(bgtask())
 
     @commands.slash_command(name="text-to-mp3")
     @commands.cooldown(5, 600, commands.BucketType.user)
     async def text_to_mp3(
-        self, 
+        self,
         ctx: discord.ApplicationContext,
-        speed: discord.Option(
-            int,
-            "The speed of the voice. Default is 150.",
-            required=False,
-            default=150
-        ),
+        speed: discord.Option(int, "The speed of the voice. Default is 150.", required=False, default=150),
         voice: discord.Option(
             str,
             "The voice to use. Some may cause timeout.",
             autocomplete=discord.utils.basic_autocomplete(VOICES),
-            default="default"
-        )
+            default="default",
+        ),
     ):
         """Converts text to MP3. 5 uses per 10 minutes."""
         if voice not in VOICES:
@@ -1207,9 +1199,9 @@ class OtherCog(commands.Cog):
                         placeholder="Enter text to read",
                         min_length=1,
                         max_length=4000,
-                        style=discord.InputTextStyle.long
+                        style=discord.InputTextStyle.long,
                     ),
-                    title="Convert text to an MP3"
+                    title="Convert text to an MP3",
                 )
 
             async def callback(self, interaction: discord.Interaction):
@@ -1233,12 +1225,12 @@ class OtherCog(commands.Cog):
                             assert no_exists < 300, "File does not exist for 5 minutes."
                             no_exists += 1
                             return True
-                        
+
                         stat = os.stat(target_fn)
                         for _result in last_3_sizes:
                             if stat.st_size != _result:
                                 return True
-                    
+
                         return False
 
                     while should_loop():
@@ -1261,9 +1253,7 @@ class OtherCog(commands.Cog):
                     _msg = await interaction.followup.send("Downloading text...")
                     try:
                         response = await _self.http.get(
-                            _url,
-                            headers={"User-Agent": "Mozilla/5.0"},
-                            follow_redirects=True
+                            _url, headers={"User-Agent": "Mozilla/5.0"}, follow_redirects=True
                         )
                         if response.status_code != 200:
                             await _msg.edit(content=f"Failed to download text. Status code: {response.status_code}")
@@ -1291,10 +1281,7 @@ class OtherCog(commands.Cog):
                 start_time = time()
                 task = _bot.loop.create_task(assurance_task())
                 try:
-                    mp3, size = await asyncio.wait_for(
-                        _bot.loop.run_in_executor(None, _convert, text_pre),
-                        timeout=600
-                    )
+                    mp3, size = await asyncio.wait_for(_bot.loop.run_in_executor(None, _convert, text_pre), timeout=600)
                 except asyncio.TimeoutError:
                     task.cancel()
                     await _msg.edit(content="Failed to convert text to MP3 - Timeout. Try shorter/less complex text.")
@@ -1308,7 +1295,7 @@ class OtherCog(commands.Cog):
                 if size >= ctx.guild.filesize_limit - 1500:
                     await _msg.edit(
                         content=f"MP3 is too large ({size / 1024 / 1024}Mb vs "
-                                f"{ctx.guild.filesize_limit / 1024 / 1024}Mb)"
+                        f"{ctx.guild.filesize_limit / 1024 / 1024}Mb)"
                     )
                     return
                 fn = ""
@@ -1323,19 +1310,16 @@ class OtherCog(commands.Cog):
                     fn += word + "-"
                 fn = fn[:-1]
                 fn = fn[:28]
-                await _msg.edit(
-                    content="Here's your MP3!",
-                    file=discord.File(mp3, filename=fn + ".mp3")
-                )
-        
+                await _msg.edit(content="Here's your MP3!", file=discord.File(mp3, filename=fn + ".mp3"))
+
         await ctx.send_modal(TextModal())
-    
+
     @commands.slash_command()
     @commands.cooldown(5, 10, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.user)
     async def quote(self, ctx: discord.ApplicationContext):
         """Generates a random quote"""
-        emoji = discord.PartialEmoji(name='loading', animated=True, id=1101463077586735174)
+        emoji = discord.PartialEmoji(name="loading", animated=True, id=1101463077586735174)
 
         async def get_quote() -> str | discord.File:
             try:
@@ -1358,10 +1342,7 @@ class OtherCog(commands.Cog):
 
         class GenerateNewView(discord.ui.View):
             def __init__(self):
-                super().__init__(
-                    timeout=300,
-                    disable_on_timeout=True
-                )
+                super().__init__(timeout=300, disable_on_timeout=True)
 
             async def __aenter__(self):
                 self.disable_all_items()
@@ -1381,7 +1362,7 @@ class OtherCog(commands.Cog):
             @discord.ui.button(
                 label="New Quote",
                 style=discord.ButtonStyle.green,
-                emoji=discord.PartialEmoji.from_str("\U000023ed\U0000fe0f")
+                emoji=discord.PartialEmoji.from_str("\U000023ed\U0000fe0f"),
             )
             async def new_quote(self, _, interaction: discord.Interaction):
                 await interaction.response.defer(invisible=True)
@@ -1394,9 +1375,7 @@ class OtherCog(commands.Cog):
                         return await followup.edit(content=new_result, view=GenerateNewView())
 
             @discord.ui.button(
-                label="Regenerate",
-                style=discord.ButtonStyle.blurple,
-                emoji=discord.PartialEmoji.from_str("\U0001f504")
+                label="Regenerate", style=discord.ButtonStyle.blurple, emoji=discord.PartialEmoji.from_str("\U0001f504")
             )
             async def regenerate(self, _, interaction: discord.Interaction):
                 await interaction.response.defer(invisible=True)
@@ -1406,7 +1385,7 @@ class OtherCog(commands.Cog):
                         return await interaction.followup.send(
                             "\N{cross mark} Message is starred and cannot be regenerated. You can press "
                             "'New Quote' to generate a new quote instead.",
-                            ephemeral=True
+                            ephemeral=True,
                         )
                     new_result = await get_quote()
                     if isinstance(new_result, discord.File):
@@ -1414,11 +1393,7 @@ class OtherCog(commands.Cog):
                     else:
                         return await interaction.edit_original_response(content=new_result)
 
-            @discord.ui.button(
-                label="Delete",
-                style=discord.ButtonStyle.red,
-                emoji="\N{wastebasket}\U0000fe0f"
-            )
+            @discord.ui.button(label="Delete", style=discord.ButtonStyle.red, emoji="\N{wastebasket}\U0000fe0f")
             async def delete(self, _, interaction: discord.Interaction):
                 await interaction.response.defer(invisible=True)
                 await interaction.delete_original_response()
@@ -1435,13 +1410,12 @@ class OtherCog(commands.Cog):
     @commands.cooldown(1, 30, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.user)
     async def ocr(
-            self,
-            ctx: discord.ApplicationContext,
-            attachment: discord.Option(
-                discord.SlashCommandOptionType.attachment,
-                description="Image to perform OCR on",
-            )
-
+        self,
+        ctx: discord.ApplicationContext,
+        attachment: discord.Option(
+            discord.SlashCommandOptionType.attachment,
+            description="Image to perform OCR on",
+        ),
     ):
         """OCRs an image"""
         await ctx.defer()
@@ -1468,13 +1442,8 @@ class OtherCog(commands.Cog):
                     response = await self.http.put(
                         "https://api.mystb.in/paste",
                         json={
-                            "files": [
-                                {
-                                    "filename": "ocr.txt",
-                                    "content": text
-                                }
-                            ],
-                        }
+                            "files": [{"filename": "ocr.txt", "content": text}],
+                        },
                     )
                     response.raise_for_status()
                 except httpx.HTTPError:
@@ -1484,7 +1453,7 @@ class OtherCog(commands.Cog):
                     with Timer(timings, "Respond (URL)"):
                         embed = discord.Embed(
                             description="View on [mystb.in](%s)" % ("https://mystb.in/" + data["id"]),
-                            colour=discord.Colour.dark_theme()
+                            colour=discord.Colour.dark_theme(),
                         )
                         await ctx.respond(embed=embed)
             timings["Upload text to mystbin"] = _t.total
@@ -1541,11 +1510,7 @@ class OtherCog(commands.Cog):
     @commands.cooldown(1, 180, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.user)
     async def sherlock(
-            self,
-            ctx: discord.ApplicationContext,
-            username: str,
-            search_nsfw: bool = False,
-            use_tor: bool = False
+        self, ctx: discord.ApplicationContext, username: str, search_nsfw: bool = False, use_tor: bool = False
     ):
         """Sherlocks a username."""
         # git clone https://github.com/sherlock-project/sherlock.git && cd sherlock && docker build -t sherlock .
@@ -1563,11 +1528,9 @@ class OtherCog(commands.Cog):
                 embed = discord.Embed(
                     title="Sherlocking username %s" % chars[n % 4],
                     description=f"Elapsed: {elapsed:.0f}s",
-                    colour=discord.Colour.dark_theme()
+                    colour=discord.Colour.dark_theme(),
                 )
-                await ctx.edit(
-                    embed=embed
-                )
+                await ctx.edit(embed=embed)
                 n += 1
 
         await ctx.defer()
@@ -1582,9 +1545,10 @@ class OtherCog(commands.Cog):
             "-v",
             f"{tempdir}:/opt/sherlock/results",
             "sherlock",
-            "--folderoutput", "/opt/sherlock/results",
+            "--folderoutput",
+            "/opt/sherlock/results",
             "--print-found",
-            "--csv"
+            "--csv",
         ]
         if search_nsfw:
             command.append("--nsfw")
@@ -1647,6 +1611,7 @@ class OtherCog(commands.Cog):
     @discord.guild_only()
     async def opusinate(self, ctx: discord.ApplicationContext, file: discord.Attachment, size_mb: float = 8):
         """Converts the given file into opus with the given size."""
+
         def humanise(v: int) -> str:
             units = ["B", "KB", "MB", "GB", "TB", "PB", "EB"]
             while v > 1024:
@@ -1685,7 +1650,7 @@ class OtherCog(commands.Cog):
                 "a",  # select audio-nly
                 str(location),
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
 
             stdout, stderr = await process.communicate()
@@ -1698,9 +1663,7 @@ class OtherCog(commands.Cog):
             try:
                 stream = metadata["streams"].pop()
             except IndexError:
-                return await ctx.respond(
-                    ":x: No audio streams to transcode."
-                )
+                return await ctx.respond(":x: No audio streams to transcode.")
             duration = float(metadata["format"]["duration"])
             bit_rate = math.floor(int(metadata["format"]["bit_rate"]) / 1024)
             channels = int(stream["channels"])
@@ -1728,29 +1691,27 @@ class OtherCog(commands.Cog):
                     "-b:a",
                     "%sK" % end_br,
                     "-y",
-                    output_file.name
+                    output_file.name,
                 ]
                 process = await asyncio.create_subprocess_exec(
-                    command[0],
-                    *command[1:],
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
+                    command[0], *command[1:], stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
                 )
                 stdout, stderr = await process.communicate()
 
                 if process.returncode != 0:
                     return await ctx.respond(
-                        ":x: There was an error while transcoding:\n```\n%s\n```" % discord.utils.escape_markdown(
-                            stderr.decode()
-                        )
+                        ":x: There was an error while transcoding:\n```\n%s\n```"
+                        % discord.utils.escape_markdown(stderr.decode())
                     )
 
                 output_location = Path(output_file.name)
                 stat = output_location.stat()
-                content = ("\N{white heavy check mark} Transcoded from %r to opus @ %dkbps.\n\n"
-                           "* Source: %dKbps\n* Target: %dKbps\n* Ceiling: %dKbps\n* Calculated: %dKbps\n"
-                           "* Duration: %.1f seconds\n* Input size: %s\n* Output size: %s\n* Difference: %s"
-                           " (%dKbps)") % (
+                content = (
+                    "\N{white heavy check mark} Transcoded from %r to opus @ %dkbps.\n\n"
+                    "* Source: %dKbps\n* Target: %dKbps\n* Ceiling: %dKbps\n* Calculated: %dKbps\n"
+                    "* Duration: %.1f seconds\n* Input size: %s\n* Output size: %s\n* Difference: %s"
+                    " (%dKbps)"
+                ) % (
                     codec,
                     end_br,
                     bit_rate,
@@ -1761,33 +1722,21 @@ class OtherCog(commands.Cog):
                     humanise(file.size),
                     humanise(stat.st_size),
                     humanise(file.size - stat.st_size),
-                    bit_rate - end_br
+                    bit_rate - end_br,
                 )
                 if stat.st_size <= max_size or share is False:
                     if stat.st_size >= (size_bytes - 100):
-                        return await ctx.respond(
-                            ":x: File was too large."
-                        )
-                    return await ctx.respond(
-                        content,
-                        file=discord.File(output_location)
-                    )
+                        return await ctx.respond(":x: File was too large.")
+                    return await ctx.respond(content, file=discord.File(output_location))
                 else:
                     share_location = Path("/mnt/vol/share/tmp/") / output_location.name
                     share_location.touch(0o755)
                     await self.bot.loop.run_in_executor(
-                        None,
-                        functools.partial(
-                            shutil.copy,
-                            output_location,
-                            share_location
-                        )
+                        None, functools.partial(shutil.copy, output_location, share_location)
                     )
                     return await ctx.respond(
-                        "%s\n* [Download](https://droplet.nexy7574.co.uk/share/tmp/%s)" % (
-                            content,
-                            output_location.name
-                        )
+                        "%s\n* [Download](https://droplet.nexy7574.co.uk/share/tmp/%s)"
+                        % (content, output_location.name)
                     )
 
 

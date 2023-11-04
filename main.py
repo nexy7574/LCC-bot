@@ -1,11 +1,12 @@
 import asyncio
 import sys
+from datetime import datetime, timedelta, timezone
 
+import config
 import discord
 from discord.ext import commands
-import config
-from datetime import datetime, timezone, timedelta
-from utils import console, get_or_none, JimmyBans, JimmyBanException
+
+from utils import JimmyBanException, JimmyBans, console, get_or_none
 from utils.client import bot
 
 
@@ -97,8 +98,10 @@ if __name__ == "__main__":
     bot.started_at = discord.utils.utcnow()
 
     if getattr(config, "WEB_SERVER", True):
-        from web.server import app
         import uvicorn
+
+        from web.server import app
+
         app.state.bot = bot
 
         http_config = uvicorn.Config(
@@ -106,7 +109,7 @@ if __name__ == "__main__":
             host=getattr(config, "HTTP_HOST", "127.0.0.1"),
             port=getattr(config, "HTTP_PORT", 3762),
             loop="asyncio",
-            **getattr(config, "UVICORN_CONFIG", {})
+            **getattr(config, "UVICORN_CONFIG", {}),
         )
         server = uvicorn.Server(http_config)
         console.log("Starting web server...")

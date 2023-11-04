@@ -1,9 +1,11 @@
-import pytest
-from pathlib import Path
-from utils import Tutors
-from typing import Union
-import warnings
 import json
+import warnings
+from pathlib import Path
+from typing import Union
+
+import pytest
+
+from utils import Tutors
 
 file = (Path(__file__).parent.parent / "utils" / "timetable.json").resolve()
 

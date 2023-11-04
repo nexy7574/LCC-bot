@@ -1,3 +1,5 @@
+import asyncio
+import glob
 import hashlib
 import inspect
 import io
@@ -5,21 +7,22 @@ import json
 import os
 import random
 import re
-import asyncio
-import textwrap
 import subprocess
+import textwrap
 import traceback
-import glob
 import warnings
-from datetime import datetime, timezone, timedelta
-from bs4 import BeautifulSoup
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Optional, Tuple, Dict, Any
+from typing import Any, Dict, Optional, Tuple
+
 import discord
 import httpx
-from discord.ext import commands, pages, tasks
-from utils import Student, get_or_none, console
+from bs4 import BeautifulSoup
 from config import guilds
+from discord.ext import commands, pages, tasks
+
+from utils import Student, console, get_or_none
+
 try:
     from config import dev
 except ImportError:
@@ -29,8 +32,7 @@ try:
 except ImportError:
     OAUTH_REDIRECT_URI = None
 try:
-    from config import GITHUB_USERNAME
-    from config import GITHUB_PASSWORD
+    from config import GITHUB_PASSWORD, GITHUB_USERNAME
 except ImportError:
     GITHUB_USERNAME = None
     GITHUB_PASSWORD = None
@@ -143,16 +145,12 @@ class Events(commands.Cog):
         _re = re.match(
             r"https://github\.com/(?P<repo>[a-zA-Z0-9-]+/[\w.-]+)/blob/(?P<path>[^#>]+)(\?[^#>]+)?"
             r"(#L(?P<start_line>\d+)(([-~:]|(\.\.))L(?P<end_line>\d+))?)",
-            message.content
+            message.content,
         )
         if _re:
             branch, path = _re.group("path").split("/", 1)
             _p = Path(path).suffix
-            url = RAW_URL.format(
-                repo=_re.group("repo"),
-                branch=branch,
-                path=path
-            )
+            url = RAW_URL.format(repo=_re.group("repo"), branch=branch, path=path)
             if all((GITHUB_PASSWORD, GITHUB_USERNAME)):
                 auth = (GITHUB_USERNAME, GITHUB_PASSWORD)
             else:
@@ -180,7 +178,7 @@ class Events(commands.Cog):
             RAW_URL = "https://github.com/{repo}/archive/refs/heads/{branch}.zip"
             _full_re = re.finditer(
                 r"https://github\.com/(?P<repo>[a-zA-Z0-9-]+/[\w.-]+)(/tree/(?P<branch>[^#>]+))?\.(git|zip)",
-                message.content
+                message.content,
             )
             for _match in _full_re:
                 repo = _match.group("repo")
@@ -206,11 +204,7 @@ class Events(commands.Cog):
                         await message.edit(suppress=True)
 
     @commands.Cog.listener()
-    async def on_voice_state_update(
-        self,
-        member: discord.Member, 
-        *_
-    ):
+    async def on_voice_state_update(self, member: discord.Member, *_):
         me_voice = member.guild.me.voice
         if me_voice is None or me_voice.channel is None or member.guild.voice_client is None:
             return
@@ -240,57 +234,49 @@ class Events(commands.Cog):
                     except asyncio.TimeoutError:
                         await message.channel.trigger_typing()
                         await message.reply(
-                            "I'd play the song but discord's voice servers are shit.", 
-                            file=discord.File(_file)
+                            "I'd play the song but discord's voice servers are shit.", file=discord.File(_file)
                         )
                         region = message.author.voice.channel.rtc_region
                         # noinspection PyUnresolvedReferences
                         console.log(
                             "Timed out connecting to voice channel: {0.name} in {0.guild.name} "
                             "(region {1})".format(
-                                message.author.voice.channel,
-                                region.name if region else "auto (unknown)"
+                                message.author.voice.channel, region.name if region else "auto (unknown)"
                             )
                         )
                         return
-                    
+
                     if voice.channel != message.author.voice.channel:
                         await voice.move_to(message.author.voice.channel)
-                    
+
                     if message.guild.me.voice.self_mute or message.guild.me.voice.mute:
                         await message.channel.trigger_typing()
                         await message.reply("Unmute me >:(", file=discord.File(_file))
                     else:
-                        
+
                         def after(err):
                             self.bot.loop.create_task(
                                 _dc(voice),
                             )
                             if err is not None:
                                 console.log(f"Error playing audio: {err}")
-                                self.bot.loop.create_task(
-                                    message.add_reaction("\N{speaker with cancellation stroke}")
-                                )
+                                self.bot.loop.create_task(message.add_reaction("\N{speaker with cancellation stroke}"))
                             else:
                                 self.bot.loop.create_task(
                                     message.remove_reaction("\N{speaker with three sound waves}", self.bot.user)
                                 )
-                                self.bot.loop.create_task(
-                                    message.add_reaction("\N{speaker}")
-                                )
+                                self.bot.loop.create_task(message.add_reaction("\N{speaker}"))
 
                         # noinspection PyTypeChecker
                         src = discord.FFmpegPCMAudio(str(_file.resolve()), stderr=subprocess.DEVNULL)
                         src = discord.PCMVolumeTransformer(src, volume=0.5)
-                        voice.play(
-                            src,
-                            after=after
-                        )
+                        voice.play(src, after=after)
                         if message.channel.permissions_for(message.guild.me).add_reactions:
                             await message.add_reaction("\N{speaker with three sound waves}")
                 else:
                     await message.channel.trigger_typing()
                     await message.reply(file=discord.File(_file))
+
             return internal
 
         async def send_what():
@@ -305,29 +291,18 @@ class Events(commands.Cog):
                 await message.reply("You really are deaf, aren't you.")
             elif not msg.content:
                 await message.reply(
-                    "Maybe *I* need to get my hearing checked, I have no idea what {} said.".format(
-                        msg.author.mention
-                    )
+                    "Maybe *I* need to get my hearing checked, I have no idea what {} said.".format(msg.author.mention)
                 )
             else:
-                text = "{0.author.mention} said '{0.content}', you deaf sod.".format(
-                    msg
-                )
-                _content = textwrap.shorten(
-                    text, width=2000, placeholder="[...]"
-                )
+                text = "{0.author.mention} said '{0.content}', you deaf sod.".format(msg)
+                _content = textwrap.shorten(text, width=2000, placeholder="[...]")
                 await message.reply(_content, allowed_mentions=discord.AllowedMentions.none())
 
         def get_sloc_count():
             root = Path.cwd()
             root_files = list(root.glob("**/*.py"))
             root_files.append(root / "main.py")
-            root_files = list(
-                filter(
-                    lambda f: "venv" not in f.parents and "venv" not in f.parts,
-                    root_files
-                )
-            )
+            root_files = list(filter(lambda f: "venv" not in f.parents and "venv" not in f.parts, root_files))
             lines = 0
 
             for file in root_files:
@@ -361,10 +336,10 @@ class Events(commands.Cog):
                         "content_type": a.content_type,
                     }
                     for a in message.attachments
-                ]
+                ],
             }
             if message.author.discriminator != "0":
-                payload["author"] += '#%s' % message.author.discriminator
+                payload["author"] += "#%s" % message.author.discriminator
             if message.author != self.bot.user and (payload["content"] or payload["attachments"]):
                 await self.bot.bridge_queue.put(payload)
 
@@ -388,78 +363,48 @@ class Events(commands.Cog):
                 },
                 r"it just works": {
                     "func": play_voice(assets / "it-just-works.ogg"),
-                    "meta": {
-                        "check": (assets / "it-just-works.ogg").exists
-                    }
+                    "meta": {"check": (assets / "it-just-works.ogg").exists},
                 },
                 "count to (3|three)": {
                     "func": play_voice(assets / "count-to-three.ogg"),
-                    "meta": {
-                        "check": (assets / "count-to-three.ogg").exists
-                    }
+                    "meta": {"check": (assets / "count-to-three.ogg").exists},
                 },
                 r"^linux$": {
                     "content": lambda: (assets / "copypasta.txt").read_text(),
-                    "meta": {
-                        "needs_mention": True,
-                        "check": (assets / "copypasta.txt").exists
-                    }
+                    "meta": {"needs_mention": True, "check": (assets / "copypasta.txt").exists},
                 },
                 r"carat": {
                     "file": discord.File(assets / "carat.jpg"),
                     "delete_after": None,
-                    "meta": {
-                        "check": (assets / "carat.jpg").exists
-                    }
+                    "meta": {"check": (assets / "carat.jpg").exists},
                 },
                 r"(lupupa|fuck(ed)? the hell out\W*)": {
                     "file": discord.File(assets / "lupupa.jpg"),
-                    "meta": {
-                        "check": (assets / "lupupa.jpg").exists
-                    }
+                    "meta": {"check": (assets / "lupupa.jpg").exists},
                 },
                 r"[s5]+(m)+[e3]+[g9]+": {
                     # "func": send_smeg,
                     "file": lambda: discord.File(random.choice(list((assets / "smeg").iterdir()))),
                     "delete_after": 30,
-                    "meta": {
-                        "sub": {
-                            r"pattern": r"([-_.\s\u200b])+",
-                            r"with": ''
-                        },
-                        "check": (assets / "smeg").exists
-                    }
+                    "meta": {"sub": {r"pattern": r"([-_.\s\u200b])+", r"with": ""}, "check": (assets / "smeg").exists},
                 },
-                r"(what|huh)(\?|!)*$": {
-                    "func": send_what,
-                    "meta": {
-                        "check": lambda: message.reference is not None
-                    }
-                },
+                r"(what|huh)(\?|!)*$": {"func": send_what, "meta": {"check": lambda: message.reference is not None}},
                 ("year", "linux", "desktop"): {
                     "content": lambda: "%s will be the year of the GNU+Linux desktop." % datetime.now().year,
-                    "delete_after": None
+                    "delete_after": None,
                 },
                 r"mine(ing|d)? (diamonds|away)": {
                     "func": play_voice(assets / "mine-diamonds.ogg"),
-                    "meta": {
-                        "check": (assets / "mine-diamonds.ogg").exists
-                    }
+                    "meta": {"check": (assets / "mine-diamonds.ogg").exists},
                 },
                 r"v[ei]r[mg]in(\sme(d|m[a]?)ia\W*)?(\W\w*\W*)?$": {
                     "content": "Get virgin'd",
-                    "file": lambda: discord.File(
-                        random.choice(list(Path(assets / 'virgin').iterdir()))
-                    ),
-                    "meta": {
-                        "check": (assets / 'virgin').exists
-                    }
+                    "file": lambda: discord.File(random.choice(list(Path(assets / "virgin").iterdir()))),
+                    "meta": {"check": (assets / "virgin").exists},
                 },
                 r"richard|(dick\W*$)": {
                     "file": discord.File(assets / "visio.png"),
-                    "meta": {
-                        "check": (assets / "visio.png").exists
-                    }
+                    "meta": {"check": (assets / "visio.png").exists},
                 },
                 r"thank(\syou|s)(,)? jimmy": {
                     "content": "You're welcome, %s!" % message.author.mention,
@@ -467,18 +412,12 @@ class Events(commands.Cog):
                 r"(ok )?jimmy (we|i) g[eo]t it": {
                     "content": "No need to be so rude! Cunt.",
                 },
-                r"c(mon|ome on) jimmy": {
-                    "content": "IM TRYING"
-                },
-                r"(bor(r)?is|johnson)": {
-                    "file": discord.File(assets / "boris.jpeg")
-                },
+                r"c(mon|ome on) jimmy": {"content": "IM TRYING"},
+                r"(bor(r)?is|johnson)": {"file": discord.File(assets / "boris.jpeg")},
                 r"\W?(s(ource\w)?)?l(ines\s)?o(f\s)?c(ode)?(\W)?$": {
                     "content": lambda: "I have {:,} lines of source code across {:,} files!".format(*get_sloc_count())
                 },
-                r"t(ry\s)?i(t\s)?a(nd\s)?see.*": {
-                    "content": "https://tryitands.ee"
-                }
+                r"t(ry\s)?i(t\s)?a(nd\s)?see.*": {"content": "https://tryitands.ee"},
             }
             # Stop responding to any bots
             if message.author.bot is True:
@@ -515,11 +454,7 @@ class Events(commands.Cog):
                             continue
 
                     if meta.get("sub") is not None and isinstance(meta["sub"], dict):
-                        content = re.sub(
-                            meta["sub"]["pattern"],
-                            meta["sub"]["with"],
-                            message.content
-                        )
+                        content = re.sub(meta["sub"]["pattern"], meta["sub"]["with"], message.content)
                     else:
                         content = message.content
 
@@ -566,7 +501,7 @@ class Events(commands.Cog):
                     r"mpreg|lupupa|\U0001fac3": "\U0001fac3",  # mpreg
                     r"(trans(gender)?($|\W+)|%s)" % T_EMOJI: T_EMOJI,  # trans
                     r"gay|%s" % G_EMOJI: G_EMOJI,
-                    r"(femboy|trans(gender)?($|\W+))": C_EMOJI
+                    r"(femboy|trans(gender)?($|\W+))": C_EMOJI,
                 }
                 if message.channel.permissions_for(message.guild.me).add_reactions:
                     is_naus = random.randint(1, 100) == 32
@@ -588,9 +523,7 @@ class Events(commands.Cog):
         if channel is None or not channel.can_send(discord.Embed()):
             warnings.warn("Cannot send to spam channel, disabling feed fetcher")
             return
-        headers = {
-            "User-Agent": f"python-httpx/{httpx.__version__} (Like Akregator/5.22.3); syndication"
-        }
+        headers = {"User-Agent": f"python-httpx/{httpx.__version__} (Like Akregator/5.22.3); syndication"}
 
         file = Path.home() / ".cache" / "lcc-bot" / "discord.atom"
         if not file.exists():
@@ -675,22 +608,18 @@ class Events(commands.Cog):
                     content = f"[open on discordstatus.com (too large to display)]({entry.link['href']})"
 
                 embed = discord.Embed(
-                    title=title,
-                    description=content,
-                    color=colour,
-                    url=entry.link["href"],
-                    timestamp=updated
+                    title=title, description=content, color=colour, url=entry.link["href"], timestamp=updated
                 )
                 embed.set_author(
                     name="Discord Status",
                     url="https://discordstatus.com/",
                     icon_url="https://raw.githubusercontent.com/EEKIM10/LCC-bot/"
-                             "fe0cb6dd932f9fc2cb0a26433aff8e4cce19279a/assets/discord.png"
+                    "fe0cb6dd932f9fc2cb0a26433aff8e4cce19279a/assets/discord.png",
                 )
                 embed.set_footer(
                     text="Published: {} | Updated: {}".format(
                         datetime.fromisoformat(entry.find("published").text).strftime("%Y-%m-%d %H:%M:%S"),
-                        updated.strftime("%Y-%m-%d %H:%M:%S")
+                        updated.strftime("%Y-%m-%d %H:%M:%S"),
                     )
                 )
 

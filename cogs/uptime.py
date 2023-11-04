@@ -1,18 +1,19 @@
 import asyncio
 import datetime
+import hashlib
 import json
 import random
-import hashlib
 import time
 from datetime import timedelta
 from pathlib import Path
-from typing import Dict, Tuple, List, Optional
-from urllib.parse import urlparse, parse_qs, ParseResult
+from typing import Dict, List, Optional, Tuple
+from urllib.parse import ParseResult, parse_qs, urlparse
 
 import discord
 import httpx
+from discord.ext import commands, pages, tasks
 from httpx import AsyncClient, Response
-from discord.ext import commands, tasks, pages
+
 from utils import UptimeEntry, console
 
 """
@@ -339,9 +340,7 @@ class UptimeCompetition(commands.Cog):
         embeds = entries = []
         for _target in targets:
             _target = self.get_target(_target, _target)
-            query = UptimeEntry.objects.filter(timestamp__gte=look_back_timestamp).filter(
-                target_id=_target["id"]
-            )
+            query = UptimeEntry.objects.filter(timestamp__gte=look_back_timestamp).filter(target_id=_target["id"])
             query = query.order_by("-timestamp")
             start = time.time()
             entries = await query.all()
@@ -366,12 +365,10 @@ class UptimeCompetition(commands.Cog):
                 new_embed.set_footer(text=f"Total query time: {minutes:.0f}m {seconds:.2f}s")
             else:
                 new_embed.set_footer(text=f"Total query time: {total_query_time:.2f}s")
-            new_embed.set_footer(
-                text=f"{new_embed.footer.text} | {len(entries):,} rows"
-            )
+            new_embed.set_footer(text=f"{new_embed.footer.text} | {len(entries):,} rows")
             embeds = [new_embed]
         await ctx.respond(embeds=embeds)
-    
+
     @uptime.command(name="speedtest")
     @commands.is_owner()
     async def stats_speedtest(self, ctx: discord.ApplicationContext):
@@ -430,22 +427,17 @@ class UptimeCompetition(commands.Cog):
                     return (end - start) * 1000, 1
                 case "random":
                     start = time.time()
-                    e = await UptimeEntry.objects.offset(
-                        random.randint(0, 1000)
-                    ).first()
+                    e = await UptimeEntry.objects.offset(random.randint(0, 1000)).first()
                     end = time.time()
                     return (end - start) * 1000, 1
                 case _:
                     raise ValueError(f"Unknown test name: {name}")
 
         def gen_embed(_copy):
-            embed = discord.Embed(
-                title='\N{HOURGLASS} Speedtest Results',
-                colour=discord.Colour.red()
-            )
+            embed = discord.Embed(title="\N{HOURGLASS} Speedtest Results", colour=discord.Colour.red())
             for _name in _copy.keys():
                 if _copy[_name] is None:
-                    embed.add_field(name=_name, value='Waiting...')
+                    embed.add_field(name=_name, value="Waiting...")
                 else:
                     _time, _row = _copy[_name]
                     _time /= 1000
@@ -453,14 +445,11 @@ class UptimeCompetition(commands.Cog):
 
                     if _time >= 60:
                         minutes, seconds = divmod(_time, 60)
-                        ts = f'{minutes:.0f}m {seconds:.2f}s'
+                        ts = f"{minutes:.0f}m {seconds:.2f}s"
                     else:
-                        ts = f'{_time:.2f}s'
+                        ts = f"{_time:.2f}s"
 
-                    embed.add_field(
-                        name=_name, 
-                        value=f'{ts}, {_row:,} rows ({rows_per_second:.2f} rows/s)'
-                    )
+                    embed.add_field(name=_name, value=f"{ts}, {_row:,} rows ({rows_per_second:.2f} rows/s)")
             return embed
 
         embed = gen_embed(tests)
@@ -470,7 +459,7 @@ class UptimeCompetition(commands.Cog):
             tests[test_key] = await run_test(test_key)
             embed = gen_embed(tests)
             await ctx.edit(embed=embed)
-        
+
         embed.colour = discord.Colour.green()
         await ctx.edit(embed=embed)
 

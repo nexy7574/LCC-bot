@@ -10,6 +10,7 @@
 
 import datetime
 import os
+
 import discord
 
 # The IDs of guilds the bot should be in; used to determine where to make slash commands
@@ -51,11 +52,7 @@ WEB_SERVER = True  # change this to False to disable it
 
 # Or change uvicorn settings (see: https://www.uvicorn.org/settings/)
 # Note that passing `host` or `port` will raise an error, as those are configured above.
-UVICORN_CONFIG = {
-    "log_level": "error",
-    "access_log": False,
-    "lifespan": "off"
-}
+UVICORN_CONFIG = {"log_level": "error", "access_log": False, "lifespan": "off"}
 
 # Only change this if you want to test changes to the bot without sending too much traffic to discord.
 # Connect modes:

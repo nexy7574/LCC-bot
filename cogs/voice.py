@@ -1,15 +1,15 @@
+import asyncio
 import functools
 import io
 import json
 import shutil
-import asyncio
 import subprocess
+import tempfile
+from pathlib import Path
 
 import discord
 import httpx
 import yt_dlp
-import tempfile
-from pathlib import Path
 from discord.ext import commands
 
 
@@ -17,7 +17,7 @@ class TransparentQueue(asyncio.Queue):
     def __init__(self, maxsize: int = 0) -> None:
         super().__init__(maxsize)
         self._internal_queue = []
-    
+
     async def put(self, item):
         await super().put(item)
         self._internal_queue.append(item)
@@ -35,7 +35,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
         self.title = data.get("title")
         self.url = data.get("url")
-    
+
     @property
     def duration(self):
         return self.data.get("duration")
@@ -44,9 +44,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def from_url(cls, ytdl: yt_dlp.YoutubeDL, url, *, loop=None, stream=False):
         ffmpeg_options = {"options": "-vn -b:a 44.1k"}
         loop = loop or asyncio.get_event_loop()
-        data = await loop.run_in_executor(
-            None, lambda: ytdl.extract_info(url, download=not stream)
-        )
+        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
 
         if "entries" in data:
             if not data["entries"]:
@@ -79,7 +77,7 @@ class VoiceCog(commands.Cog):
             "paths": {
                 "home": str(self.cache),
                 "temp": str(self.cache),
-            }
+            },
         }
         self.yt_dl = yt_dlp.YoutubeDL(self.ytdl_options)
         self.queue = TransparentQueue(100)
@@ -101,7 +99,7 @@ class VoiceCog(commands.Cog):
 
             embed = discord.Embed(
                 description=f"Now playing: [{player.title}]({player.url}), as requested by {ctx.author.mention}, "
-                            f"{discord.utils.format_dt(inserted_at, 'R')}.",
+                f"{discord.utils.format_dt(inserted_at, 'R')}.",
                 color=discord.Color.green(),
             )
             try:
@@ -127,11 +125,8 @@ class VoiceCog(commands.Cog):
         def after(e):
             self.song_done.set()
             if e:
-                self.bot.loop.create_task(
-                    ctx.respond(
-                        f"An error occurred while playing the audio: {e}"
-                    )
-                )
+                self.bot.loop.create_task(ctx.respond(f"An error occurred while playing the audio: {e}"))
+
         return after
 
     async def unblock(self, func, *args, **kwargs):
@@ -140,10 +135,10 @@ class VoiceCog(commands.Cog):
 
     @commands.slash_command(name="play")
     async def stream(
-            self,
-            ctx: discord.ApplicationContext,
-            url: str,
-            volume: float = 100,
+        self,
+        ctx: discord.ApplicationContext,
+        url: str,
+        volume: float = 100,
     ):
         """Streams a URL using yt-dl"""
         if not ctx.user.voice:
@@ -232,6 +227,7 @@ class VoiceCog(commands.Cog):
     @commands.slash_command(name="skip")
     async def skip(self, ctx: discord.ApplicationContext):
         """Skips the current song"""
+
         class VoteSkipDialog(discord.ui.View):
             def __init__(self):
                 super().__init__()
@@ -250,19 +246,13 @@ class VoiceCog(commands.Cog):
                         ctx.voice_client.stop()
                         self.stop()
                         self.disable_all_items()
-                        return await interaction.edit_original_response(
-                            view=self,
-                            content="Skipped song."
-                        )
+                        return await interaction.edit_original_response(view=self, content="Skipped song.")
 
                     if len(self.voted) >= target:
                         ctx.voice_client.stop()
                         self.stop()
                         self.disable_all_items()
-                        return await interaction.edit_original_response(
-                            view=self,
-                            content="Skipped song."
-                        )
+                        return await interaction.edit_original_response(view=self, content="Skipped song.")
                     else:
                         await ctx.respond(
                             f"Voted to skip. %d/%d" % (len(self.voted), target),
@@ -272,8 +262,7 @@ class VoiceCog(commands.Cog):
 
                 self.disable_all_items()
                 await interaction.edit_original_response(
-                    view=self,
-                    content="Vote skip (%d/%d)." % (len(self.voted), target)
+                    view=self, content="Vote skip (%d/%d)." % (len(self.voted), target)
                 )
 
         if not ctx.guild.voice_client:
@@ -314,7 +303,7 @@ class VoiceCog(commands.Cog):
                         data = data[key]
                         last_key.append(key)
                     else:
-                        content = "Key %r not found in metadata (got as far as %r)." % (key, '.'.join(last_key))
+                        content = "Key %r not found in metadata (got as far as %r)." % (key, ".".join(last_key))
                         break
             json.dump(data, file, indent=4)
             file.seek(0)
@@ -343,15 +332,12 @@ class VoiceCog(commands.Cog):
 
     @commands.slash_command(name="boost-audio")
     async def boost_audio(
-            self,
-            ctx: discord.ApplicationContext,
-            file: discord.Attachment,
-            level: discord.Option(
-                float,
-                "A level (in percentage) of volume (e.g. 150 = 150%)",
-                min_value=0.1,
-                max_value=999.99
-            )
+        self,
+        ctx: discord.ApplicationContext,
+        file: discord.Attachment,
+        level: discord.Option(
+            float, "A level (in percentage) of volume (e.g. 150 = 150%)", min_value=0.1, max_value=999.99
+        ),
     ):
         """Boosts an audio file's audio level."""
         await ctx.defer()
@@ -361,7 +347,7 @@ class VoiceCog(commands.Cog):
         with tempfile.TemporaryDirectory("jimmy-audio-boost-") as temp_dir_raw:
             temp_dir = Path(temp_dir_raw).resolve()
             _input = temp_dir / file.filename
-            output = _input.with_name(_input.name + "-processed" + '.'.join(_input.suffixes))
+            output = _input.with_name(_input.name + "-processed" + ".".join(_input.suffixes))
             await file.save(_input)
 
             proc: subprocess.CompletedProcess = await self.bot.loop.run_in_executor(
@@ -379,8 +365,8 @@ class VoiceCog(commands.Cog):
                         "volume=%d" % (level / 100),
                         str(output),
                     ),
-                    capture_output=True
-                )
+                    capture_output=True,
+                ),
             )
             if proc.returncode == 0:
                 if output.stat().st_size >= (25 * 1024 * 1024) + len(output.name):
@@ -389,14 +375,8 @@ class VoiceCog(commands.Cog):
             else:
                 data = {
                     "files": [
-                        {
-                            "content": proc.stderr.decode() or 'empty',
-                            "filename": "stderr.txt"
-                        },
-                        {
-                            "content": proc.stdout.decode() or 'empty',
-                            "filename": "stdout.txt"
-                        }
+                        {"content": proc.stderr.decode() or "empty", "filename": "stderr.txt"},
+                        {"content": proc.stdout.decode() or "empty", "filename": "stdout.txt"},
                     ]
                 }
                 response = await httpx.AsyncClient().put("https://api.mystb.in/paste", json=data)

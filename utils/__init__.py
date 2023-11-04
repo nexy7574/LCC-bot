@@ -1,12 +1,12 @@
-from typing import Optional, TYPE_CHECKING
+import time
+from typing import TYPE_CHECKING, Optional
 from urllib.parse import urlparse
 
-import time
 from discord.ext import commands
 
 from ._email import *
-from .db import *
 from .console import *
+from .db import *
 from .views import *
 
 if TYPE_CHECKING:

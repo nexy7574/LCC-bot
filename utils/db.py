@@ -1,14 +1,14 @@
 import datetime
+import os
 import sys
-import discord
 import uuid
-from typing import TYPE_CHECKING, Optional, TypeVar
 from enum import IntEnum, auto
+from pathlib import Path
+from typing import TYPE_CHECKING, Optional, TypeVar
 
+import discord
 import orm
 from databases import Database
-import os
-from pathlib import Path
 
 
 class Tutors(IntEnum):
@@ -87,7 +87,7 @@ class Student(orm.Model):
         "name": orm.String(min_length=2, max_length=32),
         "access_token": orm.String(min_length=6, max_length=128, default=None, allow_null=True),
         "ip_info": orm.JSON(default=None, allow_null=True),
-        "access_token_hash": orm.String(min_length=128, max_length=128, default=None, allow_null=True), 
+        "access_token_hash": orm.String(min_length=128, max_length=128, default=None, allow_null=True),
     }
     if TYPE_CHECKING:
         entry_id: uuid.UUID

@@ -3,18 +3,19 @@ import sqlite3
 import textwrap
 from typing import Optional
 
+import config
 import discord
 from discord.ext import commands, tasks
-import config
+
 from utils import (
     Assignments,
-    Tutors,
-    simple_embed_paginator,
-    get_or_none,
-    Student,
-    hyperlink,
-    console,
     SelectAssigneesView,
+    Student,
+    Tutors,
+    console,
+    get_or_none,
+    hyperlink,
+    simple_embed_paginator,
 )
 
 BOOL_EMOJI = {True: "\N{white heavy check mark}", False: "\N{cross mark}"}
