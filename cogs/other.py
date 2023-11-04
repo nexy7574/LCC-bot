@@ -986,6 +986,7 @@ class OtherCog(commands.Cog):
                 "merge_output_format": "webm/mp4/mov/flv/avi/ogg/m4a/wav/mp3/opus/mka/mkv",
                 "source_address": "0.0.0.0",
                 "cookiefile": str(real_cookies_txt.resolve().absolute()),
+                "concurrent_fragment_downloads": 4
             }
             description = ""
             proxy_url = "socks5://localhost:1090"
