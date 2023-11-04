@@ -895,21 +895,12 @@ class OtherCog(commands.Cog):
         await ctx.defer()
         from urllib.parse import parse_qs
 
-        formats = await self.list_formats(url)
-        if _format:
-            _fmt = _format
-            for fmt in formats.keys():
-                if formats[fmt]["format"] == _format:
-                    _format = fmt
-                    break
-
         MAX_SIZE_MB = ctx.guild.filesize_limit / 1024 / 1024
         if MAX_SIZE_MB == 8.0:
             MAX_SIZE_MB = 25.0
         REAL_MAX_SIZE_MB = MAX_SIZE_MB
         if disable_filesize_buffer is False:
-            MAX_SIZE_MB *= 0.9
-            MAX_SIZE_MB -= 1
+            MAX_SIZE_MB *= 0.8
         BYTES_REMAINING = (MAX_SIZE_MB - 0.256) * 1024 * 1024
         import yt_dlp
 
@@ -1030,7 +1021,7 @@ class OtherCog(commands.Cog):
 
             with yt_dlp.YoutubeDL(args) as downloader:
                 try:
-                    extracted_info = downloader.extract_info(url, download=False)
+                    extracted_info = await asyncio.to_thread(downloader.extract_info, url, download=False)
                 except yt_dlp.utils.DownloadError:
                     pass
                 else:
@@ -1083,7 +1074,7 @@ class OtherCog(commands.Cog):
                     )
                     embed.set_thumbnail(url=thumbnail_url)
                     await ctx.respond(embed=embed)
-                    await self.bot.loop.run_in_executor(None, partial(downloader.download, [url]))
+                    await asyncio.to_thread(partial(downloader.download, [url]))
                 except yt_dlp.utils.DownloadError as e:
                     traceback.print_exc()
                     return await ctx.edit(
