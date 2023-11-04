@@ -855,7 +855,7 @@ class OtherCog(commands.Cog):
         await ctx.respond("Removed domain from blacklist.")
 
     @staticmethod
-    async def check_proxy(self, url: str = "socks5h://localhost:1090"):
+    async def check_proxy(self, url: str = "socks5://localhost:1090"):
         async with httpx.AsyncClient(
             http2=True
         ) as client:
@@ -998,9 +998,9 @@ class OtherCog(commands.Cog):
                 "cookiefile": str(real_cookies_txt.resolve().absolute())
             }
             description = ""
-            proxy_url = "socks5h://localhost:1090"
+            proxy_url = "socks5://localhost:1090"
             try:
-                proxy_down = await self.check_proxy("socks5h://localhost:1090")
+                proxy_down = await self.check_proxy("socks5://localhost:1090")
                 if proxy_down > 0:
                     if proxy_down == 1:
                         description += ":warning: (SHRoNK) Proxy check leaked IP - trying backup proxy\n"
@@ -1009,7 +1009,7 @@ class OtherCog(commands.Cog):
                     else:
                         description += ":warning: (SHRoNK) Unknown proxy error - trying backup proxy\n"
 
-                    proxy_down = await self.check_proxy("socks5h://localhost:1080")
+                    proxy_down = await self.check_proxy("socks5://localhost:1080")
                     if proxy_down > 0:
                         if proxy_down == 1:
                             description += ":warning: (NexBox) Proxy check leaked IP.\n"
@@ -1019,7 +1019,7 @@ class OtherCog(commands.Cog):
                             description += ":warning: (NexBox) Unknown proxy error\n"
                         proxy_url = None
                     else:
-                        proxy_url = "socks5h://localhost:1080"
+                        proxy_url = "socks5://localhost:1080"
             except Exception as e:
                 traceback.print_exc()
                 description += f":warning: Failed to check proxy (`{e}`). Going unproxied."
