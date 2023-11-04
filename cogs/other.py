@@ -1036,6 +1036,43 @@ class OtherCog(commands.Cog):
                     title = extracted_info.get("title", url)
                     thumbnail_url = extracted_info.get("thumbnail") or discord.Embed.Empty
                     webpage_url = extracted_info.get("webpage_url")
+
+                    chosen_format = extracted_info.get("format")
+                    chosen_format_id = extracted_info.get("format_id")
+                    final_extension = extracted_info.get("ext")
+                    format_note = extracted_info.get("format_note", "%s (%s)" % (chosen_format, chosen_format_id))
+                    resolution = extracted_info.get("resolution")
+                    fps = extracted_info.get("fps")
+                    vcodec = extracted_info.get("vcodec")
+                    acodec = extracted_info.get("acodec")
+
+                    lines = []
+                    if chosen_format and chosen_format_id:
+                        lines.append(
+                            "* Chosen format: `%s` (`%s`)" % (chosen_format, chosen_format_id),
+                        )
+                    if format_note:
+                        lines.append(
+                            "* Format note: %r" % format_note
+                        )
+                    if final_extension:
+                        lines.append(
+                            "* File extension: " + final_extension
+                        )
+                    if resolution:
+                        _s = resolution
+                        if fps:
+                            _s += " @ %s FPS" % fps
+                        lines.append(
+                            "* Resolution: " + _s
+                        )
+                    if vcodec or acodec:
+                        lines.append("%s+%s" % (vcodec or "N/A", acodec or "N/A"))
+
+                    if lines:
+                        description += "\n"
+                        description += "\n".join(lines)
+
                 try:
                     embed = discord.Embed(
                         title="Downloading %r..." % title,
