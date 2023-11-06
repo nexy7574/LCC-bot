@@ -1023,11 +1023,15 @@ class OtherCog(commands.Cog):
                 try:
                     extracted_info = await asyncio.to_thread(downloader.extract_info, url, download=False)
                 except yt_dlp.utils.DownloadError:
-                    pass
+                    title = chosen_format = chosen_format_id = final_extension = format_note = "error"
+                    resolution = vcodec = acodec = "error"
+                    fps = 0
+                    thumbnail_url = webpage_url = discord.Embed.Empty
                 else:
                     title = extracted_info.get("title", url)
+                    title = textwrap.shorten(title, 100)
                     thumbnail_url = extracted_info.get("thumbnail") or discord.Embed.Empty
-                    webpage_url = extracted_info.get("webpage_url")
+                    webpage_url = extracted_info.get("webpage_url") or discord.Embed.Empty
 
                     chosen_format = extracted_info.get("format")
                     chosen_format_id = extracted_info.get("format_id")
