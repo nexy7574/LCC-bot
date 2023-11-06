@@ -854,13 +854,13 @@ class OtherCog(commands.Cog):
 
     @staticmethod
     async def check_proxy(url: str = "socks5://localhost:1090"):
-        client = httpx.AsyncClient(http2=True)
+        client = httpx.AsyncClient(http2=True, timeout=3)
         my_ip4 = (await client.get("https://api.ipify.org")).text
         real_ips = [my_ip4]
         await client.aclose()
 
         # Check the proxy
-        client = httpx.AsyncClient(http2=True, proxies=url)
+        client = httpx.AsyncClient(http2=True, proxies=url, timeout=3)
         try:
             response = await client.get(
                 "https://1.1.1.1/cdn-cgi/trace",
