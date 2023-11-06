@@ -10,6 +10,7 @@ import re
 import subprocess
 import textwrap
 import traceback
+import pydantic
 import warnings
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -45,6 +46,26 @@ except ImportError:
 
 LTR = "\N{black rightwards arrow}\U0000fe0f"
 RTL = "\N{leftwards black arrow}\U0000fe0f"
+
+
+class MessagePayload(pydantic.BaseModel):
+    class MessageAttachmentPayload(pydantic.BaseModel):
+        url: str
+        proxy_url: str
+        filename: str
+        size: int
+        width: int
+        height: int
+        content_type: str
+
+    message_id: int
+    author: str
+    avatar: str
+    content: str
+    clean_content: str
+    at: float
+    attachments: list[MessageAttachmentPayload] = []
+    reply_to: Optional["MessagePayload"] = None
 
 
 async def _dc(client: discord.VoiceClient | None):
@@ -321,27 +342,33 @@ class Events(commands.Cog):
             return
 
         if message.channel.name == "femboy-hole":
-            payload = {
-                "author": message.author.name,
-                "avatar": message.author.display_avatar.with_format("png").with_size(512).url,
-                "content": message.content,
-                "at": message.created_at.timestamp(),
-                "attachments": [
-                    {
-                        "url": a.url,
-                        "filename": a.filename,
-                        "size": a.size,
-                        "width": a.width,
-                        "height": a.height,
-                        "content_type": a.content_type,
-                    }
-                    for a in message.attachments
-                ],
-            }
-            if message.author.discriminator != "0":
-                payload["author"] += "#%s" % message.author.discriminator
-            if message.author != self.bot.user and (payload["content"] or payload["attachments"]):
-                await self.bot.bridge_queue.put(payload)
+            def generate_payload(_message: discord.Message) -> MessagePayload:
+                _payload = MessagePayload(
+                    message_id=_message.id,
+                    author=_message.author.name,
+                    avatar=_message.author.display_avatar.with_static_format("webp").with_size(512).url,
+                    content=_message.content or '',
+                    clean_content=str(_message.clean_content or ''),
+                    at=_message.created_at.timestamp()
+                )
+                for attachment in _message.attachments:
+                    _payload.attachments.append(
+                        MessagePayload.MessageAttachmentPayload(
+                            url=attachment.url,
+                            proxy_url=attachment.proxy_url,
+                            size=attachment.size,
+                            width=attachment.width,
+                            height=attachment.height,
+                            content_type=attachment.content_type
+                        )
+                    )
+                if _message.reference is not None and _message.reference.cached_message:
+                    _payload.reply_to = generate_payload(_message)
+                return _payload
+
+            payload = generate_payload(message)
+            if message.author != self.bot.user and (payload.content or payload.attachments):
+                await self.bot.bridge_queue.put(payload.model_dump())
 
         if message.channel.name == "pinboard" and not message.content.startswith(("#", "//", ";", "h!")):
             if message.type == discord.MessageType.pins_add:

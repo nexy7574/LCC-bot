@@ -254,7 +254,7 @@ async def bridge(req: Request):
     if not channel:
         raise HTTPException(status_code=404, detail="Channel does not exist.")
 
-    if len(body["message"]) > 6000:
+    if len(body["message"]) > 4000:
         raise HTTPException(status_code=400, detail="Message too long.")
     paginator = Paginator(prefix="", suffix="", max_size=1990)
     for line in body["message"].splitlines():
