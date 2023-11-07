@@ -3,6 +3,7 @@ import ipaddress
 import os
 import sys
 import textwrap
+from rich import print
 from datetime import datetime, timezone
 from hashlib import sha512
 from http import HTTPStatus
