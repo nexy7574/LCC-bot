@@ -55,6 +55,7 @@ except ImportError:
     bot = None
 app.state.last_sender = None
 app.state.last_sender_ts = datetime.utcnow()
+app.state.ws_connected = False
 
 
 @app.middleware("http")
@@ -291,9 +292,12 @@ async def bridge(req: Request):
 async def bridge_recv(ws: WebSocket, secret: str = Header(None)):
     if secret != app.state.bot.http.token:
         raise HTTPException(status_code=401, detail="Invalid secret.")
+    if app.state.ws_connected:
+        raise HTTPException(status_code=409, detail="Already connected.")
     queue: asyncio.Queue = app.state.bot.bridge_queue
 
     await ws.accept()
+    app.state.ws_connected = True
     while True:
         try:
             data = queue.get_nowait()
@@ -307,3 +311,4 @@ async def bridge_recv(ws: WebSocket, secret: str = Header(None)):
             break
         finally:
             queue.task_done()
+    app.state.ws_connected = False

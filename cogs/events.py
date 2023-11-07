@@ -60,6 +60,7 @@ class MessagePayload(pydantic.BaseModel):
 
     message_id: int
     author: str
+    is_automated: bool = False
     avatar: str
     content: str
     clean_content: str
@@ -346,6 +347,7 @@ class Events(commands.Cog):
                 _payload = MessagePayload(
                     message_id=_message.id,
                     author=_message.author.name,
+                    is_automated=_message.author.bot or _message.author.system,
                     avatar=_message.author.display_avatar.with_static_format("webp").with_size(512).url,
                     content=_message.content or '',
                     clean_content=str(_message.clean_content or ''),
