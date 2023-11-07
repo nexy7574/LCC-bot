@@ -54,8 +54,8 @@ class MessagePayload(pydantic.BaseModel):
         proxy_url: str
         filename: str
         size: int
-        width: int
-        height: int
+        width: Optional[int] = None
+        height: Optional[int] = None
         content_type: str
 
     message_id: int
