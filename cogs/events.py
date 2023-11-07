@@ -4,6 +4,7 @@ import hashlib
 import inspect
 import io
 import json
+import logging
 import os
 import random
 import re
@@ -366,7 +367,15 @@ class Events(commands.Cog):
                         )
                     )
                 if _message.reference is not None and _message.reference.cached_message:
-                    _payload.reply_to = generate_payload(_message)
+                    try:
+                        _payload.reply_to = generate_payload(_message.reference.cached_message)
+                    except RecursionError:
+                        _payload.reply_to = None
+                        logging.warning(
+                            "Failed to generate reply payload for message %s",
+                            _message.id,
+                            exc_info=True
+                        )
                 return _payload
 
             payload = generate_payload(message)
