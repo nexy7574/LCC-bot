@@ -357,6 +357,7 @@ class Events(commands.Cog):
                     _payload.attachments.append(
                         MessagePayload.MessageAttachmentPayload(
                             url=attachment.url,
+                            filename=attachment.filename,
                             proxy_url=attachment.proxy_url,
                             size=attachment.size,
                             width=attachment.width,
