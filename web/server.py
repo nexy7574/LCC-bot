@@ -12,6 +12,7 @@ import discord
 import httpx
 from config import guilds
 from fastapi import FastAPI, Header, HTTPException, Request
+from websockets.exceptions import WebSocketException
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
@@ -302,7 +303,7 @@ async def bridge_recv(ws: WebSocket, secret: str = Header(None)):
 
         try:
             await ws.send_json(data)
-        except WebSocketDisconnect:
+        except (WebSocketDisconnect, WebSocketException):
             break
         finally:
             queue.task_done()
