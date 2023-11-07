@@ -292,23 +292,33 @@ async def bridge(req: Request):
 @app.websocket("/bridge/recv")
 async def bridge_recv(ws: WebSocket, secret: str = Header(None)):
     await ws.accept()
+    print("Websocket %r accepted.", ws)
     if secret != app.state.bot.http.token:
+        print("Closing websocket %r, invalid secret.", ws)
         raise _WSException(code=1008, reason="Invalid Secret")
     if app.state.ws_connected.locked():
+        print("Closing websocket %r, already connected.", ws)
         raise _WSException(code=1008, reason="Already connected.")
     queue: asyncio.Queue = app.state.bot.bridge_queue
 
     async with app.state.ws_connected:
         while True:
             try:
-                data = queue.get_nowait()
-            except asyncio.QueueEmpty:
-                await asyncio.sleep(0.5)
+                await ws.send_json({"status": "ping"})
+            except (WebSocketDisconnect, WebSocketException):
+                print("Websocket %r disconnected.", ws)
+                break
+
+            try:
+                data = await asyncio.wait_for(queue.get(), timeout=5)
+            except asyncio.TimeoutError:
                 continue
 
             try:
+                print("Sent data %r to websocket %r.", data, ws)
                 await ws.send_json(data)
             except (WebSocketDisconnect, WebSocketException):
+                print("Websocket %r disconnected.", ws)
                 break
             finally:
                 queue.task_done()
