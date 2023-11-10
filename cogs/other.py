@@ -90,24 +90,12 @@ except Exception as _pyttsx3_err:
 async def ollama_stream_reader(response: httpx.Response) -> typing.AsyncGenerator[
     dict[str, str | int | bool], None
 ]:
-    _buffer = b""
-    async for char in response.aiter_bytes(1):
-        while not _buffer.endswith(b"\n"):
-            _buffer += char
-            print(
-                "Read {:,} bytes ({!r}) in chunk for a total of {:,} bytes in buffer ({!r}).".format(
-                    len(char),
-                    char,
-                    len(_buffer),
-                    _buffer
-                )
-            )
-        _buffer = _buffer.rstrip()
-        print("[ollama stream reader] Resolving %r" % (_buffer.decode()))
-        chunk = json.loads(_buffer.decode("utf-8", "replace"))
-        print("[ollama stream reader] %r -> %r" % (_buffer.decode(), chunk))
-        yield chunk
-        _buffer = b""
+    async for chunk in response.aiter_bytes(8192):
+        # Each chunk is a JSON string
+        try:
+            yield json.loads(chunk.strip().decode("utf-8", "replace"))
+        except json.JSONDecodeError:
+            pass
 
 
 def format_autocomplete(ctx: discord.AutocompleteContext):
@@ -1894,10 +1882,10 @@ class OtherCog(commands.Cog):
                             content = "Response is still being generated..."
                             if chunk["done"] is True:
                                 content = None
-                            output.description = chunk["response"]
+                            output.description += chunk["response"]
                             if (time() - last_edit) >= 5 or chunk["done"] is True:
                                 await msg.edit(content=content, embed=output)
-                            break
+                    await msg.edit(content=None, embed=output)
 
 
 def setup(bot):
