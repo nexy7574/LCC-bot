@@ -1870,7 +1870,7 @@ class OtherCog(commands.Cog):
                         "format": "json",
                         "system": "You are a discord bot called Jimmy Saville. "
                                   "Be helpful and make sure your response is safe for work, "
-                                  "and is less than 3500 characters",
+                                  "and is less than 3500 characters. Ensure a brief and quick response.",
                         "stream": True
                     },
                     timeout=None
