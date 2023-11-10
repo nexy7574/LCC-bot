@@ -3,6 +3,7 @@ import functools
 import glob
 import io
 import json
+import logging
 import typing
 
 import math
@@ -89,6 +90,8 @@ except Exception as _pyttsx3_err:
 async def ollama_stream_reader(response: httpx.Response) -> typing.AsyncGenerator[
     dict[str, str | int | bool], None
 ]:
+    log = logging.getLogger("ollama_stream_reader")
+    log.setLevel(logging.DEBUG)
     stream = response.aiter_bytes(1)
     _buffer = b""
     while not response.is_stream_consumed:
@@ -96,7 +99,10 @@ async def ollama_stream_reader(response: httpx.Response) -> typing.AsyncGenerato
         while not _buffer.endswith(b"}\n"):
             async for char in stream:
                 _buffer += char
-        yield json.loads(_buffer.decode("utf-8", "replace"))
+        log.debug("Resolving %r", _buffer.decode())
+        chunk = json.loads(_buffer.decode("utf-8", "replace"))
+        log.debug("%r -> %r", _buffer.decode(), chunk)
+        yield chunk
 
 
 def format_autocomplete(ctx: discord.AutocompleteContext):
@@ -1841,7 +1847,7 @@ class OtherCog(commands.Cog):
                             if "total" in chunk and "completed" in chunk:
                                 completed = chunk["completed"] or 1  # avoid division by zero
                                 total = chunk["total"] or 1
-                                percent = completed / total * 100
+                                percent = round(completed / total * 100)
                                 if not percent % 10:
                                     await msg.edit(content=f"`{chunk['status']}` - {percent:.0f}%")
                             else:
