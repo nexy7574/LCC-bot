@@ -1852,6 +1852,8 @@ class OtherCog(commands.Cog):
                                     await msg.edit(content=f"`{chunk['status']}` - {percent}%")
                             else:
                                 await msg.edit(content=f"`{chunk['status']}`")
+                await msg.edit(content=f"Downloaded model {model}. Re-run please.")
+                return
             elif response.status_code != 200:
                 return await msg.edit(content="Failed to get model: `%s`" % response.text)
 
