@@ -1846,8 +1846,10 @@ class OtherCog(commands.Cog):
                                 completed = chunk["completed"] or 1  # avoid division by zero
                                 total = chunk["total"] or 1
                                 percent = round(completed / total * 100)
-                                if not percent % 10:
-                                    await msg.edit(content=f"`{chunk['status']}` - {percent:.0f}%")
+                                if percent == 100 and completed != total:
+                                    percent = round(completed / total * 100, 2)
+                                if not percent % 10 or percent >= 90.5:
+                                    await msg.edit(content=f"`{chunk['status']}` - {percent}%")
                             else:
                                 await msg.edit(content=f"`{chunk['status']}`")
             elif response.status_code != 200:
