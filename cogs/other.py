@@ -90,11 +90,12 @@ except Exception as _pyttsx3_err:
 async def ollama_stream_reader(response: httpx.Response) -> typing.AsyncGenerator[
     dict[str, str | int | bool], None
 ]:
-    async for chunk in response.aiter_bytes(8192):
+    print("Starting to iterate over ollama response %r..." % response, file=sys.stderr)
+    async for chunk in response.aiter_bytes():
         # Each chunk is a JSON string
         try:
             loaded = json.loads(chunk.strip().decode("utf-8", "replace"))
-            print("Loaded chunk: %r", loaded)
+            print("Loaded chunk: %r" % loaded)
             yield loaded
         except json.JSONDecodeError as e:
             print("Failed to decode chunk %r: %r" % (chunk, e), file=sys.stderr)
