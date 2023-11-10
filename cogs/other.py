@@ -1843,6 +1843,7 @@ class OtherCog(commands.Cog):
                         if response.status_code != 200:
                             return await msg.edit(content="Failed to download model: `%s`" % response.text)
                         async for chunk in ollama_stream_reader(response):
+                            print(chunk)
                             if "total" in chunk and "completed" in chunk:
                                 completed = chunk["completed"] or 1  # avoid division by zero
                                 total = chunk["total"] or 1
@@ -1879,6 +1880,7 @@ class OtherCog(commands.Cog):
                         return await msg.edit(content="Failed to generate text: `%s`" % response.text)
                     last_edit = msg.edited_at.timestamp() if msg.edited_at else msg.created_at.timestamp()
                     async for chunk in ollama_stream_reader(response):
+                        print(chunk)
                         if "done" not in chunk.keys() or "response" not in chunk.keys():
                             continue
                         else:
