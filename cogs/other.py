@@ -94,7 +94,8 @@ async def ollama_stream_reader(response: httpx.Response) -> typing.AsyncGenerato
         # Each chunk is a JSON string
         try:
             yield json.loads(chunk.strip().decode("utf-8", "replace"))
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            print("Failed to decode chunk %r: %r" % (chunk, e), file=sys.stderr)
             pass
 
 
