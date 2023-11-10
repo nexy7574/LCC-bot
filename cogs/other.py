@@ -3,7 +3,6 @@ import functools
 import glob
 import io
 import json
-import logging
 import typing
 
 import math
@@ -31,10 +30,11 @@ import httpx
 import psutil
 import pytesseract
 import pyttsx3
-from discord.ext import commands, pages
+from discord.ext import commands
 from dns import asyncresolver
 from PIL import Image
 from rich.tree import Tree
+from rich import print
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -62,7 +62,7 @@ try:
     VOICES = [x.id for x in _engine.getProperty("voices")]
     del _engine
 except Exception as _pyttsx3_err:
-    print("Failed to load pyttsx3:", _pyttsx3_err, file=sys.stderr)
+    print("Failed to load pyttsx3: %s" % _pyttsx3_err, file=sys.stderr)
     pyttsx3 = None
     VOICES = []
 
