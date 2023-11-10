@@ -1874,7 +1874,8 @@ class OtherCog(commands.Cog):
                         "system": "You are a discord bot called Jimmy Saville. "
                                   "Be helpful and make sure your response is safe for work, "
                                   "and is less than 3500 characters"
-                    }
+                    },
+                    timeout=None
                 ) as response:
                     if response.status_code != 200:
                         return await msg.edit(content="Failed to generate text: `%s`" % response.text)
