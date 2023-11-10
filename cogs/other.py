@@ -90,8 +90,6 @@ except Exception as _pyttsx3_err:
 async def ollama_stream_reader(response: httpx.Response) -> typing.AsyncGenerator[
     dict[str, str | int | bool], None
 ]:
-    log = logging.getLogger("ollama_stream_reader")
-    log.setLevel(logging.DEBUG)
     stream = response.aiter_bytes(1)
     _buffer = b""
     while not response.is_stream_consumed:
@@ -100,9 +98,9 @@ async def ollama_stream_reader(response: httpx.Response) -> typing.AsyncGenerato
             async for char in stream:
                 _buffer += char
         _buffer = _buffer.rstrip()
-        log.debug("Resolving %r", _buffer.decode())
+        print("[ollama stream reader] Resolving %r" % (_buffer.decode()))
         chunk = json.loads(_buffer.decode("utf-8", "replace"))
-        log.debug("%r -> %r", _buffer.decode(), chunk)
+        print("[ollama stream reader] %r -> %r" % (_buffer.decode(), chunk))
         yield chunk
 
 
@@ -1862,7 +1860,7 @@ class OtherCog(commands.Cog):
                 colour=discord.Colour.blurple(),
             )
             output.set_footer(text="Powered by Ollama")
-
+            await msg.edit(content="Starting generation. Please wait.")
             async with ctx.channel.typing():
                 async with client.stream(
                     "POST",
@@ -1881,7 +1879,7 @@ class OtherCog(commands.Cog):
                         return await msg.edit(content="Failed to generate text: `%s`" % response.text)
                     last_edit = msg.edited_at.timestamp() if msg.edited_at else msg.created_at.timestamp()
                     async for chunk in ollama_stream_reader(response):
-                        if "done" not in chunk or "response" not in chunk:
+                        if "done" not in chunk.keys() or "response" not in chunk.keys():
                             continue
                         else:
                             content = "Response is still being generated..."
