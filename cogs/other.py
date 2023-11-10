@@ -1805,7 +1805,7 @@ class OtherCog(commands.Cog):
             model = "orca-mini"
 
         msg = await ctx.reply(f"Preparing {model!r} <a:loading:1101463077586735174>")
-        async with httpx.AsyncClient(base_url="http://localhost:11434/api") as client:
+        async with httpx.AsyncClient(base_url="http://192.168.0.90:11434/api") as client:
             # get models
             try:
                 response = await client.post("/show", json={"name": model})
