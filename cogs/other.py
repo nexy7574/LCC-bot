@@ -1877,7 +1877,6 @@ class OtherCog(commands.Cog):
                 ) as response:
                     if response.status_code != 200:
                         return await msg.edit(content="Failed to generate text: `%s`" % response.text)
-                    last_edit = msg.edited_at.timestamp() if msg.edited_at else msg.created_at.timestamp()
                     async for chunk in ollama_stream_reader(response):
                         print(chunk)
                         if "done" not in chunk.keys() or "response" not in chunk.keys():
@@ -1887,6 +1886,7 @@ class OtherCog(commands.Cog):
                             if chunk["done"] is True:
                                 content = None
                             output.description += chunk["response"]
+                            last_edit = msg.edited_at.timestamp() if msg.edited_at else msg.created_at.timestamp()
                             if (time() - last_edit) >= 5 or chunk["done"] is True:
                                 await msg.edit(content=content, embed=output)
                     await msg.edit(content=None, embed=output)
