@@ -97,6 +97,7 @@ async def ollama_stream_reader(response: httpx.Response) -> typing.AsyncGenerato
         while not _buffer.endswith(b"}\n"):
             async for char in stream:
                 _buffer += char
+                print("Read {:,} bytes in chunk for a total of {:,} bytes in buffer.".format(len(char), len(_buffer))
         _buffer = _buffer.rstrip()
         print("[ollama stream reader] Resolving %r" % (_buffer.decode()))
         chunk = json.loads(_buffer.decode("utf-8", "replace"))
@@ -1837,7 +1838,7 @@ class OtherCog(commands.Cog):
                     async with client.stream(
                         "POST",
                         "/pull",
-                        json={"name": model},
+                        json={"name": model, "stream": True},
                         timeout=None
                     ) as response:
                         if response.status_code != 200:
@@ -1872,7 +1873,8 @@ class OtherCog(commands.Cog):
                         "format": "json",
                         "system": "You are a discord bot called Jimmy Saville. "
                                   "Be helpful and make sure your response is safe for work, "
-                                  "and is less than 3500 characters"
+                                  "and is less than 3500 characters",
+                        "stream": True
                     },
                     timeout=None
                 ) as response:
