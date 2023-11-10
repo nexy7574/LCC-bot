@@ -99,6 +99,7 @@ async def ollama_stream_reader(response: httpx.Response) -> typing.AsyncGenerato
         while not _buffer.endswith(b"}\n"):
             async for char in stream:
                 _buffer += char
+        _buffer = _buffer.rstrip()
         log.debug("Resolving %r", _buffer.decode())
         chunk = json.loads(_buffer.decode("utf-8", "replace"))
         log.debug("%r -> %r", _buffer.decode(), chunk)
