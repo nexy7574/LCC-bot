@@ -92,12 +92,14 @@ async def ollama_stream_reader(response: httpx.Response) -> typing.AsyncGenerato
 ]:
     _buffer = b""
     async for char in response.aiter_bytes(1):
-        while not _buffer.endswith(b"}\n"):
+        while not _buffer.endswith(b"\n"):
             _buffer += char
             print(
-                "Read {:,} bytes in chunk for a total of {:,} bytes in buffer.".format(
+                "Read {:,} bytes ({!r}) in chunk for a total of {:,} bytes in buffer ({!r}).".format(
                     len(char),
-                    len(_buffer)
+                    char,
+                    len(_buffer),
+                    _buffer
                 )
             )
         _buffer = _buffer.rstrip()
