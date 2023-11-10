@@ -90,24 +90,22 @@ except Exception as _pyttsx3_err:
 async def ollama_stream_reader(response: httpx.Response) -> typing.AsyncGenerator[
     dict[str, str | int | bool], None
 ]:
-    stream = response.aiter_bytes(1)
     _buffer = b""
-    while not response.is_stream_consumed:
-        _buffer = b""
+    async for char in response.aiter_bytes(1):
         while not _buffer.endswith(b"}\n"):
-            async for char in stream:
-                _buffer += char
-                print(
-                    "Read {:,} bytes in chunk for a total of {:,} bytes in buffer.".format(
-                        len(char),
-                        len(_buffer)
-                    )
+            _buffer += char
+            print(
+                "Read {:,} bytes in chunk for a total of {:,} bytes in buffer.".format(
+                    len(char),
+                    len(_buffer)
                 )
+            )
         _buffer = _buffer.rstrip()
         print("[ollama stream reader] Resolving %r" % (_buffer.decode()))
         chunk = json.loads(_buffer.decode("utf-8", "replace"))
         print("[ollama stream reader] %r -> %r" % (_buffer.decode(), chunk))
         yield chunk
+        _buffer = b""
 
 
 def format_autocomplete(ctx: discord.AutocompleteContext):
