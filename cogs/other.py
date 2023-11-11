@@ -1924,6 +1924,8 @@ class OtherCog(commands.Cog):
             output.set_footer(text=f"Powered by Ollama @ {host}")
             await msg.edit(embed=output)
             async with ctx.channel.typing():
+                with open("./assets/ollama-prompt.txt") as file:
+                    system_prompt = file.read().replace("\n", " ").strip()
                 async with client.stream(
                     "POST",
                     "/generate",
@@ -1931,9 +1933,7 @@ class OtherCog(commands.Cog):
                         "model": model,
                         "prompt": query,
                         "format": "json",
-                        "system": "You are a discord bot called Jimmy Saville. "
-                                  "Be helpful and make sure your response is safe for work, "
-                                  "and is less than 3500 characters. Ensure a brief and quick response.",
+                        "system": system_prompt,
                         "stream": True
                     },
                     timeout=None
