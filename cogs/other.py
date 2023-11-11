@@ -1916,12 +1916,12 @@ class OtherCog(commands.Cog):
                 return await msg.edit(content="Failed to get model: `%s`" % error.decode())
 
             output = discord.Embed(
-                title=f"{model} (server {host}) says:",
+                title=f"{model} says:",
                 description="",
                 colour=discord.Colour.blurple(),
                 timestamp=discord.utils.utcnow()
             )
-            output.set_footer(text="Powered by Ollama")
+            output.set_footer(text=f"Powered by Ollama @ {host}")
             await msg.edit(embed=output)
             async with ctx.channel.typing():
                 async with client.stream(
