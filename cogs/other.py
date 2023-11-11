@@ -1902,6 +1902,7 @@ class OtherCog(commands.Cog):
                         if response.status_code != 200:
                             error = await response.aread()
                             return await msg.edit(content="Failed to download model: `%s`" % error.decode())
+                        progresses = [5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99, 100]
                         async for chunk in ollama_stream_reader(response):
                             print(chunk)
                             if "total" in chunk and "completed" in chunk:
@@ -1912,11 +1913,12 @@ class OtherCog(commands.Cog):
                                     percent = round(completed / total * 100, 2)
                                 total_gigabytes = total / 1024 / 1024 / 1024
                                 completed_gigabytes = completed / 1024 / 1024 / 1024
-                                if (completed / total * 100) % 10 == 0 or percent >= 90.5:
+                                if percent in progresses:
                                     await msg.edit(
                                         content=f"`{chunk['status']}` - {percent}% "
                                                 f"({completed_gigabytes:,.2f}GB/{total_gigabytes:,.2f}GB)"
                                     )
+                                    progresses.pop()
                             else:
                                 await msg.edit(content=f"`{chunk['status']}`")
                 await msg.edit(content=f"Downloaded model {model}.")
