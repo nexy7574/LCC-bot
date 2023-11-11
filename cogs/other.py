@@ -1837,6 +1837,7 @@ class OtherCog(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.user, wait=True)
     async def ollama(self, ctx: commands.Context, *, query: str):
         """:3"""
+        content = None
         try_hosts = {
             "127.0.0.1:11434": "localhost",
             "100.106.34.86:11434": "Nex Laptop",
