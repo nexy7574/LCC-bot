@@ -1857,10 +1857,28 @@ class OtherCog(commands.Cog):
             except ValueError:
                 host += ":11434"
         else:
-            host = "192.168.0.90:11434"
+            try_hosts = [
+                "127.0.0.1:11434",  # Localhost
+                "100.106.34.86:11434",  # Laptop
+                "100.66.187.46:11434",  # optiplex
+                "100.116.242.161:11434"  # Raspberry Pi
+            ]
+            async with httpx.AsyncClient(follow_redirects=True) as client:
+                for host in try_hosts:
+                    try:
+                        response = await client.get(
+                            f"http://{host}/api/tags",
+                        )
+                        response.raise_for_status()
+                    except (httpx.TransportError, httpx.NetworkError, httpx.HTTPStatusError):
+                        continue
+                    else:
+                        break
+                else:
+                    return await ctx.reply(":x: No servers available.")
 
         msg = await ctx.reply(f"Preparing [{model!r}](http://{host}) <a:loading:1101463077586735174>")
-        async with httpx.AsyncClient(base_url=f"http://{host}/api") as client:
+        async with httpx.AsyncClient(base_url=f"http://{host}/api", follow_redirects=True) as client:
             # get models
             try:
                 response = await client.post("/show", json={"name": model})
