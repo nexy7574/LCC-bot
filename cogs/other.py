@@ -2063,11 +2063,11 @@ class OtherCog(commands.Cog):
                             result.append(f"{round(hours)} {label}")
                         return ", ".join(reversed(result))
 
-                    total_time_spent = get_time_spent(chunk["total_duration"])
-                    eval_time_spent = get_time_spent(chunk["eval_duration"])
-                    load_time_spent = get_time_spent(chunk["load_duration"])
-                    sample_time_sent = get_time_spent(chunk["sample_duration"])
-                    prompt_eval_time_spent = get_time_spent(chunk["prompt_eval_duration"])
+                    total_time_spent = get_time_spent(chunk.get("total_duration", 999999999.0))
+                    eval_time_spent = get_time_spent(chunk.get("eval_duration", 999999999.0))
+                    load_time_spent = get_time_spent(chunk.get("load_duration", 999999999.0))
+                    sample_time_sent = get_time_spent(chunk.get("sample_duration", 999999999.0))
+                    prompt_eval_time_spent = get_time_spent(chunk.get("prompt_eval_duration", 999999999.0))
                     value = ("* Total: {}\n"
                              "* Model load: {}\n"
                              "* Sample generation: {}\n"
