@@ -1957,6 +1957,12 @@ class OtherCog(commands.Cog):
                                 await msg.edit(content=content, embed=output, view=view)
                             if self.ollama_locks[msg].is_set():
                                 return await msg.edit(content="Aborted.", embed=output, view=None)
+                            if len(output.description) >= 4000:
+                                output.add_field(
+                                    name="Aborting early",
+                                    value="Output exceeded 4000 characters."
+                                )
+                                break
 
                     def get_time_spent(nanoseconds: int) -> str:
                         hours, minutes, seconds = 0, 0, 0
