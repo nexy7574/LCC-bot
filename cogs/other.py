@@ -1809,7 +1809,6 @@ class OtherCog(commands.Cog):
                         % (content, output_location.name)
                     )
 
-
     class OllamaKillSwitchView(discord.ui.View):
         def __init__(self, ctx: commands.Context, msg: discord.Message):
             super().__init__(timeout=None)
@@ -1822,7 +1821,7 @@ class OtherCog(commands.Cog):
         @discord.ui.button(
             label="Abort",
             style=discord.ButtonStyle.red,
-            emoji="\N{waste basket}",
+            emoji="\N{wastebasket}",
         )
         async def abort_button(self, _, interaction: discord.Interaction):
             await interaction.response.defer()
