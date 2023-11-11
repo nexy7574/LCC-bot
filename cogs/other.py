@@ -1960,7 +1960,7 @@ class OtherCog(commands.Cog):
 
                     def get_time_spent(nanoseconds: int) -> str:
                         hours, minutes, seconds = 0, 0, 0
-                        seconds = nanoseconds / 1e9
+                        seconds = nanoseconds * 1e9
                         if seconds >= 60:
                             minutes, seconds = divmod(seconds, 60)
                         if minutes >= 60:
@@ -1989,7 +1989,7 @@ class OtherCog(commands.Cog):
 
                     total_time_spent = get_time_spent(chunk["total_duration"])
                     eval_time_spent = get_time_spent(chunk["eval_duration"])
-                    tokens_per_second = chunk["eval_count"] / chunk["eval_duration"]
+                    tokens_per_second = chunk["eval_count"] / (chunk["eval_duration"] * 1e9)
                     output.add_field(
                         name="Timings",
                         value="Total: {}\nEval: {} ({:,.2f}/s)".format(
