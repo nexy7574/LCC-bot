@@ -1910,9 +1910,12 @@ class OtherCog(commands.Cog):
                                 percent = round(completed / total * 100)
                                 if percent == 100 and completed != total:
                                     percent = round(completed / total * 100, 2)
+                                total_gigabytes = total / 1024 / 1024 / 1024
+                                completed_gigabytes = completed / 1024 / 1024 / 1024
                                 if not percent % 10 or percent >= 90.5:
                                     await msg.edit(
-                                        content=f"`{chunk['status']}` - {percent}% ({completed:,}/{total:,})"
+                                        content=f"`{chunk['status']}` - {percent}% "
+                                                f"({completed_gigabytes:,.2f}GB/{total_gigabytes:,.2f}GB)"
                                     )
                             else:
                                 await msg.edit(content=f"`{chunk['status']}`")
