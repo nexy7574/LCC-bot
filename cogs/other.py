@@ -1849,7 +1849,8 @@ class OtherCog(commands.Cog):
 
         if not await self.bot.is_owner(ctx.author):
             if not model.startswith("orca-mini"):
-                return await ctx.reply(":x: You can only use `orca-mini` models.")
+                await ctx.reply(":warning: You can only use `orca-mini` models.", delete_after=30)
+                model = "orca-mini:latest"
 
         if query.startswith("server:"):
             host, query = query.split(" ", 1)
