@@ -1837,6 +1837,12 @@ class OtherCog(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.user, wait=True)
     async def ollama(self, ctx: commands.Context, *, query: str):
         """:3"""
+        try_hosts = {
+            "127.0.0.1:11434": "localhost",
+            "100.106.34.86:11434": "Nex Laptop",
+            "100.66.187.46:11434": "Nexbox",
+            "100.116.242.161:11434": "PortaPi"
+        }
         if query.startswith("model:"):
             model, query = query.split(" ", 1)
             model = model[6:].casefold()
@@ -1863,14 +1869,14 @@ class OtherCog(commands.Cog):
             except ValueError:
                 host += ":11434"
         else:
-            try_hosts = [
-                "127.0.0.1:11434",  # Localhost
-                "100.106.34.86:11434",  # Laptop
-                "100.66.187.46:11434",  # optiplex
-                "100.116.242.161:11434"  # Raspberry Pi
-            ]
+            # try_hosts = [
+            #     "127.0.0.1:11434",  # Localhost
+            #     "100.106.34.86:11434",  # Laptop
+            #     "100.66.187.46:11434",  # optiplex
+            #     "100.116.242.161:11434"  # Raspberry Pi
+            # ]
             async with httpx.AsyncClient(follow_redirects=True) as client:
-                for host in try_hosts:
+                for host in try_hosts.keys():
                     try:
                         response = await client.get(
                             f"http://{host}/api/tags",
@@ -1883,15 +1889,32 @@ class OtherCog(commands.Cog):
                 else:
                     return await ctx.reply(":x: No servers available.")
 
-        msg = await ctx.reply(f"Preparing [{model!r}](http://{host}) <a:loading:1101463077586735174>")
+        embed = discord.Embed(
+            colour=discord.Colour.greyple()
+        )
+        embed.set_author(
+            name=f"Loading {model}",
+            url=f"http://{host}",
+            icon_url="https://cdn.discordapp.com/emojis/1101463077586735174.gif"
+        )
+        embed.set_footer(text="Using server {} ({})".format(host, try_hosts.get(host, "Other")))
+
+        msg = await ctx.reply(embed=embed)
         async with httpx.AsyncClient(base_url=f"http://{host}/api", follow_redirects=True) as client:
             # get models
             try:
                 response = await client.post("/show", json={"name": model})
             except httpx.TransportError as e:
-                return await msg.edit(content="Failed to connect to Ollama: `%s`" % e)
+                embed = discord.Embed(
+                    title="Failed to connect to Ollama.",
+                    description=str(e),
+                    colour=discord.Colour.red()
+                )
+                embed.set_footer(text="Using server {} ({})".format(host, try_hosts.get(host, "Other")))
+                return await msg.edit(embed=embed)
             if response.status_code == 404:
-                await msg.edit(content=f"Downloading model {model}, please wait.")
+                embed.title = f"Downloading {model}"
+                await msg.edit(embed=embed)
                 async with ctx.channel.typing():
                     async with client.stream(
                         "POST",
@@ -1901,10 +1924,15 @@ class OtherCog(commands.Cog):
                     ) as response:
                         if response.status_code != 200:
                             error = await response.aread()
-                            return await msg.edit(content="Failed to download model: `%s`" % error.decode())
-                        progresses = [5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99, 100]
+                            embed = discord.Embed(
+                                title=f"Failed to download model {model}:",
+                                description=f"HTTP {response.status_code}:\n```{error or '<no body>'}\n```",
+                                colour=discord.Colour.red()
+                            )
+                            embed.set_footer(text="Using server {} ({})".format(host, try_hosts.get(host, "Other")))
+                            return await msg.edit(embed=embed)
+                        lines: dict[str, str] = {}
                         async for chunk in ollama_stream_reader(response):
-                            print(chunk)
                             if "total" in chunk and "completed" in chunk:
                                 completed = chunk["completed"] or 1  # avoid division by zero
                                 total = chunk["total"] or 1
@@ -1913,29 +1941,37 @@ class OtherCog(commands.Cog):
                                     percent = round(completed / total * 100, 2)
                                 total_gigabytes = total / 1024 / 1024 / 1024
                                 completed_gigabytes = completed / 1024 / 1024 / 1024
-                                if percent in progresses:
-                                    await msg.edit(
-                                        content=f"`{chunk['status']}` - {percent}% "
-                                                f"({completed_gigabytes:,.2f}GB/{total_gigabytes:,.2f}GB)"
-                                    )
-                                    progresses.pop()
+                                lines[chunk["status"]] = (f"{percent}% "
+                                                          f"({completed_gigabytes:.2f}GB/{total_gigabytes:.2f}GB)")
                             else:
-                                await msg.edit(content=f"`{chunk['status']}`")
-                await msg.edit(content=f"Downloaded model {model}.")
+                                lines[chunk["status"]] = chunk["status"]
+                            
+                            embed.description = "\n".join(f"`{k}`: {v}" for k, v in lines.items())
+                            if (time() - msg.created_at.timestamp()) >= 5:
+                                await msg.edit(embed=embed)
+                embed.title = f"Downloaded {model}!"
+                embed.colour = discord.Colour.green()
+                await msg.edit(embed=embed)
                 while (await client.post("/show", json={"name": model})).status_code != 200:
                     await asyncio.sleep(5)
             elif response.status_code != 200:
                 error = await response.aread()
-                return await msg.edit(content="Failed to get model: `%s`" % error.decode())
+                embed = discord.Embed(
+                    title=f"Failed to download model {model}:",
+                    description=f"HTTP {response.status_code}:\n```{error or '<no body>'}\n```",
+                    colour=discord.Colour.red()
+                )
+                embed.set_footer(text="Using server {} ({})".format(host, try_hosts.get(host, "Other")))
+                return await msg.edit(embed=embed)
 
-            output = discord.Embed(
+            embed = discord.Embed(
                 title=f"{model} says:",
                 description="",
                 colour=discord.Colour.blurple(),
                 timestamp=discord.utils.utcnow()
             )
-            output.set_footer(text=f"Powered by Ollama @ {host}")
-            await msg.edit(embed=output)
+            embed.set_footer(text=f"Powered by Ollama • {host} ({try_hosts.get(host, 'Other')})")
+            await msg.edit(embed=embed)
             async with ctx.channel.typing():
                 with open("./assets/ollama-prompt.txt") as file:
                     system_prompt = file.read().replace("\n", " ").strip()
@@ -1953,7 +1989,13 @@ class OtherCog(commands.Cog):
                 ) as response:
                     if response.status_code != 200:
                         error = await response.aread()
-                        return await msg.edit(content="Failed to generate text: `%s`" % error.decode())
+                        embed = discord.Embed(
+                            title=f"Failed to generate response from {model}:",
+                            description=f"HTTP {response.status_code}:\n```{error or '<no body>'}\n```",
+                            colour=discord.Colour.red()
+                        )
+                        embed.set_footer(text="Using server {} ({})".format(host, try_hosts.get(host, "Other")))
+                        return await msg.edit(embed=embed)
                     self.ollama_locks[msg] = asyncio.Event()
                     view = self.OllamaKillSwitchView(ctx, msg)
                     await msg.edit(view=view)
@@ -1961,21 +2003,35 @@ class OtherCog(commands.Cog):
                         if "done" not in chunk.keys() or "response" not in chunk.keys():
                             continue
                         else:
-                            content = "Response is still being generated..."
                             if chunk["done"] is True:
                                 content = None
-                            output.description += chunk["response"]
+                                embed.remove_author()
+                            else:
+                                embed.set_author(
+                                    name=f"Generating response with {model}",
+                                    url=f"http://{host}",
+                                    icon_url="https://cdn.discordapp.com/emojis/1101463077586735174.gif"
+                                )
+                            embed.description += chunk["response"]
                             last_edit = msg.edited_at.timestamp() if msg.edited_at else msg.created_at.timestamp()
                             if (time() - last_edit) >= 5 or chunk["done"] is True:
-                                await msg.edit(content=content, embed=output, view=view)
+                                await msg.edit(content=content, embed=embed, view=view)
                             if self.ollama_locks[msg].is_set():
-                                return await msg.edit(content="Aborted.", embed=output, view=None)
-                            if len(output.description) >= 4000:
-                                output.add_field(
+                                embed.title = embed.title[:-1] + " (Aborted)"
+                                embed.colour = discord.Colour.red()
+                                return await msg.edit(embed=embed, view=None)
+                            if len(embed.description) >= 4000:
+                                embed.add_field(
                                     name="Aborting early",
                                     value="Output exceeded 4000 characters."
                                 )
+                                embed.title = embed.title[:-1] + " (Aborted)"
+                                embed.colour = discord.Colour.red()
+                                embed.description = embed.description[:4096]
                                 break
+                    else:
+                        embed.colour = discord.Colour.green()
+                        embed.remove_author()
 
                     def get_time_spent(nanoseconds: int) -> str:
                         hours, minutes, seconds = 0, 0, 0
@@ -2008,16 +2064,25 @@ class OtherCog(commands.Cog):
 
                     total_time_spent = get_time_spent(chunk["total_duration"])
                     eval_time_spent = get_time_spent(chunk["eval_duration"])
-                    tokens_per_second = chunk["eval_count"] / chunk["eval_duration"]
-                    output.add_field(
-                        name="Timings",
-                        value="Total: {}\nEval: {} ({:,.2f}/s)".format(
-                            total_time_spent,
-                            eval_time_spent,
-                            tokens_per_second
-                        ),
+                    load_time_spent = get_time_spent(chunk["load_duration"])
+                    sample_time_sent = get_time_spent(chunk["sample_duration"])
+                    prompt_eval_time_spent = get_time_spent(chunk["prompt_eval_duration"])
+                    value = ("* Total: {}\n"
+                             "* Model load: {}\n"
+                             "* Sample generation: {}\n"
+                             "* Prompt eval: {}\n"
+                             "* Response generation: {}").format(
+                        total_time_spent,
+                        load_time_spent,
+                        sample_time_sent,
+                        prompt_eval_time_spent,
+                        eval_time_spent
                     )
-                    await msg.edit(content=None, embed=output, view=None)
+                    embed.add_field(
+                        name="Timings",
+                        value=value
+                    )
+                    await msg.edit(content=None, embed=embed, view=None)
                     self.ollama_locks.pop(msg, None)
 
 
