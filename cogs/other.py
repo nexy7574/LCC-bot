@@ -1911,7 +1911,9 @@ class OtherCog(commands.Cog):
                                 if percent == 100 and completed != total:
                                     percent = round(completed / total * 100, 2)
                                 if not percent % 10 or percent >= 90.5:
-                                    await msg.edit(content=f"`{chunk['status']}` - {percent}%")
+                                    await msg.edit(
+                                        content=f"`{chunk['status']}` - {percent}% ({completed:,}/{total:,})"
+                                    )
                             else:
                                 await msg.edit(content=f"`{chunk['status']}`")
                 await msg.edit(content=f"Downloaded model {model}.")
