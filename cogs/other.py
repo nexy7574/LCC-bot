@@ -1834,8 +1834,7 @@ class OtherCog(commands.Cog):
     @commands.command(
         usage="[model:<name:tag>] [server:<ip[:port]>] <query>"
     )
-    @commands.is_owner()
-    @commands.max_concurrency(1, wait=True)
+    @commands.max_concurrency(1, commands.BucketType.user, wait=True)
     async def ollama(self, ctx: commands.Context, *, query: str):
         """:3"""
         if query.startswith("model:"):
@@ -1847,6 +1846,10 @@ class OtherCog(commands.Cog):
                 model += ":latest"
         else:
             model = "orca-mini"
+
+        if not await self.bot.is_owner(ctx.author):
+            if not model.startswith("orca-mini"):
+                return await ctx.reply(":x: You can only use `orca-mini` models.")
 
         if query.startswith("server:"):
             host, query = query.split(" ", 1)
