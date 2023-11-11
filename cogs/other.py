@@ -1916,7 +1916,7 @@ class OtherCog(commands.Cog):
                 return await msg.edit(content="Failed to get model: `%s`" % error.decode())
 
             output = discord.Embed(
-                title=f"{model} says:",
+                title=f"{model} (server {host}) says:",
                 description="",
                 colour=discord.Colour.blurple(),
                 timestamp=discord.utils.utcnow()
