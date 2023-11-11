@@ -1847,6 +1847,8 @@ class OtherCog(commands.Cog):
         else:
             model = "orca-mini"
 
+        model = model.casefold()
+
         if not await self.bot.is_owner(ctx.author):
             if not model.startswith("orca-mini"):
                 await ctx.reply(":warning: You can only use `orca-mini` models.", delete_after=30)
