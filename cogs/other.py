@@ -1837,6 +1837,11 @@ class OtherCog(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.user, wait=True)
     async def ollama(self, ctx: commands.Context, *, query: str):
         """:3"""
+        msg = await ctx.reply(
+            embed=discord.Embed(
+                description='Loading, please wait.'
+            )
+        )
         content = None
         try_hosts = {
             "127.0.0.1:11434": "localhost",
@@ -1900,7 +1905,7 @@ class OtherCog(commands.Cog):
         )
         embed.set_footer(text="Using server {} ({})".format(host, try_hosts.get(host, "Other")))
 
-        msg = await ctx.reply(embed=embed)
+        await msg.edit(embed=embed)
         async with httpx.AsyncClient(base_url=f"http://{host}/api", follow_redirects=True) as client:
             # get models
             try:
@@ -1949,7 +1954,7 @@ class OtherCog(commands.Cog):
                                 lines[status] = status
                             
                             embed.description = "\n".join(f"`{k}`: {v}" for k, v in lines.items())
-                            if (time() - msg.created_at.timestamp()) >= 5:
+                            if (time() - msg.edited_at.timestamp()) >= 5:
                                 await msg.edit(embed=embed)
                 embed.title = f"Downloaded {model}!"
                 embed.colour = discord.Colour.green()
@@ -1967,7 +1972,7 @@ class OtherCog(commands.Cog):
                 return await msg.edit(embed=embed)
 
             embed = discord.Embed(
-                title=f"{model} says:",
+                title=f"{model} says (connecting):",
                 description="",
                 colour=discord.Colour.blurple(),
                 timestamp=discord.utils.utcnow()
@@ -2000,7 +2005,9 @@ class OtherCog(commands.Cog):
                         return await msg.edit(embed=embed)
                     self.ollama_locks[msg] = asyncio.Event()
                     view = self.OllamaKillSwitchView(ctx, msg)
-                    await msg.edit(view=view)
+                    embed.title = f"{model} says:"
+                    await msg.edit(embed=embed, view=view)
+                    last_edit = time()
                     async for chunk in ollama_stream_reader(response):
                         if "done" not in chunk.keys() or "response" not in chunk.keys():
                             continue
@@ -2015,11 +2022,11 @@ class OtherCog(commands.Cog):
                                     icon_url="https://cdn.discordapp.com/emojis/1101463077586735174.gif"
                                 )
                             embed.description += chunk["response"]
-                            last_edit = msg.edited_at.timestamp() if msg.edited_at else msg.created_at.timestamp()
-                            if (time() - last_edit) >= 5 or chunk["done"] is True:
+                            if (time() - last_edit) >= 6:
                                 await msg.edit(content=content, embed=embed, view=view)
                             if self.ollama_locks[msg].is_set():
                                 embed.title = embed.title[:-1] + " (Aborted)"
+                                embed.remove_author()
                                 embed.colour = discord.Colour.red()
                                 return await msg.edit(embed=embed, view=None)
                             if len(embed.description) >= 4000:
@@ -2030,6 +2037,7 @@ class OtherCog(commands.Cog):
                                 embed.title = embed.title[:-1] + " (Aborted)"
                                 embed.colour = discord.Colour.red()
                                 embed.description = embed.description[:4096]
+                                embed.remove_author()
                                 break
                     else:
                         embed.colour = discord.Colour.green()
