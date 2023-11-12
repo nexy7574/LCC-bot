@@ -1128,15 +1128,17 @@ class OtherCog(commands.Cog):
                     )
                 else:
                     parsed_qs = parse_qs(url)
-                    if "t" in parsed_qs and parsed_qs["t"] and parsed_qs["t"][0].isdigit():
+                    if "t" in parsed_qs and parsed_qs['t']:
                         # Assume is timestamp
-                        timestamp = round(float(parsed_qs["t"][0]))
-                        end_timestamp = None
-                        if len(parsed_qs["t"]) >= 2:
-                            end_timestamp = round(float(parsed_qs["t"][1]))
+                        try:
+                            timestamp, end_timestamp = map(round, map(float, parsed_qs["t"]))
                             if end_timestamp < timestamp:
-                                end_timestamp, timestamp = reversed((end_timestamp, timestamp))
-                        _end = "to %s" % end_timestamp if len(parsed_qs["t"]) == 2 else "onward"
+                                timestamp, end_timestamp = reversed((timestamp, end_timestamp))
+                        except ValueError:
+                            timestamp = round(float(parsed_qs["t"][0]))
+                            end_timestamp = None
+                
+                        _end = "to %s" % end_timestamp if end_timestamp is not None else "onward"
                         embed = discord.Embed(
                             title="Trimming...",
                             description=f"Trimming from {timestamp} seconds {_end}.\nThis may take a while.",
