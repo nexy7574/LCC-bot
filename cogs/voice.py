@@ -363,7 +363,7 @@ class VoiceCog(commands.Cog):
                         "64k",
                         "-af",
                         "volume=%d" % (level / 100),
-                        "-vn"
+                        "-vn",
                         str(output),
                     ),
                     capture_output=True,
