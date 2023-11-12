@@ -360,9 +360,10 @@ class VoiceCog(commands.Cog):
                         "-i",
                         str(_input),
                         "-b:a",
-                        "44.1k",
+                        "64k",
                         "-af",
                         "volume=%d" % (level / 100),
+                        "-vn"
                         str(output),
                     ),
                     capture_output=True,
