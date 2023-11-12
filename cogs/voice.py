@@ -347,7 +347,7 @@ class VoiceCog(commands.Cog):
         with tempfile.TemporaryDirectory("jimmy-audio-boost-") as temp_dir_raw:
             temp_dir = Path(temp_dir_raw).resolve()
             _input = temp_dir / file.filename
-            output = _input.with_name(_input.name + "-processed" + ".".join(_input.suffixes))
+            output = _input.with_name(_input.name + "-processed.ogg")
             await file.save(_input)
 
             proc: subprocess.CompletedProcess = await self.bot.loop.run_in_executor(
@@ -359,6 +359,7 @@ class VoiceCog(commands.Cog):
                         "-hide_banner",
                         "-i",
                         str(_input),
+                        "-c:a libopus",
                         "-b:a",
                         "64k",
                         "-af",
