@@ -1945,7 +1945,8 @@ class OtherCog(commands.Cog):
                                 lines[chunk["status"]] = (f"{percent}% "
                                                           f"({completed_gigabytes:.2f}GB/{total_gigabytes:.2f}GB)")
                             else:
-                                lines[chunk["status"]] = chunk["status"]
+                                status = chunk.get("status", chunk.get("error", os.urandom(3).hex()))
+                                lines[status] = status
                             
                             embed.description = "\n".join(f"`{k}`: {v}" for k, v in lines.items())
                             if (time() - msg.created_at.timestamp()) >= 5:
