@@ -1839,7 +1839,7 @@ class OtherCog(commands.Cog):
         """:3"""
         msg = await ctx.reply(
             embed=discord.Embed(
-                description='Loading, please wait.'
+                description='Finding an available server, please wait.'
             )
         )
         content = None
