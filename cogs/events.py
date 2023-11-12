@@ -118,21 +118,8 @@ class Events(commands.Cog):
             except discord.HTTPException:
                 return
             if payload.emoji.name == "\N{wastebasket}\U0000fe0f":
-                if message.author.id == self.bot.user.id:
+                if message.author.bot:
                     await message.delete(delay=0.25)
-                elif message.channel.permissions_for(message.guild.me).manage_messages:
-                    reactions = 0
-                    mod_reactions = 0
-                    for reaction in message.reactions:
-                        if reaction.emoji == payload.emoji:
-                            async for member in reaction.users():
-                                if member.id == self.bot.user.id:
-                                    continue
-                                if member.guild_permissions.manage_messages:
-                                    mod_reactions += 1
-                                reactions += 1
-                    if reactions >= 2 or mod_reactions >= 1:
-                        await message.delete(delay=0.1)
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
