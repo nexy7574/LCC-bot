@@ -1996,7 +1996,8 @@ class OtherCog(commands.Cog):
                             embed = discord.Embed(
                                 title=f"Failed to download model {model}:",
                                 description=f"HTTP {response.status_code}:\n```{error or '<no body>'}\n```",
-                                colour=discord.Colour.red()
+                                colour=discord.Colour.red(),
+                                url=str(response.url)
                             )
                             embed.set_footer(text="Using server {} ({})".format(host, try_hosts.get(host, "Other")))
                             return await msg.edit(embed=embed)
@@ -2030,7 +2031,8 @@ class OtherCog(commands.Cog):
                 embed = discord.Embed(
                     title=f"Failed to download model {model}:",
                     description=f"HTTP {response.status_code}:\n```{error or '<no body>'}\n```",
-                    colour=discord.Colour.red()
+                    colour=discord.Colour.red(),
+                    url=str(response.url)
                 )
                 embed.set_footer(text="Using server {} ({})".format(host, try_hosts.get(host, "Other")))
                 return await msg.edit(embed=embed)
