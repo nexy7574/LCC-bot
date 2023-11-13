@@ -1928,6 +1928,8 @@ class OtherCog(commands.Cog):
                         break
                 else:
                     return await ctx.respond(":x: No servers available.")
+        else:
+            host = server
 
         embed = discord.Embed(
             colour=discord.Colour.greyple()
