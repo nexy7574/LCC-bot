@@ -1899,25 +1899,16 @@ class OtherCog(commands.Cog):
 
         content = None
         RESTRICTED_SERVERS = (
-            "100.106.34.86:11434"
+            "100.106.34.86:11434",
+            "100.66.187.46:11434"
         )
         try_hosts = {
-            "127.0.0.1:11434": "localhost",
             "100.106.34.86:11434": "NexTop",
             "ollama.shronk.net": "Alibaba Cloud",
             "100.66.187.46:11434": "NexBox",
-            "100.116.242.161:11434": "PortaPi"
         }
         model = model.casefold()
 
-        if not await self.bot.is_owner(ctx.author):
-            if not model.startswith("orca-mini"):
-                await ctx.respond(
-                    ":warning: You can only use `orca-mini` models.",
-                    delete_after=30,
-                    ephemeral=True
-                )
-                model = "orca-mini"
         if server != "auto":
             async with httpx.AsyncClient(follow_redirects=True) as client:
                 for host in try_hosts.keys():
@@ -1956,6 +1947,16 @@ class OtherCog(commands.Cog):
                     server = server.netloc
 
             host = server
+
+        if host in RESTRICTED_SERVERS:
+            if not await self.bot.is_owner(ctx.author):
+                if not model.startswith("orca-mini"):
+                    await ctx.respond(
+                        ":warning: You can only use `orca-mini` models.",
+                        delete_after=30,
+                        ephemeral=True
+                    )
+                    model = "orca-mini"
 
         embed = discord.Embed(
             colour=discord.Colour.greyple()
