@@ -3,6 +3,7 @@ import base64
 import functools
 import glob
 import io
+import ipaddress
 import json
 import typing
 import zlib
@@ -1897,6 +1898,9 @@ class OtherCog(commands.Cog):
             context = self.context_cache[context]
 
         content = None
+        RESTRICTED_SERVERS = (
+            "100.106.34.86:11434"
+        )
         try_hosts = {
             "127.0.0.1:11434": "localhost",
             "100.106.34.86:11434": "NexTop",
@@ -1929,6 +1933,28 @@ class OtherCog(commands.Cog):
                 else:
                     return await ctx.respond(":x: No servers available.")
         else:
+            try:
+                try:
+                    server, port = server.split(":", 1)
+                    port = int(port)
+                except ValueError:
+                    port = 11434
+                server = ipaddress.ip_address(server)
+                if not isinstance(server, ipaddress.IPv4Address):
+                    raise ValueError
+                server = "%s:%s" % (server, port)
+            except ValueError:
+                try:
+                    if not server.startswith("http"):
+                        server = "http://" + server
+                    server = urlparse(server)
+                    if not server.netloc:
+                        raise ValueError
+                except ValueError:
+                    return await ctx.respond(f":x: Failed to parse {server!r} as a domain/IPv4.")
+                else:
+                    server = server.netloc
+
             host = server
 
         embed = discord.Embed(
