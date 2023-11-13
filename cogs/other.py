@@ -2143,13 +2143,15 @@ class OtherCog(commands.Cog):
                         name="Timings",
                         value=value
                     )
-                    if context:
-                        embed.add_field(
-                            name="Context",
-                            value=f"```\n{context}\n```"[:1024],
-                            inline=False
-                        )
                     await msg.edit(content=None, embed=embed, view=None)
+                    if context:
+                        await ctx.respond(
+                            "Context:\n"
+                            "```\n"
+                            f"{context}\n"
+                            "```",
+                            ephemeral=True
+                        )
                     self.ollama_locks.pop(msg, None)
 
 
