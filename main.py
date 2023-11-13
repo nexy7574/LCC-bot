@@ -1,5 +1,6 @@
 import asyncio
 import sys
+import logging
 from datetime import datetime, timedelta, timezone
 
 import config
@@ -8,6 +9,14 @@ from discord.ext import commands
 
 from utils import JimmyBanException, JimmyBans, console, get_or_none
 from utils.client import bot
+
+logging.basicConfig(
+    filename="jimmy.log",
+    filemode="a",
+    format="%(asctime)s:%(level)s:%(name)s: %(message)s",
+    datefmt="%Y-%m-%d:%H:%M",
+    level=logging.INFO
+)
 
 
 @bot.listen()
