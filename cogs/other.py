@@ -1893,7 +1893,7 @@ class OtherCog(commands.Cog):
 
         if context:
             try:
-                context_decoded = base64.b85decode(context).decode()
+                context_decoded = base64.b64decode(context).decode()
                 context_decompressed = await asyncio.to_thread(
                     functools.partial(zlib.decompress, context_decoded.encode())
                 )
@@ -2124,7 +2124,7 @@ class OtherCog(commands.Cog):
                         )
                         end = time()
                         compress_time_spent = format(round(end * 1000 - start * 1000), ",")
-                        context: str = base64.b85encode(context_json_compressed).decode()
+                        context: str = base64.b64encode(context_json_compressed).decode()
                     else:
                         compress_time_spent = "N/A"
                         context = None
