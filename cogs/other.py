@@ -1970,6 +1970,28 @@ class OtherCog(commands.Cog):
 
         msg = await ctx.respond(embed=embed, ephemeral=False)
         async with httpx.AsyncClient(base_url=f"http://{host}/api", follow_redirects=True) as client:
+            try:
+                response = await client.get("/tags")
+                response.raise_for_status()
+            except httpx.HTTPStatusError as e:
+                error = "GET {0.response.url} HTTP {0.status}: {0.text}".format(e.response)
+                return await msg.edit(
+                    embed=discord.Embed(
+                        title="Failed to GET /tags. Offline?",
+                        description=error,
+                        colour=discord.Colour.red()
+                    )
+                )
+            except httpx.TransportError as e:
+                return await msg.edit(
+                    embed=discord.Embed(
+                        title=f"Failed to connect to {host!r}",
+                        description="Transport error sending request to {}: {}".format(
+                            host, str(e)
+                        ),
+                        colour=discord.Colour.red()
+                    )
+                )
             # get models
             try:
                 response = await client.post("/show", json={"name": model})
