@@ -1975,6 +1975,7 @@ class OtherCog(commands.Cog):
                             embed.set_footer(text="Using server {} ({})".format(host, try_hosts.get(host, "Other")))
                             return await msg.edit(embed=embed)
                         lines: dict[str, str] = {}
+                        last_edit = time()
                         async for chunk in ollama_stream_reader(response):
                             if "total" in chunk and "completed" in chunk:
                                 completed = chunk["completed"] or 1  # avoid division by zero
@@ -1991,7 +1992,7 @@ class OtherCog(commands.Cog):
                                 lines[status] = status
                             
                             embed.description = "\n".join(f"`{k}`: {v}" for k, v in lines.items())
-                            if (time() - msg.created_at.timestamp()) >= 5:
+                            if (time() - last_edit) >= 5:
                                 await msg.edit(embed=embed)
                 embed.title = f"Downloaded {model}!"
                 embed.colour = discord.Colour.green()
@@ -2044,6 +2045,7 @@ class OtherCog(commands.Cog):
                     self.ollama_locks[msg] = asyncio.Event()
                     view = self.OllamaKillSwitchView(ctx, msg)
                     await msg.edit(view=view)
+                    last_edit = time()
                     async for chunk in ollama_stream_reader(response):
                         if "done" not in chunk.keys() or "response" not in chunk.keys():
                             continue
@@ -2058,9 +2060,9 @@ class OtherCog(commands.Cog):
                                     icon_url="https://cdn.discordapp.com/emojis/1101463077586735174.gif"
                                 )
                             embed.description += chunk["response"]
-                            last_edit = msg.edited_at.timestamp() if msg.edited_at else msg.created_at.timestamp()
                             if (time() - last_edit) >= 5 or chunk["done"] is True:
                                 await msg.edit(content=content, embed=embed, view=view)
+                                last_edit = time()
                             if self.ollama_locks[msg].is_set():
                                 embed.title = embed.title[:-1] + " (Aborted)"
                                 embed.colour = discord.Colour.red()
