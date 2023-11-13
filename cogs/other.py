@@ -1909,7 +1909,7 @@ class OtherCog(commands.Cog):
         }
         model = model.casefold()
 
-        if server != "auto":
+        if server == "auto":
             async with httpx.AsyncClient(follow_redirects=True) as client:
                 for host in try_hosts.keys():
                     try:
