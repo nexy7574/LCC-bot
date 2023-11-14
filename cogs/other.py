@@ -1969,7 +1969,13 @@ class OtherCog(commands.Cog):
         embed.set_footer(text="Using server {} ({})".format(host, try_hosts.get(host, "Other")))
 
         msg = await ctx.respond(embed=embed, ephemeral=False)
-        async with httpx.AsyncClient(base_url=f"http://{host}/api", follow_redirects=True) as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            try:
+                await client.get(f"https://{host}/api/tags")
+                client.base_url = f"https://{host}/api"
+            except httpx.ConnectError as e:
+                client.base_url = f"http://{host}/api"
+
             try:
                 response = await client.get("/tags")
                 response.raise_for_status()
