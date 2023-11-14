@@ -1973,7 +1973,7 @@ class OtherCog(commands.Cog):
             try:
                 await client.get(f"https://{host}/api/tags")
                 client.base_url = f"https://{host}/api"
-            except httpx.ConnectError as e:
+            except (httpx.ConnectError, Exception):
                 client.base_url = f"http://{host}/api"
 
             try:
