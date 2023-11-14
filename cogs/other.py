@@ -1980,7 +1980,7 @@ class OtherCog(commands.Cog):
                 response = await client.get("/tags")
                 response.raise_for_status()
             except httpx.HTTPStatusError as e:
-                error = "GET {0.response.url} HTTP {0.status}: {0.text}".format(e.response)
+                error = "GET {0.url} HTTP {0.status_code}: {0.text}".format(e.response)
                 return await msg.edit(
                     embed=discord.Embed(
                         title="Failed to GET /tags. Offline?",
