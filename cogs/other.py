@@ -1834,7 +1834,7 @@ class OtherCog(commands.Cog):
                 self.stop()
 
     @commands.slash_command()
-    @commands.max_concurrency(1, commands.BucketType.user, wait=False)
+    @commands.max_concurrency(3, commands.BucketType.user, wait=False)
     async def ollama(
             self,
             ctx: discord.ApplicationContext,
