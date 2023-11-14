@@ -1944,7 +1944,10 @@ class OtherCog(commands.Cog):
                 except ValueError:
                     return await ctx.respond(f":x: Failed to parse {server!r} as a domain/IPv4.")
                 else:
-                    server = server.netloc
+                    _server = server
+                    server = _server.netloc
+                    port = _server.port or 443
+                    server = "%s:%s" % (server, port)
 
             host = server
 
