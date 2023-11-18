@@ -454,7 +454,7 @@ class Events(commands.Cog):
                 r"scrapped(\sit)?|((7\s|seven\s)?different\s)?bins|(meat\s|flying\s)?tax": {
                     "file": discord.File(assets / "scrapped.m4a")
                 },
-                r"peppa|pig": {"file": discord.File(assets / "peppa.m4a")},
+                r"peppa|pig": {"file": discord.File(assets / "peppa-pig.m4a")},
                 r"brush|hair": {"file": discord.File(assets / "brush.m4a")},
                 r"((cup\s)?of\s)?tea": {"file": discord.File(assets / "tea.m4a")},
             }
@@ -490,6 +490,12 @@ class Events(commands.Cog):
                             if not okay:
                                 break
                         else:
+                            continue
+                    elif data.get("file"):
+                        # Check the file exists
+                        if not isinstance(data["file"], discord.File):
+                            data["file"] = discord.File(data["file"])
+                        if not data["file"].fp.exists():
                             continue
 
                     if meta.get("sub") is not None and isinstance(meta["sub"], dict):
