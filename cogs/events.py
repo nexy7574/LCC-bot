@@ -491,12 +491,6 @@ class Events(commands.Cog):
                                 break
                         else:
                             continue
-                    elif data.get("file"):
-                        # Check the file exists
-                        if not isinstance(data["file"], discord.File):
-                            data["file"] = discord.File(data["file"])
-                        if not data["file"].fp.exists():
-                            continue
 
                     if meta.get("sub") is not None and isinstance(meta["sub"], dict):
                         content = re.sub(meta["sub"]["pattern"], meta["sub"]["with"], message.content)
