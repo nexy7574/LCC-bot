@@ -458,6 +458,7 @@ class Events(commands.Cog):
                 r"brush|hair": {"file": discord.File(assets / "hair.m4a")},
                 r"((cup\s)?of\s)?tea": {"file": discord.File(assets / "tea.m4a")},
                 r"wheat|fields": {"file": discord.File(assets / "wheat.m4a")},
+                r"bus((s)?es)?": {"file": discord.File(assets / "bus.m4a")},
             }
             # Stop responding to any bots
             if message.author.bot is True:
