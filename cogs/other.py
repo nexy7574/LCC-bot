@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import fnmatch
 import functools
 import glob
 import io
@@ -1897,70 +1898,103 @@ class OtherCog(commands.Cog):
                 return await ctx.respond(":x: Context not found in cache.")
             context = self.context_cache[context]
 
-        content = None
-        RESTRICTED_SERVERS = (
-            "100.106.34.86:11434",
-            "100.66.187.46:11434"
-        )
-        try_hosts = {
-            "100.106.34.86:11434": "NexTop",
-            "ollama.shronk.net": "Alibaba Cloud",
-            "100.66.187.46:11434": "NexBox",
-        }
         model = model.casefold()
+        try:
+            model.split(":", 1)
+        except ValueError:
+            model = model + ":latest"
 
-        if server == "auto":
-            async with httpx.AsyncClient(follow_redirects=True) as client:
-                for host in try_hosts.keys():
-                    try:
-                        response = await client.get(
-                            f"http://{host}/api/tags",
-                        )
-                        response.raise_for_status()
-                    except (httpx.TransportError, httpx.NetworkError, httpx.HTTPStatusError):
-                        continue
-                    else:
-                        break
-                else:
-                    return await ctx.respond(":x: No servers available.")
-        else:
-            try:
-                try:
-                    server, port = server.split(":", 1)
-                    port = int(port)
-                except ValueError:
-                    port = 11434
-                server = ipaddress.ip_address(server)
-                if not isinstance(server, ipaddress.IPv4Address):
-                    raise ValueError
-                server = "%s:%s" % (server, port)
-            except ValueError:
-                try:
-                    if not server.startswith("http"):
-                        server = "http://" + server
-                    server = urlparse(server)
-                    if not server.netloc:
-                        raise ValueError
-                except ValueError:
-                    return await ctx.respond(f":x: Failed to parse {server!r} as a domain/IPv4.")
-                else:
-                    _server = server
-                    server = _server.netloc
-                    port = _server.port or 443
-                    server = "%s:%s" % (server, port)
+        servers = {
+            "100.106.34.86:11434": {
+                "name": "NexTop",
+                "allow": [
+                    "orca-mini:latest",
+                    "orca-mini:3b",
+                    "orca-mini:7b",
+                    "llama2:latest",
+                    "llama2-uncensored:latest",
+                    "codellama:latest",
+                    "codellama:python",
+                    "codellama:instruct",
+                ],
+                "owner": 421698654189912064
+            },
+            "ollama.shronk.net:11434": {
+                "name": "Alibaba Cloud",
+                "allow": ["*"],
+                "owner": 1019233057519177778,
+            },
+            "100.66.187.46:11434": {
+                "name": "NexBox",
+                "restrict-to": [
+                    "orca-mini:latest",
+                    "orca-mini:3b",
+                    "orca-mini:7b",
+                ],
+                "owner": 421698654189912064
+            },
+        }
 
-            host = server
+        class ServerSelector(discord.ui.View):
+            def __init__(self):
+                super().__init__(
+                    disable_on_timeout=True
+                )
+                self.chosen_server = None
 
-        if host in RESTRICTED_SERVERS:
-            if not await self.bot.is_owner(ctx.author):
-                if not model.startswith("orca-mini"):
-                    await ctx.respond(
-                        ":warning: You can only use `orca-mini` models.",
-                        delete_after=30,
-                        ephemeral=True
+            @discord.ui.select(
+                placeholder="Choose a server.",
+                custom_id="select",
+                options=[
+                    discord.SelectOption(
+                        label="%s (%s)" % (y['name'], x),
+                        label=x
                     )
-                    model = "orca-mini"
+                    for x, y in servers.items()
+                    if fnmatch.fnmatch(model, y.get("restrict-to", ['*']))
+                ] + [
+                    discord.SelectOption(
+                        label="Custom",
+                        value="custom"
+                    )
+                ]
+            )
+            async def select_callback(self, item: discord.ui.Select, interaction: discord.Interaction):
+                if item.values[0] == "custom":
+                    class ServerSelectionModal(discord.ui.Modal):
+                        def __init__(self):
+                            super().__init__(
+                                discord.ui.InputText(
+                                    label="Domain/IP",
+                                    placeholder="Enter server",
+                                    min_length=1,
+                                    max_length=4000,
+                                    style=discord.InputTextStyle.short,
+                                ),
+                                discord.ui.InputText(
+                                    label="Port (only 443 is HTTPS)",
+                                    placeholder="11434",
+                                    min_length=2,
+                                    max_length=5,
+                                    style=discord.InputTextStyle.short,
+                                    value="11434"
+                                ),
+                                title="Enter server details",
+                                timeout=120
+                            )
+                            self.hostname = None
+                            self.port = None
 
+                        async def callback(self, _interaction: discord.Interaction):
+                            await _interaction.response.defer()
+                            self.stop()
+
+                    _modal = ServerSelectionModal()
+                    await interaction.response.send_modal(_modal)
+                    await _modal.wait()
+                    if not all()
+
+        content = None
         embed = discord.Embed(
             colour=discord.Colour.greyple()
         )
