@@ -448,6 +448,15 @@ class Events(commands.Cog):
                 r"china": {"file": discord.File(assets / "china.m4a")},
                 r"drones": {"file": discord.File(assets / "drones.m4a")},
                 r"pork($|\W+)|markets": {"file": discord.File(assets / "pork.m4a")},
+                r"common\ssense|(wo)?man($|\W+)|(trans)?gender": {
+                    "file": discord.File(assets / "common-sense.m4a")
+                },
+                r"scrapped(\sit)?|((7\s|seven\s)?different\s)?bins|(meat\s|flying\s)?tax": {
+                    "file": discord.File(assets / "scrapped.m4a")
+                },
+                r"peppa|pig": {"file": discord.File(assets / "peppa.m4a")},
+                r"brush|hair": {"file": discord.File(assets / "brush.m4a")},
+                r"((cup\s)?of\s)?tea": {"file": discord.File(assets / "tea.m4a")},
             }
             # Stop responding to any bots
             if message.author.bot is True:
@@ -516,7 +525,7 @@ class Events(commands.Cog):
                         if data.get("file") is not None:
                             if not isinstance(data["file"], discord.File):
                                 data["file"] = discord.File(data["file"])
-                        data.setdefault("delete_after", 60)
+                        data.setdefault("delete_after", 300)
                         await message.channel.trigger_typing()
                         await message.reply(**data)
                         break
