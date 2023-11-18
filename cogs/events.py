@@ -457,6 +457,7 @@ class Events(commands.Cog):
                 r"peppa|pig": {"file": discord.File(assets / "peppa-pig.m4a")},
                 r"brush|hair": {"file": discord.File(assets / "hair.m4a")},
                 r"((cup\s)?of\s)?tea": {"file": discord.File(assets / "tea.m4a")},
+                r"wheat|fields": {"file": discord.File(assets / "wheat.m4a")},
             }
             # Stop responding to any bots
             if message.author.bot is True:
