@@ -1948,7 +1948,7 @@ class OtherCog(commands.Cog):
                 options=[
                     discord.SelectOption(
                         label="%s (%s)" % (y['name'], x),
-                        label=x
+                        value=x
                     )
                     for x, y in servers.items()
                     if fnmatch.fnmatch(model, y.get("restrict-to", ['*']))
@@ -1992,7 +1992,22 @@ class OtherCog(commands.Cog):
                     _modal = ServerSelectionModal()
                     await interaction.response.send_modal(_modal)
                     await _modal.wait()
-                    if not all()
+                    if not all((_modal.hostname, _modal.port)):
+                        return
+                    self.chosen_server = f"{_modal.hostname}:{_modal.port}"
+                else:
+                    self.chosen_server = item.values[0]
+                self.stop()
+
+        if server == "auto":
+            selector = ServerSelector()
+            await ctx.send("Select a server:", view=selector)
+            await selector.wait()
+            if not selector.chosen_server:
+                return
+            host = selector.chosen_server
+        else:
+            host = server
 
         content = None
         embed = discord.Embed(
@@ -2003,7 +2018,7 @@ class OtherCog(commands.Cog):
             url=f"http://{host}",
             icon_url="https://cdn.discordapp.com/emojis/1101463077586735174.gif"
         )
-        embed.set_footer(text="Using server {} ({})".format(host, try_hosts.get(host, "Other")))
+        embed.set_footer(text="Using server {} ({})".format(host, servers.get(host, "Other")))
 
         msg = await ctx.respond(embed=embed, ephemeral=False)
         async with httpx.AsyncClient(follow_redirects=True) as client:
@@ -2044,7 +2059,7 @@ class OtherCog(commands.Cog):
                     description=str(e),
                     colour=discord.Colour.red()
                 )
-                embed.set_footer(text="Using server {} ({})".format(host, try_hosts.get(host, "Other")))
+                embed.set_footer(text="Using server {} ({})".format(host, servers.get(host, "Other")))
                 return await msg.edit(embed=embed)
             if response.status_code == 404:
                 embed.title = f"Downloading {model}"
@@ -2064,7 +2079,7 @@ class OtherCog(commands.Cog):
                                 colour=discord.Colour.red(),
                                 url=str(response.url)
                             )
-                            embed.set_footer(text="Using server {} ({})".format(host, try_hosts.get(host, "Other")))
+                            embed.set_footer(text="Using server {} ({})".format(host, servers.get(host, "Other")))
                             return await msg.edit(embed=embed)
                         lines: dict[str, str] = {}
                         last_edit = time()
@@ -2099,7 +2114,7 @@ class OtherCog(commands.Cog):
                     colour=discord.Colour.red(),
                     url=str(response.url)
                 )
-                embed.set_footer(text="Using server {} ({})".format(host, try_hosts.get(host, "Other")))
+                embed.set_footer(text="Using server {} ({})".format(host, servers.get(host, "Other")))
                 return await msg.edit(embed=embed)
 
             embed = discord.Embed(
@@ -2108,7 +2123,7 @@ class OtherCog(commands.Cog):
                 colour=discord.Colour.blurple(),
                 timestamp=discord.utils.utcnow()
             )
-            embed.set_footer(text=f"Powered by Ollama • {host} ({try_hosts.get(host, 'Other')})")
+            embed.set_footer(text=f"Powered by Ollama • {host} ({servers.get(host, 'Other')})")
             await msg.edit(embed=embed)
             async with ctx.channel.typing():
                 payload = {
@@ -2133,7 +2148,7 @@ class OtherCog(commands.Cog):
                             description=f"HTTP {response.status_code}:\n```{error or '<no body>'}\n```",
                             colour=discord.Colour.red()
                         )
-                        embed.set_footer(text="Using server {} ({})".format(host, try_hosts.get(host, "Other")))
+                        embed.set_footer(text="Using server {} ({})".format(host, servers.get(host, "Other")))
                         return await msg.edit(embed=embed)
                     self.ollama_locks[msg] = asyncio.Event()
                     view = self.OllamaKillSwitchView(ctx, msg)
