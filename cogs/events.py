@@ -516,7 +516,7 @@ class Events(commands.Cog):
                         if data.get("file") is not None:
                             if not isinstance(data["file"], discord.File):
                                 data["file"] = discord.File(data["file"])
-                        data.setdefault("delete_after", 30)
+                        data.setdefault("delete_after", 60)
                         await message.channel.trigger_typing()
                         await message.reply(**data)
                         break
