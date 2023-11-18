@@ -444,6 +444,10 @@ class Events(commands.Cog):
                     "content": lambda: "I have {:,} lines of source code across {:,} files!".format(*get_sloc_count())
                 },
                 r"t(ry\s)?i(t\s)?a(nd\s)?see.*": {"content": "https://tryitands.ee"},
+                r"disgrace": {"file": discord.File(assets / "disgrace.m4a")},
+                r"china": {"file": discord.File(assets / "china.m4a")},
+                r"drones": {"file": discord.File(assets / "drones.m4a")},
+                r"pork($|\W+)|markets": {"file": discord.File(assets / "pork.m4a")},
             }
             # Stop responding to any bots
             if message.author.bot is True:
