@@ -2058,11 +2058,12 @@ class OtherCog(commands.Cog):
             url=f"http://{host}",
             icon_url="https://cdn.discordapp.com/emojis/1101463077586735174.gif"
         )
+        FOOTER_TEXT = "Powered by Ollama • Using server {} ({})".format(
+            host,
+            servers.get(host, H_DEFAULT)['name']
+        )
         embed.set_footer(
-            text="Using server {} ({})".format(
-                host,
-                servers.get(host, H_DEFAULT)['name']
-            )
+            text=FOOTER_TEXT
         )
 
         msg = await ctx.respond(embed=embed, ephemeral=False)
@@ -2083,7 +2084,7 @@ class OtherCog(commands.Cog):
                         title="Failed to GET /tags. Offline?",
                         description=error,
                         colour=discord.Colour.red()
-                    )
+                    ).set_footer(text=FOOTER_TEXT)
                 )
             except httpx.TransportError as e:
                 return await msg.edit(
@@ -2093,7 +2094,7 @@ class OtherCog(commands.Cog):
                             host, str(e)
                         ),
                         colour=discord.Colour.red()
-                    )
+                    ).set_footer(text=FOOTER_TEXT)
                 )
             # get models
             try:
@@ -2104,7 +2105,7 @@ class OtherCog(commands.Cog):
                     description=str(e),
                     colour=discord.Colour.red()
                 )
-                embed.set_footer(text="Using server {} ({})".format(host, servers.get(host, "Other")))
+                embed.set_footer(text=FOOTER_TEXT)
                 return await msg.edit(embed=embed)
             if response.status_code == 404:
                 embed.title = f"Downloading {model}"
@@ -2124,7 +2125,7 @@ class OtherCog(commands.Cog):
                                 colour=discord.Colour.red(),
                                 url=str(response.url)
                             )
-                            embed.set_footer(text="Using server {} ({})".format(host, servers.get(host, "Other")))
+                            embed.set_footer(text=FOOTER_TEXT)
                             return await msg.edit(embed=embed)
                         lines: dict[str, str] = {}
                         last_edit = time()
@@ -2159,7 +2160,7 @@ class OtherCog(commands.Cog):
                     colour=discord.Colour.red(),
                     url=str(response.url)
                 )
-                embed.set_footer(text="Using server {} ({})".format(host, servers.get(host, "Other")))
+                embed.set_footer(text=FOOTER_TEXT)
                 return await msg.edit(embed=embed)
 
             embed = discord.Embed(
@@ -2168,7 +2169,7 @@ class OtherCog(commands.Cog):
                 colour=discord.Colour.blurple(),
                 timestamp=discord.utils.utcnow()
             )
-            embed.set_footer(text=f"Powered by Ollama • {host} ({servers.get(host, 'Other')})")
+            embed.set_footer(text=FOOTER_TEXT)
             await msg.edit(embed=embed)
             async with ctx.channel.typing():
                 payload = {
@@ -2193,7 +2194,7 @@ class OtherCog(commands.Cog):
                             description=f"HTTP {response.status_code}:\n```{error or '<no body>'}\n```",
                             colour=discord.Colour.red()
                         )
-                        embed.set_footer(text="Using server {} ({})".format(host, servers.get(host, "Other")))
+                        embed.set_footer(text=FOOTER_TEXT)
                         return await msg.edit(embed=embed)
                     self.ollama_locks[msg] = asyncio.Event()
                     view = self.OllamaKillSwitchView(ctx, msg)
@@ -2296,6 +2297,7 @@ class OtherCog(commands.Cog):
                             value=key,
                             inline=True
                         )
+                    embed.set_footer(text=FOOTER_TEXT)
                     await msg.edit(content=None, embed=embed, view=None)
                     self.ollama_locks.pop(msg, None)
 
