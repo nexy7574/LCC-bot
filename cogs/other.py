@@ -1904,7 +1904,7 @@ class OtherCog(commands.Cog):
         except ValueError:
             model = model + ":latest"
 
-        servers = {
+        servers: dict[str, dict[str, str, list[str] | int]] = {
             "100.106.34.86:11434": {
                 "name": "NexTop",
                 "allow": [
@@ -1926,7 +1926,7 @@ class OtherCog(commands.Cog):
             },
             "100.66.187.46:11434": {
                 "name": "NexBox",
-                "restrict-to": [
+                "allow": [
                     "orca-mini:latest",
                     "orca-mini:3b",
                     "orca-mini:7b",
@@ -1934,6 +1934,12 @@ class OtherCog(commands.Cog):
                 "owner": 421698654189912064
             },
         }
+
+        def model_is_allowed(model_name: str, srv: dict[str, str | list[str] | int]) -> bool:
+            for pat in srv.get("allow", ['*']):
+                if not fnmatch.fnmatch(model_name.casefold(), pat.casefold()):
+                    return False
+            return True
 
         class ServerSelector(discord.ui.View):
             def __init__(self):
@@ -1951,7 +1957,7 @@ class OtherCog(commands.Cog):
                         value=x
                     )
                     for x, y in servers.items()
-                    if fnmatch.fnmatch(model, y.get("restrict-to", ['*']))
+                    if model_is_allowed(model, y)
                 ] + [
                     discord.SelectOption(
                         label="Custom",
