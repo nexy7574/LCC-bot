@@ -1938,6 +1938,13 @@ class OtherCog(commands.Cog):
         def model_is_allowed(model_name: str, srv: dict[str, str | list[str] | int]) -> bool:
             for pat in srv.get("allow", ['*']):
                 if not fnmatch.fnmatch(model_name.casefold(), pat.casefold()):
+                    print(
+                        "Server %r does not support %r (only %r.)" % (
+                            srv['name'],
+                            model_name,
+                            ', '.join(srv['allow'])
+                        )
+                    )
                     return False
             return True
 

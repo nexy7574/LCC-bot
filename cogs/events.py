@@ -504,7 +504,7 @@ class Events(commands.Cog):
                         content = message.content
 
                     if isinstance(key, str):
-                        regex = re.compile(key, re.IGNORECASE)
+                        regex = re.compile(key.casefold(), re.IGNORECASE)
                         if not regex.search(content):
                             continue
                     elif isinstance(key, tuple):
