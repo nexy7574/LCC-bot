@@ -458,7 +458,11 @@ class Events(commands.Cog):
                 r"brush|hair": {"file": discord.File(assets / "hair.m4a")},
                 r"((cup\s)?of\s)?tea": {"file": discord.File(assets / "tea.m4a")},
                 r"wheat|fields": {"file": discord.File(assets / "wheat.m4a")},
-                r"bus((s)?es)?": {"file": discord.File(assets / "bus.m4a")},
+                r"bus((s)?es)?\W*$": {"file": discord.File(assets / "bus.m4a")},
+                r"^DoH$": {"content": "DoH: Domain Name Service over Hyper Text Transfer Protocol Secure"},
+                r"^DoT$": {"content": "DoT: Domain Name Service over Transport Layer Security"},
+                r"^DoQ$": {"content": "DoQ: Domain Name Service over Quick User Datagram Protocol Internet Connections"},
+                r"^(Do)?DTLS$": {"content": "DoDTLS: Domain Name Service over Datagram Transport Layer Security"},
             }
             # Stop responding to any bots
             if message.author.bot is True:
