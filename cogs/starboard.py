@@ -96,11 +96,15 @@ class StarBoardCog(commands.Cog):
                     embed.fields[1].value = field.value.replace(":\n>>> ", "")
                 else:
                     embed.fields[1].value += textwrap.shorten(ref.content, 1024 - len(field.value), placeholder="...")
-        elif message.interaction is not None:
+        if message.interaction is not None:
             inter: discord.MessageInteraction = message.interaction
+            if inter.type == discord.InteractionType.application_command:
+                cmd = "</{}:{}>".format(inter.id, inter.name)
+            else:
+                cmd = repr(inter.name)
             embed.add_field(
                 name="In response to",
-                value=f"Command '{inter.name}' by {inter.user.display_name}]):",
+                value=f"Command {cmd} by {inter.user.display_name}",
                 inline=False,
             )
 
