@@ -96,6 +96,13 @@ class StarBoardCog(commands.Cog):
                     embed.fields[1].value = field.value.replace(":\n>>> ", "")
                 else:
                     embed.fields[1].value += textwrap.shorten(ref.content, 1024 - len(field.value), placeholder="...")
+        elif message.interaction is not None:
+            inter: discord.MessageInteraction = message.interaction
+            embed.add_field(
+                name="In response to",
+                value=f"Command '{inter.name}' by {inter.user.display_name}]):",
+                inline=False,
+            )
 
         for file in message.attachments:
             name = f"Attachment #{message.attachments.index(file)}"
