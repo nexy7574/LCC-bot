@@ -22,7 +22,7 @@ class StarBoardCog(commands.Cog):
         async with httpx.AsyncClient(
             headers={
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.69; Win64; x64) "
-                "LCC-Bot-Scraper/0 (https://github.com/EEKIM10/LCC-bot)"
+                "LCC-Bot-Scraper/0 (https://github.com/nexy7574/LCC-bot)"
             }
         ) as session:
             image = starboard_message.embeds[0].image
@@ -103,14 +103,14 @@ class StarBoardCog(commands.Cog):
             for file in message.attachments:
                 name = f"Attachment #{message.attachments.index(file)}"
                 spoiler = file.is_spoiler()
-                if not spoiler and file.url.lower().endswith(("png", "jpeg", "jpg", "gif", "webp")) and not embed.image:
-                    embed.set_image(url=file.url)
                 if spoiler:
                     embed.add_field(name=name, value=f"||[{file.filename}]({file.url})||", inline=False)
                 else:
+                    if file.content_type.startswith("image") and embed.image is discord.Embed.Empty:
+                        embed.set_image(url=file.url)
                     embed.add_field(name=name, value=f"[{file.filename}]({file.url})", inline=False)
 
-        embed.set_footer(text="Starboard threshold for this message was {:.2f}.".format(cap))
+        # embed.set_footer(text="Starboard threshold for this message was {:.2f}.".format(cap))
         return embed
 
     @commands.Cog.listener("on_raw_reaction_add")
