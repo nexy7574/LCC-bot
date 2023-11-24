@@ -55,8 +55,6 @@ class StarBoardCog(commands.Cog):
             star_count = 0
         else:
             star_count = star_count[0].count
-        # noinspection PyUnresolvedReferences
-        cap = (message.channel if "thread" in message.channel.type.name else message.guild).member_count * 0.1
         embed = discord.Embed(colour=discord.Colour.gold(), timestamp=message.created_at, description=message.content)
         embed.set_author(
             name=message.author.display_name, url=message.jump_url, icon_url=message.author.display_avatar.url
@@ -99,16 +97,16 @@ class StarBoardCog(commands.Cog):
                 else:
                     embed.fields[1].value += textwrap.shorten(ref.content, 1024 - len(field.value), placeholder="...")
 
-        if message.attachments:
-            for file in message.attachments:
-                name = f"Attachment #{message.attachments.index(file)}"
-                spoiler = file.is_spoiler()
-                if spoiler:
-                    embed.add_field(name=name, value=f"||[{file.filename}]({file.url})||", inline=False)
-                else:
-                    if file.content_type.startswith("image") and embed.image is discord.Embed.Empty:
+        for file in message.attachments:
+            name = f"Attachment #{message.attachments.index(file)}"
+            spoiler = file.is_spoiler()
+            if spoiler:
+                embed.add_field(name=name, value=f"||[{file.filename}]({file.url})||", inline=False)
+            else:
+                if file.content_type.startswith("image"):
+                    if embed.image.url is discord.Embed.Empty:
                         embed.set_image(url=file.url)
-                    embed.add_field(name=name, value=f"[{file.filename}]({file.url})", inline=False)
+                embed.add_field(name=name, value=f"[{file.filename}]({file.url})", inline=False)
 
         # embed.set_footer(text="Starboard threshold for this message was {:.2f}.".format(cap))
         return embed
