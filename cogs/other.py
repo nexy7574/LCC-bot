@@ -2371,7 +2371,8 @@ class OtherCog(commands.Cog):
                 )
         await ctx.respond(embed=embed)
         if run_speed_test and FAILED is False:
-
+            now = discord.utils.utcnow()
+            embed.set_footer(text="Started speedtest at " + now.strftime("%X"))
             chosen_proxy = ("socks5://" + proxy_uri) if proxy_uri else None
             async with httpx.AsyncClient(
                     http2=True,
@@ -2381,7 +2382,6 @@ class OtherCog(commands.Cog):
                     }
             ) as client:
                 bytes_received = 0
-                used = "https://example.com"
                 for region in SPEED_REGIONS:
                     try:
                         start = time()
@@ -2393,6 +2393,10 @@ class OtherCog(commands.Cog):
                                     break
                         response.raise_for_status()
                         end = time()
+                        now = discord.utils.utcnow()
+                        embed.set_footer(
+                            text=embed.footer.text + " | Finished at: " + now.strftime("%X")
+                        )
                         break
                     except Exception as e:
                         results[proxy_uri]["failure"] = f"Failed to test {region} speed (`{e}`)."
@@ -2401,10 +2405,11 @@ class OtherCog(commands.Cog):
                 megabytes = bytes_received / 1024 / 1024
                 elapsed = end - start
                 bits_per_second = (bytes_received * 8) / elapsed
-                megabytes_per_second = bits_per_second / 1024 / 1024
+                megabits_per_second = bits_per_second / 1024 / 1024
                 embed2 = discord.Embed(
-                    title="\U000023f2\U0000fe0f Speed test results (for )",
-                    description=f"Downloaded {megabytes:,}MB in {elapsed:,.0f} seconds ({megabytes_per_second}Mbps)."
+                    title=f"\U000023f2\U0000fe0f Speed test results (for {proxy_uri})",
+                    description=f"Downloaded {megabytes:,.1f}MB in {elapsed:,.0f} seconds "
+                                f"({megabits_per_second:,.0f}Mbps)."
                 )
                 embed2.add_field(name="Source", value=used)
                 await ctx.edit(embeds=[embed, embed2])
