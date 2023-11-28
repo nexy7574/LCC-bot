@@ -2381,21 +2381,23 @@ class OtherCog(commands.Cog):
                     }
             ) as client:
                 bytes_received = 0
+                used = "https://example.com"
                 for region in SPEED_REGIONS:
                     try:
                         start = time()
-                        async with client.stream("GET", SPEED_URL.format(region)) as response:
+                        used = SPEED_URL.format(region)
+                        async with client.stream("GET", used) as response:
                             async for chunk in response.aiter_bytes():
                                 bytes_received += len(chunk)
                                 if (time() - start) > 30.0:
                                     break
                         response.raise_for_status()
                         end = time()
+                        break
                     except Exception as e:
                         results[proxy_uri]["failure"] = f"Failed to test {region} speed (`{e}`)."
-                        break
                 else:
-                    results[proxy_uri]["download_speed"] /= len(SPEED_REGIONS)
+                    return
                 megabytes = bytes_received / 1024 / 1024
                 elapsed = end - start
                 bits_per_second = (bytes_received * 8) / elapsed
@@ -2404,6 +2406,7 @@ class OtherCog(commands.Cog):
                     title="\U000023f2\U0000fe0f Speed test results (for )",
                     description=f"Downloaded {megabytes:,}MB in {elapsed:,.0f} seconds ({megabytes_per_second}Mbps)."
                 )
+                embed2.add_field(name="Source", value=used)
                 await ctx.edit(embeds=[embed, embed2])
 
 
