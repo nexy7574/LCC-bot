@@ -2301,6 +2301,111 @@ class OtherCog(commands.Cog):
                     await msg.edit(content=None, embed=embed, view=None)
                     self.ollama_locks.pop(msg, None)
 
+    @commands.slash_command(name="test-proxies")
+    @commands.max_concurrency(1, commands.BucketType.user, wait=False)
+    async def test_proxy(
+            self,
+            ctx: discord.ApplicationContext,
+            run_speed_test: bool = False
+    ):
+        """Tests proxies."""
+        await ctx.defer()
+        SPEED_REGIONS = [
+            "fsn1",
+            "nbg1",
+            "hel1",
+            "ash",
+            "hil"
+        ]
+        SPEED_URL = "https://{}-speed.hetzner.com/1GB.bin"
+        results = {
+            "localhost:1090": {
+                "name": "SHRoNK",
+                "failure": None,
+                "download_speed": 0.0,
+                "tested": False
+            },
+            "localhost:1080": {
+                "name": "NexBox",
+                "failure": None,
+                "download_speed": 0.0,
+                "tested": False
+            }
+        }
+        embed = discord.Embed(
+            title="\N{white heavy check mark} Proxy available."
+        )
+        FAILED = False
+        proxy_uri = None
+        for proxy_uri in results.keys():
+            name = results[proxy_uri]["name"]
+            try:
+                proxy_down = await self.check_proxy("socks5://" + proxy_uri)
+                results[proxy_uri]["tested"] = True
+                if proxy_down > 0:
+                    if proxy_down == 1:
+                        results[proxy_uri]["failure"] = f"{name} Proxy check leaked IP."
+                    elif proxy_down == 2:
+                        results[proxy_uri]["failure"] = "Proxy connection failed."
+                    else:
+                        results[proxy_uri]["failure"] = "Unknown proxy error."
+                else:
+                    break
+            except Exception as e:
+                traceback.print_exc()
+                results[proxy_uri]["failure"] += f"Failed to check {name} proxy (`{e}`)."
+                results[proxy_uri]["tested"] = True
+        else:
+            embed = discord.Embed(
+                title="\N{cross mark} All proxies failed.",
+                colour=discord.Colour.red()
+            )
+            FAILED = True
+
+        for uri, value in results.items():
+            if value["tested"]:
+                embed.add_field(
+                    name=value["name"],
+                    value=value["failure"] or "Proxy is working.",
+                    inline=False
+                )
+        await ctx.respond(embed=embed)
+        if run_speed_test and FAILED is False:
+
+            chosen_proxy = ("socks5://" + proxy_uri) if proxy_uri else None
+            async with httpx.AsyncClient(
+                    http2=True,
+                    proxies=chosen_proxy,
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0"
+                    }
+            ) as client:
+                bytes_received = 0
+                for region in SPEED_REGIONS:
+                    try:
+                        start = time()
+                        async with client.stream("GET", SPEED_URL.format(region)) as response:
+                            async for chunk in response.aiter_bytes():
+                                bytes_received += len(chunk)
+                                if (time() - start) > 30.0:
+                                    break
+                        response.raise_for_status()
+                        end = time()
+                    except Exception as e:
+                        results[proxy_uri]["failure"] = f"Failed to test {region} speed (`{e}`)."
+                        break
+                else:
+                    results[proxy_uri]["download_speed"] /= len(SPEED_REGIONS)
+                megabytes = bytes_received / 1024 / 1024
+                elapsed = end - start
+                bits_per_second = (bytes_received * 8) / elapsed
+                megabytes_per_second = bits_per_second / 1024 / 1024
+                embed2 = discord.Embed(
+                    title="\U000023f2\U0000fe0f Speed test results (for )",
+                    description=f"Downloaded {megabytes:,}MB in {elapsed:,.0f} seconds ({megabytes_per_second}Mbps)."
+                )
+                await ctx.edit(embeds=[embed, embed2])
+
 
 def setup(bot):
     bot.add_cog(OtherCog(bot))
