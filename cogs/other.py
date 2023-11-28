@@ -2369,10 +2369,12 @@ class OtherCog(commands.Cog):
                     value=value["failure"] or "Proxy is working.",
                     inline=False
                 )
+        embed.set_footer(text="No speed test will be run.")
         await ctx.respond(embed=embed)
         if run_speed_test and FAILED is False:
             now = discord.utils.utcnow()
             embed.set_footer(text="Started speedtest at " + now.strftime("%X"))
+            await ctx.edit(embed=embed)
             chosen_proxy = ("socks5://" + proxy_uri) if proxy_uri else None
             async with httpx.AsyncClient(
                     http2=True,
