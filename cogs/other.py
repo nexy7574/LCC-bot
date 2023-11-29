@@ -2306,7 +2306,15 @@ class OtherCog(commands.Cog):
     async def test_proxy(
             self,
             ctx: discord.ApplicationContext,
-            run_speed_test: bool = False
+            run_speed_test: bool = False,
+            proxy_name: discord.Option(
+                str,
+                choices=[
+                    "SHRoNK",
+                    "NexBox",
+                    "first-working"
+                ]
+            ) = "first-working"
     ):
         """Tests proxies."""
         await ctx.defer()
@@ -2332,6 +2340,12 @@ class OtherCog(commands.Cog):
                 "tested": False
             }
         }
+        if proxy_name != "first-working":
+            for key, value in results.items():
+                if value["name"].lower() == proxy_name.lower():
+                    continue
+                else:
+                    results.pop(key)
         embed = discord.Embed(
             title="\N{white heavy check mark} Proxy available."
         )
