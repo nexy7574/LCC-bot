@@ -1888,11 +1888,13 @@ class OtherCog(commands.Cog):
             "100.106.34.86:11434": {
                 "name": "NexTop",
                 "allow": [
+                    "orca-mini",
                     "orca-mini:latest",
                     "orca-mini:3b",
                     "orca-mini:7b",
                     "llama2:latest",
                     "llama2-uncensored:latest",
+                    "llama2-uncensored",
                     "codellama:latest",
                     "codellama:python",
                     "codellama:instruct",
@@ -1907,6 +1909,7 @@ class OtherCog(commands.Cog):
             "100.66.187.46:11434": {
                 "name": "NexBox",
                 "allow": [
+                    "orca-mini",
                     "orca-mini:latest",
                     "orca-mini:3b",
                     "orca-mini:7b",
