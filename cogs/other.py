@@ -897,14 +897,14 @@ class OtherCog(commands.Cog):
         await ctx.respond("Removed domain from blacklist.")
 
     @staticmethod
-    async def check_proxy(url: str = "socks5://localhost:1090"):
-        client = httpx.AsyncClient(http2=True, timeout=3)
+    async def check_proxy(url: str = "socks5://localhost:1090", *, timeout: float = 3.0):
+        client = httpx.AsyncClient(http2=True, timeout=timeout)
         my_ip4 = (await client.get("https://api.ipify.org")).text
         real_ips = [my_ip4]
         await client.aclose()
 
         # Check the proxy
-        client = httpx.AsyncClient(http2=True, proxies=url, timeout=3)
+        client = httpx.AsyncClient(http2=True, proxies=url, timeout=timeout)
         try:
             response = await client.get(
                 "https://1.1.1.1/cdn-cgi/trace",
@@ -2356,7 +2356,10 @@ class OtherCog(commands.Cog):
         for proxy_uri in results.keys():
             name = results[proxy_uri]["name"]
             try:
-                proxy_down = await self.check_proxy("socks5://" + proxy_uri)
+                proxy_down = await asyncio.wait_for(
+                    self.check_proxy("socks5://" + proxy_uri),
+                    timeout=10
+                )
                 results[proxy_uri]["tested"] = True
                 if proxy_down > 0:
                     embed.colour = discord.Colour.red()
@@ -2369,10 +2372,13 @@ class OtherCog(commands.Cog):
                 else:
                     embed.colour = discord.Colour.green()
                     break
+            except asyncio.TimeoutError as e:
+                results[proxy_uri]["failure"] = f"Proxy connection timed out, likely offline. {e}"
+                results[proxy_uri]["tested"] = True
             except Exception as e:
                 traceback.print_exc()
                 embed.colour = discord.Colour.red()
-                results[proxy_uri]["failure"] += f"Failed to check {name} proxy (`{e}`)."
+                results[proxy_uri]["failure"] = f"Failed to check {name} proxy (`{e}`)."
                 results[proxy_uri]["tested"] = True
         else:
             embed = discord.Embed(
