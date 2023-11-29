@@ -1878,7 +1878,8 @@ class OtherCog(commands.Cog):
 
         model = model.casefold()
         try:
-            model.split(":", 1)
+            model, tag = model.split(":", 1)
+            model = model + ":" + tag
             print("Model %r already has a tag")
         except ValueError:
             model = model + ":latest"
