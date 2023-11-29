@@ -1001,7 +1001,10 @@ class OtherCog(commands.Cog):
             description = ""
             proxy_url = "socks5://localhost:1090"
             try:
-                proxy_down = await self.check_proxy("socks5://localhost:1090")
+                proxy_down = await asyncio.wait_for(
+                    self.check_proxy("socks5://localhost:1090"),
+                    timeout=10
+                )
                 if proxy_down > 0:
                     if proxy_down == 1:
                         description += ":warning: (SHRoNK) Proxy check leaked IP - trying backup proxy.\n"
@@ -1010,7 +1013,10 @@ class OtherCog(commands.Cog):
                     else:
                         description += ":warning: (SHRoNK) Unknown proxy error - trying backup proxy.\n"
 
-                    proxy_down = await self.check_proxy("socks5://localhost:1080")
+                    proxy_down = await asyncio.wait_for(
+                        self.check_proxy("socks5://localhost:1080"),
+                        timeout=10
+                    )
                     if proxy_down > 0:
                         if proxy_down == 1:
                             description += ":warning: (NexBox) Proxy check leaked IP..\n"
