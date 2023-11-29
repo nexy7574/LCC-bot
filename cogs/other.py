@@ -2357,6 +2357,7 @@ class OtherCog(commands.Cog):
                 proxy_down = await self.check_proxy("socks5://" + proxy_uri)
                 results[proxy_uri]["tested"] = True
                 if proxy_down > 0:
+                    embed.colour = discord.Colour.red()
                     if proxy_down == 1:
                         results[proxy_uri]["failure"] = f"{name} Proxy check leaked IP."
                     elif proxy_down == 2:
@@ -2364,9 +2365,11 @@ class OtherCog(commands.Cog):
                     else:
                         results[proxy_uri]["failure"] = "Unknown proxy error."
                 else:
+                    embed.colour = discord.Colour.green()
                     break
             except Exception as e:
                 traceback.print_exc()
+                embed.colour = discord.Colour.red()
                 results[proxy_uri]["failure"] += f"Failed to check {name} proxy (`{e}`)."
                 results[proxy_uri]["tested"] = True
         else:
@@ -2381,7 +2384,7 @@ class OtherCog(commands.Cog):
                 embed.add_field(
                     name=value["name"],
                     value=value["failure"] or "Proxy is working.",
-                    inline=False
+                    inline=True
                 )
         embed.set_footer(text="No speed test will be run.")
         await ctx.respond(embed=embed)
@@ -2425,7 +2428,8 @@ class OtherCog(commands.Cog):
                 embed2 = discord.Embed(
                     title=f"\U000023f2\U0000fe0f Speed test results (for {proxy_uri})",
                     description=f"Downloaded {megabytes:,.1f}MB in {elapsed:,.0f} seconds "
-                                f"({megabits_per_second:,.0f}Mbps)."
+                                f"({megabits_per_second:,.0f}Mbps).",
+                    colour=discord.Colour.green() if megabits_per_second >= 50 else discord.Colour.red()
                 )
                 embed2.add_field(name="Source", value=used)
                 await ctx.edit(embeds=[embed, embed2])
