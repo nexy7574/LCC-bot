@@ -2314,9 +2314,11 @@ class OtherCog(commands.Cog):
                     "NexBox",
                     "first-working"
                 ]
-            ) = "first-working"
+            ) = "first-working",
+            test_time: float = 30
     ):
         """Tests proxies."""
+        test_time = max(5.0, test_time)
         await ctx.defer()
         SPEED_REGIONS = [
             "fsn1",
@@ -2405,11 +2407,14 @@ class OtherCog(commands.Cog):
                     try:
                         start = time()
                         used = SPEED_URL.format(region)
+                        latency_start = time()
                         async with client.stream("GET", used) as response:
+                            latency_end = time()
                             async for chunk in response.aiter_bytes():
                                 bytes_received += len(chunk)
-                                if (time() - start) > 30.0:
+                                if (time() - start) > test_time:
                                     break
+                        latency = (latency_end - latency_start) * 1000
                         response.raise_for_status()
                         end = time()
                         now = discord.utils.utcnow()
@@ -2428,7 +2433,7 @@ class OtherCog(commands.Cog):
                 embed2 = discord.Embed(
                     title=f"\U000023f2\U0000fe0f Speed test results (for {proxy_uri})",
                     description=f"Downloaded {megabytes:,.1f}MB in {elapsed:,.0f} seconds "
-                                f"({megabits_per_second:,.0f}Mbps).",
+                                f"({megabits_per_second:,.0f}Mbps).\n`{latency:,.0f}ms` latency.",
                     colour=discord.Colour.green() if megabits_per_second >= 50 else discord.Colour.red()
                 )
                 embed2.add_field(name="Source", value=used)
