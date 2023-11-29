@@ -1879,8 +1879,10 @@ class OtherCog(commands.Cog):
         model = model.casefold()
         try:
             model.split(":", 1)
+            print("Model %r already has a tag")
         except ValueError:
             model = model + ":latest"
+            print("Resolved model to %r" % model)
 
         servers: dict[str, dict[str, str, list[str] | int]] = {
             "100.106.34.86:11434": {
