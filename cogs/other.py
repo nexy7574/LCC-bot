@@ -1928,7 +1928,7 @@ class OtherCog(commands.Cog):
             if _srv["owner"] == ctx.user.id:
                 return True
             for pat in _srv.get("allow", ['*']):
-                if not fnmatch.fnmatch(model_name.casefold(), pat.casefold()):
+                if not fnmatch.fnmatch(model_name.lower(), pat.lower()):
                     print(
                         "Server %r does not support %r (only %r.)" % (
                             _srv['name'],
@@ -1936,7 +1936,10 @@ class OtherCog(commands.Cog):
                             ', '.join(_srv['allow'])
                         )
                     )
-                    return False
+                else:
+                    break
+            else:
+                return False
             return True
 
         class ServerSelector(discord.ui.View):
