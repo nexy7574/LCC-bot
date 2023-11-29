@@ -209,8 +209,8 @@ class OtherCog(commands.Cog):
         driver: Literal["chrome", "firefox"],
         render_time: int = 10,
         load_timeout: int = 30,
-        window_height: int = 1440,
-        window_width: int = 2560,
+        window_height: int = 2560,
+        window_width: int = 1440,
         full_screenshot: bool = False,
     ) -> Tuple[discord.File, str, int, int]:
         async def _blocking(*args):
@@ -721,10 +721,10 @@ class OtherCog(commands.Cog):
         render_timeout: discord.Option(int, name="render-timeout", description="Timeout for rendering", default=3),
         load_timeout: discord.Option(int, name="load-timeout", description="Timeout for page load", default=60),
         window_height: discord.Option(
-            int, name="window-height", description="the height of the window in pixels", default=1440
+            int, name="window-height", description="the height of the window in pixels", default=2560
         ),
         window_width: discord.Option(
-            int, name="window-width", description="the width of the window in pixels", default=2560
+            int, name="window-width", description="the width of the window in pixels", default=1440
         ),
         capture_whole_page: discord.Option(
             bool,
@@ -737,8 +737,8 @@ class OtherCog(commands.Cog):
         if capture_whole_page and browser != "firefox":
             await ctx.respond(":warning: capture-full-page is only available with firefox; switching browser.")
             browser = "firefox"
-        window_width = max(min(15360 * 6, window_width), 256)
-        window_height = max(min(8640 * 6, window_height), 144)
+        window_width = max(min(8640, window_width), 144)
+        window_height = max(min(15360, window_height), 256)
         await ctx.defer()
         url = urlparse(url)
         if not url.scheme:
