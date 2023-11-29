@@ -2028,7 +2028,7 @@ class OtherCog(commands.Cog):
                     " any of the following: {}".format(
                         srv["owner"],
                         srv["name"],
-                        ", ".join(srv.get("allowed", ["*"]))
+                        ", ".join(srv.get("allow", ["*"]))
                     )
                 )
 
