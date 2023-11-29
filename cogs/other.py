@@ -834,7 +834,7 @@ class OtherCog(commands.Cog):
                 "Details:\n"
                 f"* Browser: {driver}\n"
                 f"* Resolution: {window_height}x{window_width} ({window_width*window_height:,} pixels, "
-                f"{file_size * 1024 * 1024:,.1f}MB)\n"
+                f"{file_size / 1024 / 1024:,.1f}MB)\n"
                 f"* URL: <{friendly_url}>\n"
                 f"* Load time: {fetch_time:.2f}ms\n"
                 f"* Screenshot render time: {screenshot_time:.2f}ms\n"
