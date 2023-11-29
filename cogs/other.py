@@ -202,24 +202,6 @@ class OtherCog(commands.Cog):
         self._fmt_cache[url] = new
         return new
 
-    class AbortScreenshotTask(discord.ui.View):
-        def __init__(self, task: asyncio.Task):
-            super().__init__()
-            self.task = task
-
-        @discord.ui.button(label="Abort", style=discord.ButtonStyle.red)
-        async def abort(self, button: discord.ui.Button, interaction: discord.Interaction):
-            new: discord.Interaction = await interaction.response.send_message("Aborting...", ephemeral=True)
-            self.task.cancel()
-            try:
-                await self.task
-            except asyncio.CancelledError:
-                pass
-            self.disable_all_items()
-            button.label = "[ aborted ]"
-            await new.edit_original_response(content="Aborted screenshot task.", view=self)
-            self.stop()
-
     async def screenshot_website(
         self,
         ctx: discord.ApplicationContext,
@@ -332,9 +314,7 @@ class OtherCog(commands.Cog):
         start = time()
         data = await _blocking(screenshot_method)
         _io = io.BytesIO()
-        # Write the data async because HAHAHAHAHAHAHA
-        # We'll do it in the existing event loop though because less overhead
-        await _blocking(_io.write, data)
+        _io.write(data)
         _io.seek(0)
         end = time()
         screenshot_time = round((end - start) * 1000)
@@ -741,10 +721,10 @@ class OtherCog(commands.Cog):
         render_timeout: discord.Option(int, name="render-timeout", description="Timeout for rendering", default=3),
         load_timeout: discord.Option(int, name="load-timeout", description="Timeout for page load", default=60),
         window_height: discord.Option(
-            int, name="window-height", description="the height of the window in pixels", default=1920
+            int, name="window-height", description="the height of the window in pixels", default=1440
         ),
         window_width: discord.Option(
-            int, name="window-width", description="the width of the window in pixels", default=1080
+            int, name="window-width", description="the width of the window in pixels", default=2560
         ),
         capture_whole_page: discord.Option(
             bool,
@@ -756,12 +736,9 @@ class OtherCog(commands.Cog):
         """Takes a screenshot of a URL"""
         if capture_whole_page and browser != "firefox":
             return await ctx.respond("The capture-full-page option is only available for firefox.")
-        window_width = max(min(1080 * 6, window_width), 1080 // 6)
-        window_height = max(min(1920 * 6, window_height), 1920 // 6)
+        window_width = max(min(15360 * 6, window_width), 256)
+        window_height = max(min(8640 * 6, window_height), 144)
         await ctx.defer()
-        # if ctx.user.id == 1019233057519177778 and ctx.me.guild_permissions.moderate_members:
-        #     if ctx.user.communication_disabled_until is None:
-        #         await ctx.user.timeout_for(timedelta(minutes=2), reason="no")
         url = urlparse(url)
         if not url.scheme:
             if "/" in url.path:
