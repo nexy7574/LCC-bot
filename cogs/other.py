@@ -2341,7 +2341,7 @@ class OtherCog(commands.Cog):
             }
         }
         if proxy_name != "first-working":
-            for key, value in results.items():
+            for key, value in results.copy().items():
                 if value["name"].lower() == proxy_name.lower():
                     continue
                 else:
