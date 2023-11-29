@@ -227,8 +227,8 @@ class OtherCog(commands.Cog):
         driver: Literal["chrome", "firefox"],
         render_time: int = 10,
         load_timeout: int = 30,
-        window_height: int = 1920,
-        window_width: int = 1080,
+        window_height: int = 1440,
+        window_width: int = 2560,
         full_screenshot: bool = False,
     ) -> Tuple[discord.File, str, int, int]:
         async def _blocking(*args):
@@ -849,11 +849,14 @@ class OtherCog(commands.Cog):
             return await ctx.edit(content=f"Failed: {e}", delete_after=30)
         else:
             await ctx.edit(content=f"Screenshotting <{friendly_url}>... (99%, uploading image)")
+            file_size = len(screenshot.fp.read())
+            screenshot.fp.seek(0)
             await ctx.edit(
                 content="Here's your screenshot!\n"
                 "Details:\n"
                 f"* Browser: {driver}\n"
-                f"* Resolution: {window_height}x{window_width} ({window_width*window_height:,} pixels)\n"
+                f"* Resolution: {window_height}x{window_width} ({window_width*window_height:,} pixels, "
+                f"{file_size * 1024 * 1024:,.1f}MB)\n"
                 f"* URL: <{friendly_url}>\n"
                 f"* Load time: {fetch_time:.2f}ms\n"
                 f"* Screenshot render time: {screenshot_time:.2f}ms\n"
