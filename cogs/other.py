@@ -1,14 +1,9 @@
 import asyncio
-import base64
 import fnmatch
 import functools
 import glob
 import io
-import ipaddress
 import json
-import typing
-import zlib
-
 import math
 import os
 import random
@@ -19,6 +14,7 @@ import sys
 import tempfile
 import textwrap
 import traceback
+import typing
 from functools import partial
 from io import BytesIO
 from pathlib import Path
@@ -38,8 +34,8 @@ from discord import Interaction
 from discord.ext import commands
 from dns import asyncresolver
 from PIL import Image
-from rich.tree import Tree
 from rich import print
+from rich.tree import Tree
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -2327,19 +2323,20 @@ class OtherCog(commands.Cog):
             "ash",
             "hil"
         ]
-        SPEED_URL = "https://{}-speed.hetzner.com/1GB.bin"
         results = {
             "localhost:1090": {
                 "name": "SHRoNK",
                 "failure": None,
                 "download_speed": 0.0,
-                "tested": False
+                "tested": False,
+                "speedtest": "https://{hetzner_region}-speed.hetzner.com/100M.bin"
             },
             "localhost:1080": {
                 "name": "NexBox",
                 "failure": None,
                 "download_speed": 0.0,
-                "tested": False
+                "tested": False,
+                "speedtest": "http://192.168.0.90:82/100M.bin"
             }
         }
         if proxy_name != "first-working":
@@ -2412,7 +2409,7 @@ class OtherCog(commands.Cog):
                 for region in SPEED_REGIONS:
                     try:
                         start = time()
-                        used = SPEED_URL.format(region)
+                        used = results[proxy_uri]["speedtest"].format(hetzner_region=region)
                         latency_start = time()
                         async with client.stream("GET", used) as response:
                             latency_end = time()

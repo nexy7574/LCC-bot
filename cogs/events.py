@@ -11,7 +11,6 @@ import re
 import subprocess
 import textwrap
 import traceback
-import pydantic
 import warnings
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -19,6 +18,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import discord
 import httpx
+import pydantic
 from bs4 import BeautifulSoup
 from config import guilds
 from discord.ext import commands, pages, tasks
