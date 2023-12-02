@@ -1037,7 +1037,7 @@ class OtherCog(commands.Cog):
                 args["proxy"] = proxy_url
             if extract_audio:
                 args["postprocessors"] = [
-                    {"key": "FFmpegExtractAudio", "preferredquality": "24", "preferredcodec": "opus"}
+                    {"key": "FFmpegExtractAudio", "preferredquality": "96", "preferredcodec": "best"}
                 ]
                 args["format"] = args["format"] or f"(ba/b)[filesize<={MAX_SIZE_MB}M]/ba/b"
 
