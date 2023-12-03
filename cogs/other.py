@@ -13,6 +13,7 @@ import os
 import random
 import re
 import shutil
+import hashlib
 import subprocess
 import sys
 import tempfile
@@ -2457,28 +2458,39 @@ class OtherCog(commands.Cog):
             return await ctx.respond("No voice messages.")
         if getattr(config, "OPENAI_KEY", None) is None:
             return await ctx.respond("Service unavailable.")
-        client = openai.OpenAI(api_key=config.OPENAI_KEY)
-        with tempfile.NamedTemporaryFile("wb+", suffix=".mp4") as f:
-            with tempfile.NamedTemporaryFile("wb+", suffix="-" + attachment.filename) as f2:
-                await attachment.save(f2.name)
-                f2.seek(0)
-                seg: pydub.AudioSegment = await asyncio.to_thread(pydub.AudioSegment.from_ogg, file=f2)
-                seg = seg.set_channels(1)
-                await asyncio.to_thread(
-                    seg.export, f.name, format="mp4"
-                )
-            f.seek(0)
+        file_hash = hashlib.sha1(usedforsecurity=False)
+        file_hash.update(await attachment.read())
+        file_hash = file_hash.hexdigest()
 
-            transcript = await asyncio.to_thread(
-                client.audio.transcriptions.create,
-                file=pathlib.Path(f.name),
-                model="whisper-1"
-            )
-            paginator = commands.Paginator("", "", 4096)
-            for line in transcript.text.splitlines():
-                paginator.add_line(textwrap.shorten(line, 4096))
-            embeds = list(map(lambda p: discord.Embed(description=p), paginator.pages))
-            return await ctx.respond(embeds=embeds or [discord.Embed(description="No text found.")])
+        cache = Path.home() / ".cache" / "lcc-bot" / ("%s-transcript.txt" % file_hash)
+        if not cache.exists():
+            client = openai.OpenAI(api_key=config.OPENAI_KEY)
+            with tempfile.NamedTemporaryFile("wb+", suffix=".mp4") as f:
+                with tempfile.NamedTemporaryFile("wb+", suffix="-" + attachment.filename) as f2:
+                    await attachment.save(f2.name)
+                    f2.seek(0)
+                    seg: pydub.AudioSegment = await asyncio.to_thread(pydub.AudioSegment.from_ogg, file=f2)
+                    seg = seg.set_channels(1)
+                    await asyncio.to_thread(
+                        seg.export, f.name, format="mp4"
+                    )
+                f.seek(0)
+
+                transcript = await asyncio.to_thread(
+                    client.audio.transcriptions.create,
+                    file=pathlib.Path(f.name),
+                    model="whisper-1"
+                )
+                text = transcript.text
+                cache.write_text(text)
+        else:
+            text = cache.read_text()
+
+        paginator = commands.Paginator("", "", 4096)
+        for line in text.splitlines():
+            paginator.add_line(textwrap.shorten(line, 4096))
+        embeds = list(map(lambda p: discord.Embed(description=p), paginator.pages))
+        return await ctx.respond(embeds=embeds or [discord.Embed(description="No text found.")])
 
 
 def setup(bot):
