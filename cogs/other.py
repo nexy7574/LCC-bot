@@ -2451,8 +2451,10 @@ class OtherCog(commands.Cog):
         if not message.attachments:
             return await ctx.respond("No attachments found.")
 
+        _ft = "wav"
         for attachment in message.attachments:
-            if attachment.content_type == "audio/ogg":
+            if attachment.content_type == "audio/":
+                _ft = attachment.filename.split(".")[-1]
                 break
         else:
             return await ctx.respond("No voice messages.")
@@ -2469,7 +2471,7 @@ class OtherCog(commands.Cog):
                 with tempfile.NamedTemporaryFile("wb+", suffix="-" + attachment.filename) as f2:
                     await attachment.save(f2.name)
                     f2.seek(0)
-                    seg: pydub.AudioSegment = await asyncio.to_thread(pydub.AudioSegment.from_ogg, file=f2)
+                    seg: pydub.AudioSegment = await asyncio.to_thread(pydub.AudioSegment.from_file, file=f2, format=_ft)
                     seg = seg.set_channels(1)
                     await asyncio.to_thread(
                         seg.export, f.name, format="mp4"
