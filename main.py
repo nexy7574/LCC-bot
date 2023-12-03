@@ -1,6 +1,7 @@
 import asyncio
 import sys
 import logging
+import textwrap
 from datetime import datetime, timedelta, timezone
 
 import config
@@ -48,7 +49,8 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
     if ctx.user.id == 1019233057519177778:
         await ctx.respond("Uh oh! I did a fucky wucky >.< I'll make sure to let important peoplez know straight away!!")
     else:
-        await ctx.respond("Application Command Error: `%r`" % error)
+        text = "Application Command Error: `%r`" % error
+        await ctx.respond(textwrap.shorten(text, 2000))
     raise error
 
 

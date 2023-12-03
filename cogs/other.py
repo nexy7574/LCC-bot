@@ -3,6 +3,10 @@ import fnmatch
 import functools
 import glob
 import io
+import pathlib
+
+import openai
+import pydub
 import json
 import math
 import os
@@ -43,6 +47,7 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
 
+import config
 from utils import Timer, console
 
 try:
@@ -2437,6 +2442,43 @@ class OtherCog(commands.Cog):
                 )
                 embed2.add_field(name="Source", value=used)
                 await ctx.edit(embeds=[embed, embed2])
+
+    @commands.message_command(name="Transcribe")
+    async def transcribe_message(self, ctx: discord.ApplicationContext, message: discord.Message):
+        """Transcribes a message."""
+        await ctx.defer()
+        if not message.attachments:
+            return await ctx.respond("No attachments found.")
+
+        for attachment in message.attachments:
+            if attachment.content_type == "audio/ogg":
+                break
+        else:
+            return await ctx.respond("No voice messages.")
+        if getattr(config, "OPENAI_KEY", None) is None:
+            return await ctx.respond("Service unavailable.")
+        client = openai.OpenAI(api_key=config.OPENAI_KEY)
+        with tempfile.NamedTemporaryFile("wb+", suffix=".mp4") as f:
+            with tempfile.NamedTemporaryFile("wb+", suffix="-" + attachment.filename) as f2:
+                await attachment.save(f2.name)
+                f2.seek(0)
+                seg: pydub.AudioSegment = await asyncio.to_thread(pydub.AudioSegment.from_ogg, file=f2)
+                seg = seg.set_channels(1)
+                await asyncio.to_thread(
+                    seg.export, f.name, format="mp4"
+                )
+            f.seek(0)
+
+            transcript = await asyncio.to_thread(
+                client.audio.transcriptions.create,
+                file=pathlib.Path(f.name),
+                model="whisper-1"
+            )
+            paginator = commands.Paginator("", "", 4096)
+            for line in transcript.text.splitlines():
+                paginator.add_line(textwrap.shorten(line, 4096))
+            embeds = list(map(lambda p: discord.Embed(description=p), paginator.pages))
+            return await ctx.respond(embeds=embeds or [discord.Embed(description="No text found.")])
 
 
 def setup(bot):
