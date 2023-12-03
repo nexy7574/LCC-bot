@@ -2453,7 +2453,7 @@ class OtherCog(commands.Cog):
 
         _ft = "wav"
         for attachment in message.attachments:
-            if attachment.content_type == "audio/":
+            if attachment.content_type.startswith("audio/"):
                 _ft = attachment.filename.split(".")[-1]
                 break
         else:
