@@ -349,20 +349,6 @@ class OtherCog(commands.Cog):
                     )
         return result
 
-    async def analyse_text(self, text: str) -> Optional[Tuple[float, float, float, float]]:
-        """Analyse text for positivity, negativity and neutrality."""
-
-        def inner():
-            try:
-                from utils.sentiment_analysis import intensity_analyser
-            except ImportError:
-                return None
-            scores = intensity_analyser.polarity_scores(text)
-            return scores["pos"], scores["neu"], scores["neg"], scores["compound"]
-
-        async with self.bot.training_lock:
-            return await self.bot.loop.run_in_executor(None, inner)
-
     @staticmethod
     async def get_xkcd(session: aiohttp.ClientSession, n: int) -> dict | None:
         async with session.get("https://xkcd.com/{!s}/info.0.json".format(n)) as response:
@@ -444,40 +430,6 @@ class OtherCog(commands.Cog):
         embed = await self.generate_xkcd(number)
         view = self.XKCDGalleryView(number)
         return await ctx.respond(embed=embed, view=view)
-
-    @commands.slash_command()
-    async def sentiment(self, ctx: discord.ApplicationContext, *, text: str):
-        """Attempts to detect a text's tone"""
-        await ctx.defer()
-        if not text:
-            return await ctx.respond("You need to provide some text to analyse.")
-        result = await self.analyse_text(text)
-        if result is None:
-            return await ctx.edit(content="Failed to load sentiment analysis module.")
-        embed = discord.Embed(title="Sentiment Analysis", color=discord.Colour.embed_background())
-        embed.add_field(name="Positive", value="{:.2%}".format(result[0]))
-        embed.add_field(name="Neutral", value="{:.2%}".format(result[2]))
-        embed.add_field(name="Negative", value="{:.2%}".format(result[1]))
-        embed.add_field(name="Compound", value="{:.2%}".format(result[3]))
-        return await ctx.edit(content=None, embed=embed)
-
-    @commands.message_command(name="Detect Sentiment")
-    async def message_sentiment(self, ctx: discord.ApplicationContext, message: discord.Message):
-        await ctx.defer()
-        text = str(message.clean_content)
-        if not text:
-            return await ctx.respond("You need to provide some text to analyse.")
-        await ctx.respond("Analyzing (this may take some time)...")
-        result = await self.analyse_text(text)
-        if result is None:
-            return await ctx.edit(content="Failed to load sentiment analysis module.")
-        embed = discord.Embed(title="Sentiment Analysis", color=discord.Colour.embed_background())
-        embed.add_field(name="Positive", value="{:.2%}".format(result[0]))
-        embed.add_field(name="Neutral", value="{:.2%}".format(result[2]))
-        embed.add_field(name="Negative", value="{:.2%}".format(result[1]))
-        embed.add_field(name="Compound", value="{:.2%}".format(result[3]))
-        embed.url = message.jump_url
-        return await ctx.edit(content=None, embed=embed)
 
     corrupt_file = discord.SlashCommandGroup(
         name="corrupt-file",

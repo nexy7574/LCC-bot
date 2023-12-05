@@ -94,21 +94,6 @@ class Events(commands.Cog):
     def cog_unload(self):
         self.fetch_discord_atom_feed.cancel()
 
-    # noinspection DuplicatedCode
-    async def analyse_text(self, text: str) -> Optional[Tuple[float, float, float, float]]:
-        """Analyse text for positivity, negativity and neutrality."""
-
-        def inner():
-            try:
-                from utils.sentiment_analysis import intensity_analyser
-            except ImportError:
-                return None
-            scores = intensity_analyser.polarity_scores(text)
-            return scores["pos"], scores["neu"], scores["neg"], scores["compound"]
-
-        async with self.bot.training_lock:
-            return await self.bot.loop.run_in_executor(None, inner)
-
     @commands.Cog.listener("on_raw_reaction_add")
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         channel: Optional[discord.TextChannel] = self.bot.get_channel(payload.channel_id)
