@@ -3,6 +3,7 @@ import sys
 import logging
 import textwrap
 from datetime import datetime, timedelta, timezone
+from rich.logging import RichHandler
 
 import config
 import discord
@@ -12,17 +13,20 @@ from utils import JimmyBanException, JimmyBans, console, get_or_none
 from utils.client import bot
 
 logging.basicConfig(
-    filename="jimmy.log",
-    filemode="a",
+    filename=getattr(config, "LOG_FILE", "jimmy.log"),
+    filemode=getattr(config, "LOG_MODE", "a"),
     format="%(asctime)s:%(level)s:%(name)s: %(message)s",
     datefmt="%Y-%m-%d:%H:%M",
-    level=logging.INFO
+    level=getattr(config, "LOG_LEVEL", logging.INFO)
 )
+# echo to stdout
+handler = RichHandler(getattr(config, "LOG_LEVEL", logging.INFO), console=console, markup=True)
+logging.getLogger().addHandler(handler)
 
 
 @bot.listen()
 async def on_connect():
-    console.log("[green]Connected to discord!")
+    bot.log.info("[green]Connected to discord!")
 
 
 @bot.listen("on_application_command_error")
@@ -66,7 +70,7 @@ async def on_command_error(ctx: commands.Context, error: Exception):
 
 @bot.listen("on_application_command")
 async def on_application_command(ctx: discord.ApplicationContext):
-    console.log(
+    bot.log.info(
         "{0.author} ({0.author.id}) used application command /{0.command.qualified_name} in "
         "[blue]#{0.channel}[/], {0.guild}".format(ctx)
     )
@@ -74,9 +78,9 @@ async def on_application_command(ctx: discord.ApplicationContext):
 
 @bot.event
 async def on_ready():
-    console.log("Logged in as", bot.user)
+    bot.log.info("(READY) Logged in as", bot.user)
     if getattr(config, "CONNECT_MODE", None) == 1:
-        console.log("Bot is now ready and exit target 1 is set, shutting down.")
+        bot.log.critical("Bot is now ready and exit target 1 is set, shutting down.")
         await bot.close()
         sys.exit(0)
 
@@ -105,10 +109,11 @@ async def check_not_banned(ctx: discord.ApplicationContext | commands.Context):
 
 
 if __name__ == "__main__":
-    console.log("Starting...")
+    bot.log.info("Starting...")
     bot.started_at = discord.utils.utcnow()
 
     if getattr(config, "WEB_SERVER", True):
+        bot.log.info("Web server is enabled (WEB_SERVER=True in config.py), initialising.")
         import uvicorn
 
         from web.server import app
@@ -119,11 +124,11 @@ if __name__ == "__main__":
             app,
             host=getattr(config, "HTTP_HOST", "127.0.0.1"),
             port=getattr(config, "HTTP_PORT", 3762),
-            loop="asyncio",
             **getattr(config, "UVICORN_CONFIG", {}),
         )
+        bot.log.info("Web server will listen on %s:%s", http_config.host, http_config.port)
         server = uvicorn.Server(http_config)
-        console.log("Starting web server...")
+        bot.log.info("Starting web server...")
         loop = bot.loop
         http_server_task = loop.create_task(server.serve())
         bot.web = {
@@ -131,5 +136,5 @@ if __name__ == "__main__":
             "config": http_config,
             "task": http_server_task,
         }
-
+    bot.log.info("Beginning main loop.")
     bot.run(config.token)
