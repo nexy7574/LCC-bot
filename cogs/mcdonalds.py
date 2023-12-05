@@ -112,7 +112,7 @@ class McDonaldsCog(commands.Cog):
             return
 
         async with self.lock:
-            NIGHTMARE_REGEX = re.compile(r"[|\s]*(?P<username>[^|]+)(#0)?[|\s]*:( bypassed.*)?")
+            NIGHTMARE_REGEX = re.compile(r"(\|\|.+\|\|)?(?P<username>[a-zA-Z0-9]{2,32}).*")
             if m := NIGHTMARE_REGEX.match(message.content):
                 username = m.group(1)
                 member = discord.utils.get(message.guild.members, name=username)
