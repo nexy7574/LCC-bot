@@ -17,11 +17,13 @@ class McDataBase:
     async def init_db(self):
         if self._conn:
             conn = self._conn
+            now = round(discord.utils.utcnow().timestamp(), 2)
             await conn.execute(
-                """
+                f"""
                 CREATE TABLE IF NOT EXISTS breaks (
                     user_id INTEGER PRIMARY KEY,
-                    since FLOAT NOT NULL
+                    since FLOAT NOT NULL,
+                    started FLOAT NOT NULL DEFAULT {now}
                 );
                 """
             )
@@ -34,10 +36,10 @@ class McDataBase:
                 """
             )
 
-    async def get_break(self, user_id: int) -> typing.Optional[tuple[float]]:
+    async def get_break(self, user_id: int) -> typing.Optional[tuple[float, float]]:
         async with self._conn.execute(
             """
-            SELECT since FROM breaks WHERE user_id = ?;
+            SELECT since, started FROM breaks WHERE user_id = ?;
             """,
             (user_id,)
         ) as cursor:
@@ -114,7 +116,7 @@ class McDonaldsCog(commands.Cog):
         async with self.lock:
             NIGHTMARE_REGEX = re.compile(r"(\|\|.+\|\|)?(?P<username>[a-zA-Z0-9]{2,32}).*")
             if m := NIGHTMARE_REGEX.match(message.content):
-                username = m.group(1)
+                username = m.group("username")
                 member = discord.utils.get(message.guild.members, name=username)
                 if member:
                     author = member
@@ -122,8 +124,16 @@ class McDonaldsCog(commands.Cog):
             async with McDataBase() as db:
                 if (last_info := await db.get_break(author.id)) is not None:
                     if message.content.upper() != "MCDONALDS!":
-                        await message.delete()
-                        if (message.created_at.timestamp() - last_info[0]) > 10:
+                        if (message.created_at.timestamp() - last_info[1]) > 300:
+                            await db.remove_break(author.id)
+                            await message.reply(
+                                f"Thank you for your patience during this commercial break. You may now resume your"
+                                f" activity.",
+                                delete_after=120
+                            )
+
+                        elif (message.created_at.timestamp() - last_info[0]) > 10:
+                            await message.delete(delay=0)
                             await message.channel.send(
                                 f"{message.author.mention} Please say `MCDONALDS!` to end commercial.",
                                 delete_after=30
