@@ -2446,7 +2446,6 @@ class OtherCog(commands.Cog):
 
     @commands.message_command(name="Transcribe")
     async def transcribe_message(self, ctx: discord.ApplicationContext, message: discord.Message):
-        """Transcribes a message."""
         await ctx.defer()
         if not message.attachments:
             return await ctx.respond("No attachments found.")
@@ -2465,6 +2464,7 @@ class OtherCog(commands.Cog):
         file_hash = file_hash.hexdigest()
 
         cache = Path.home() / ".cache" / "lcc-bot" / ("%s-transcript.txt" % file_hash)
+        cached = False
         if not cache.exists():
             client = openai.OpenAI(api_key=config.OPENAI_KEY)
             with tempfile.NamedTemporaryFile("wb+", suffix=".mp4") as f:
@@ -2487,12 +2487,21 @@ class OtherCog(commands.Cog):
                 cache.write_text(text)
         else:
             text = cache.read_text()
+            cached = True
 
         paginator = commands.Paginator("", "", 4096)
         for line in text.splitlines():
             paginator.add_line(textwrap.shorten(line, 4096))
         embeds = list(map(lambda p: discord.Embed(description=p), paginator.pages))
-        return await ctx.respond(embeds=embeds or [discord.Embed(description="No text found.")])
+        await ctx.respond(embeds=embeds or [discord.Embed(description="No text found.")])
+        
+        if await self.bot.is_owner(ctx.user):
+            await ctx.respond(
+                ("Cached response ({})" if cached else "Uncached response ({})").format(
+                    file_hash
+                ),
+                ephemeral=True
+            )
 
 
 def setup(bot):
