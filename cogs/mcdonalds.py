@@ -129,7 +129,7 @@ class McDonaldsCog(commands.Cog):
                                 delete_after=30
                             )
                             await db.set_break(author.id, message.created_at.timestamp())
-                    else:
+                    elif message.author.bot is False:
                         await db.remove_break(author.id)
                         await message.reply(
                             "Thank you. You may now resume your activity.",
@@ -170,6 +170,28 @@ class McDonaldsCog(commands.Cog):
             )
             await ctx.respond("Commercial break started.", ephemeral=True)
             await ctx.delete(delay=120)
+
+    @commands.command(name="commercial-break")
+    @commands.is_owner()
+    async def _force_com_break(self, ctx: commands.Context, *, member: discord.Member):
+        """Forces a member to go on commercial break."""
+        async with McDataBase() as db:
+            await db.set_break(member.id, discord.utils.utcnow().timestamp())
+            await ctx.reply(
+                f"{member.mention} Commercial break! Please say `MCDONALDS!` to end commercial.\n"
+                f"*This commercial break is sponsored by {ctx.author.mention}.*",
+                delete_after=300,
+                allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
+            )
+            await ctx.message.delete(delay=120)
+
+    @commands.command(name="end-break")
+    @commands.is_owner()
+    async def _unforce_com_break(self, ctx: commands.Context, *, member: discord.Member):
+        """Forces a member to finish their commercial break."""
+        async with McDataBase() as db:
+            await db.remove_break(member.id)
+            await ctx.reply(f"{member.mention} Commercial break ended.", delete_after=10)
 
 
 def setup(bot):
