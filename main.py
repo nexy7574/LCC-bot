@@ -60,7 +60,7 @@ async def on_command_error(ctx: commands.Context, error: Exception):
         return
     elif isinstance(error, JimmyBanException):
         return await ctx.reply(str(error))
-    await ctx.reply("Command Error: `%r`" % error)
+    await ctx.reply(textwrap.shorten("Command Error: `%r`" % error, 2000))
     raise error
 
 

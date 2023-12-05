@@ -1,5 +1,5 @@
 import asyncio
-import typing
+import aiosqlite
 
 import discord
 from discord.ext import commands
@@ -29,29 +29,36 @@ class McDonaldsCog(commands.Cog):
                         )
                         self.targets[message.author] = message.created_at.timestamp()
                 else:
-                    await message.reply(
-                        "Thank you. You may now resume your activity.",
-                        delete_after=60
-                    )
                     self.targets.pop(message.author, None)
                     self.cooldown[message.author] = message.created_at.timestamp()
+                    await message.reply(
+                        "Thank you. You may now resume your activity.",
+                        delete_after=120
+                    )
 
     @commands.user_command(name="Commercial Break")
     async def commercial_break(self, ctx: discord.ApplicationContext, member: discord.Member):
         await ctx.defer(ephemeral=True)
+
         if not ctx.channel.permissions_for(ctx.me).manage_messages:
             return await ctx.respond("I don't have permission to manage messages in this channel.", ephemeral=True)
+
         if member.bot or member == ctx.user:
             return await ctx.respond("No.", ephemeral=True)
+
         if member in self.targets.keys():
             await ctx.respond(f"{member.mention} is already in a commercial break.")
             return
-        elif member in self.cooldown.keys() and self.cooldown[member] + 300 > discord.utils.utcnow().timestamp():
-            await ctx.respond(
-                f"{member.mention} is not due another ad break yet. Their next commercial break will start "
-                f"<t:{int(self.cooldown[member] + 300)}:R> at the earliest."
-            )
-            return
+        elif member in self.cooldown.keys():
+            expires = self.cooldown[member] + 300
+            if expires > discord.utils.utcnow().timestamp():
+                await ctx.respond(
+                    f"{member.mention} is not due another ad break yet. Their next commercial break will start "
+                    f"<t:{int(expires)}:R> at the earliest."
+                )
+                return
+            else:
+                self.cooldown.pop(member, None)
 
         self.targets[member] = discord.utils.utcnow().timestamp()
         await ctx.send(
