@@ -32,7 +32,7 @@ class McDonaldsCog(commands.Cog):
                         "Thank you. You may now resume your activity.",
                         delete_after=60
                     )
-
+                    self.targets.pop(message.author, None)
                     self.cooldown[message.author] = message.created_at.timestamp()
 
     @commands.user_command(name="Commercial Break")
