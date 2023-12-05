@@ -293,7 +293,7 @@ async def bridge(req: Request):
 @app.websocket("/bridge/recv")
 async def bridge_recv(ws: WebSocket, secret: str = Header(None)):
     await ws.accept()
-    print("Websocket %r accepted.", ws)
+    print("Websocket %r accepted." % ws)
     if secret != app.state.bot.http.token:
         print("Closing websocket %r, invalid secret." % ws)
         raise _WSException(code=1008, reason="Invalid Secret")

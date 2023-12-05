@@ -4,7 +4,7 @@ from rich.console import Console
 
 _col, _ = shutil.get_terminal_size((80, 20))
 if _col == 80:
-    _col = 160
+    _col = 200
 
 __all__ = ("console",)
 
