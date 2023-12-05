@@ -2355,7 +2355,7 @@ class OtherCog(commands.Cog):
         for line in stdout.splitlines():
             if line.startswith(">>> Last update"):
                 break
-            if "REDACTED" in line:
+            if "REDACTED" in line or "Please query the WHOIS server of the owning registrar" in line:
                 redacted.write(line.encode() + b"\n")
             else:
                 paginator.add_line(line)
