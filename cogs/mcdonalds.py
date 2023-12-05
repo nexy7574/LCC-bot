@@ -45,13 +45,15 @@ class McDataBase:
         ) as cursor:
             return await cursor.fetchone()
 
-    async def set_break(self, user_id: int, since: float) -> None:
+    async def set_break(self, user_id: int, since: float, started: float = None) -> None:
+        if not started:
+            started = discord.Object(discord.utils.generate_snowflake()).created_at.timestamp()
         await self._conn.execute(
             """
-            INSERT INTO breaks (user_id, since) VALUES (?, ?)
-            ON CONFLICT(user_id) DO UPDATE SET since = excluded.since
+            INSERT INTO breaks (user_id, since, started) VALUES (?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET since = excluded.since, started = excluded.started
             """,
-            (user_id, since)
+            (user_id, since, started)
         )
 
     async def remove_break(self, user_id: int) -> None:
