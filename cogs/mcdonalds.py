@@ -36,7 +36,6 @@ class McDonaldsCog(commands.Cog):
                     self.cooldown[message.author] = message.created_at.timestamp()
 
     @commands.user_command(name="Commercial Break")
-    @commands.cooldown(1, 30, commands.BucketType.user)
     async def commercial_break(self, ctx: discord.ApplicationContext, member: discord.Member):
         await ctx.defer(ephemeral=True)
         if member in self.targets:
