@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import sys
 from asyncio import Lock
 from datetime import datetime, timezone
@@ -30,37 +31,40 @@ class Bot(commands.Bot):
         super().__init__(
             command_prefix=commands.when_mentioned_or(*prefixes),
             debug_guilds=guilds,
-            allowed_mentions=discord.AllowedMentions.none(),
+            allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=False, replied_user=True),
             intents=intents,
             max_messages=5000,
             case_insensitive=True,
         )
         self.loop.run_until_complete(registry.create_all())
         self.training_lock = Lock()
-        self.started_at = datetime.now(tz=timezone.utc)
+        self.started_at = discord.utils.utcnow()
         self.console = console
-        self.incidents = {}
+        self.log = log = logging.getLogger("jimmy.client")
+        self.debug = log.debug
+        self.info = log.info
+        self.warning = self.warn = log.warning
+        self.error = self.log.error
+        self.critical = self.log.critical
         for ext in extensions:
             try:
                 self.load_extension(ext)
             except discord.ExtensionNotFound:
-                console.log(f"[red]Failed to load extension {ext}: Extension not found.")
+                log.error(f"[red]Failed to load extension {ext}: Extension not found.")
             except (discord.ExtensionFailed, OSError) as e:
-                console.log(f"[red]Failed to load extension {ext}: {e}")
-                if getattr(config, "dev", False):
-                    console.print_exception()
+                log.error(f"[red]Failed to load extension {ext}: {e}", exc_info=True)
             else:
-                console.log(f"Loaded extension [green]{ext}")
+                log.info(f"Loaded extension [green]{ext}")
 
     if getattr(config, "CONNECT_MODE", None) == 2:
-
         async def connect(self, *, reconnect: bool = True) -> None:
-            self.console.log("Exit target 2 reached, shutting down (not connecting to discord).")
+            self.log.critical("Exit target 2 reached, shutting down (not connecting to discord).")
             return
 
     async def on_error(self, event: str, *args, **kwargs):
         e_type, e, tb = sys.exc_info()
         if isinstance(e, discord.NotFound) and e.code == 10062:  # invalid interaction
+            self.log.warning(f"Invalid interaction received, ignoring. {e!r}")
             return
         if isinstance(e, discord.CheckFailure) and "The global check once functions failed." in str(e):
             return
@@ -69,25 +73,27 @@ class Bot(commands.Bot):
     async def close(self) -> None:
         await self.http.close()
         if getattr(self, "web", None) is not None:
-            self.console.log("Closing web server...")
-            await self.web["server"].shutdown()
-            if hasattr(self, "web"):
+            self.log.info("Closing web server...")
+            try:
+                await asyncio.wait_for(self.web["server"].shutdown(), timeout=5)
                 self.web["task"].cancel()
                 self.console.log("Web server closed.")
                 try:
-                    await self.web["task"]
-                except asyncio.CancelledError:
+                    await asyncio.wait_for(self.web["task"], timeout=5)
+                except (asyncio.CancelledError, asyncio.TimeoutError):
                     pass
                 del self.web["server"]
                 del self.web["config"]
                 del self.web["task"]
                 del self.web
+            except asyncio.TimeoutError:
+                pass
         try:
             await super().close()
         except asyncio.TimeoutError:
-            self.console.log("Timed out while closing, forcing shutdown.")
+            self.log.critical("Timed out while closing, forcing shutdown.")
             sys.exit(1)
-        self.console.log("Finished shutting down.")
+        self.log.info("Finished shutting down.")
 
 
 try:
