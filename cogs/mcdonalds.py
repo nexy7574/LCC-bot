@@ -14,7 +14,8 @@ class McDonaldsCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if not message.channel.permissions_for(message.guild.me or self.bot.user).manage_messages:
+        me = message.guild.me if message.guild else self.bot.user
+        if not message.channel.permissions_for(me).manage_messages:
             return
 
         async with self.lock:
