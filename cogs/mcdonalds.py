@@ -38,7 +38,7 @@ class McDonaldsCog(commands.Cog):
     @commands.user_command(name="Commercial Break")
     @commands.cooldown(1, 30, commands.BucketType.user)
     async def commercial_break(self, ctx: discord.ApplicationContext, member: discord.Member):
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
         if member in self.targets:
             await ctx.respond(f"{member.mention} is already in a commercial break.")
             return
@@ -53,7 +53,8 @@ class McDonaldsCog(commands.Cog):
         await ctx.send(
             f"{member.mention} Commercial break! Please say `MCDONALDS!` to end commercial.\n"
             f"*This commercial break is sponsored by {ctx.user.mention}.*",
-            delete_after=300
+            delete_after=300,
+            allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
         )
         await ctx.respond("Commercial break started.", ephemeral=True)
         await ctx.delete(delay=120)
