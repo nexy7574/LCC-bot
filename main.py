@@ -1,15 +1,15 @@
+import logging
 import os
 import signal
 import sys
-import logging
 import textwrap
 from datetime import datetime, timedelta, timezone
+
+import discord
+from discord.ext import commands
 from rich.logging import RichHandler
 
 import config
-import discord
-from discord.ext import commands
-
 from utils import JimmyBanException, JimmyBans, console, get_or_none
 from utils.client import bot
 
@@ -25,13 +25,10 @@ logging.basicConfig(
             markup=True,
             rich_tracebacks=True,
             show_path=False,
-            show_time=False
+            show_time=False,
         ),
-        logging.FileHandler(
-            "jimmy.log",
-            "a"
-        )
-    ]
+        logging.FileHandler("jimmy.log", "a"),
+    ],
 )
 logging.getLogger("discord.gateway").setLevel(logging.WARNING)
 for _ln in [
@@ -43,7 +40,7 @@ for _ln in [
     "discord.bot",
     "httpcore.http11",
     "aiosqlite",
-    "httpx"
+    "httpx",
 ]:
     logging.getLogger(_ln).setLevel(logging.INFO)
 

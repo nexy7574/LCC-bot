@@ -6,9 +6,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional, Union
 
-import config
 import discord
 from discord.ext import commands
+
+import config
 
 if TYPE_CHECKING:
     from asyncio import Task
@@ -57,6 +58,7 @@ class Bot(commands.Bot):
                 log.info(f"Loaded extension [green]{ext}")
 
     if getattr(config, "CONNECT_MODE", None) == 2:
+
         async def connect(self, *, reconnect: bool = True) -> None:
             self.log.critical("Exit target 2 reached, shutting down (not connecting to discord).")
             return

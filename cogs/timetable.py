@@ -5,10 +5,10 @@ from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Optional, Union
 
-import config
 import discord
 from discord.ext import commands, tasks
 
+import config
 from utils import TimeTableDaySwitcherView, console
 
 

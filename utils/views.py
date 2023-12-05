@@ -8,13 +8,8 @@ import discord
 import orm
 from discord.ui import View
 
-from utils import (
-    BannedStudentID,
-    Student,
-    VerifyCode,
-    console,
-    get_or_none,
-)
+from utils import BannedStudentID, Student, VerifyCode, console, get_or_none
+
 TOKEN_LENGTH = 16
 
 if typing.TYPE_CHECKING:

@@ -5,7 +5,6 @@ import re
 import typing
 
 import aiosqlite
-
 import discord
 from discord.ext import commands
 
@@ -42,7 +41,7 @@ class McDataBase:
             """
             SELECT since, started FROM breaks WHERE user_id = ?;
             """,
-            (user_id,)
+            (user_id,),
         ) as cursor:
             return await cursor.fetchone()
 
@@ -54,7 +53,7 @@ class McDataBase:
             INSERT INTO breaks (user_id, since, started) VALUES (?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET since = excluded.since, started = excluded.started
             """,
-            (user_id, since, started)
+            (user_id, since, started),
         )
 
     async def remove_break(self, user_id: int) -> None:
@@ -63,7 +62,7 @@ class McDataBase:
             """
             DELETE FROM breaks WHERE user_id = ?;
             """,
-            (user_id,)
+            (user_id,),
         )
         await self.set_cooldown(user_id, now)
 
@@ -72,7 +71,7 @@ class McDataBase:
             """
             SELECT expires FROM cooldowns WHERE user_id = ?;
             """,
-            (user_id,)
+            (user_id,),
         ) as cursor:
             return await cursor.fetchone()
 
@@ -82,7 +81,7 @@ class McDataBase:
             INSERT INTO cooldowns (user_id, expires) VALUES (?, ?)
             ON CONFLICT(user_id) DO UPDATE SET expires = excluded.expires;
             """,
-            (user_id, expires)
+            (user_id, expires),
         )
 
     async def remove_cooldown(self, user_id: int) -> None:
@@ -90,7 +89,7 @@ class McDataBase:
             """
             DELETE FROM cooldowns WHERE user_id = ?;
             """,
-            (user_id,)
+            (user_id,),
         )
 
     async def __aenter__(self) -> "McDataBase":
@@ -123,35 +122,27 @@ class McDonaldsCog(commands.Cog):
                 if (last_info := await db.get_break(author.id)) is not None:
                     if message.content.upper() != "MCDONALDS!":
                         if (message.created_at.timestamp() - last_info[1]) > 300:
-                            self.log.debug(
-                                "Ad break expired for %s (%s).", author.name, author.id
-                            )
+                            self.log.debug("Ad break expired for %s (%s).", author.name, author.id)
                             await db.remove_break(author.id)
                             await message.reply(
                                 f"Thank you for your patience during this commercial break. You may now resume your"
                                 f" activity.",
-                                delete_after=120
+                                delete_after=120,
                             )
 
                         elif (message.created_at.timestamp() - last_info[0]) > 10:
                             self.log.info(
-                                "Deleting message %r by %r as they need to skip the ad first.",
-                                message,
-                                author
+                                "Deleting message %r by %r as they need to skip the ad first.", message, author
                             )
                             await message.delete(delay=0)
                             await message.channel.send(
-                                f"{message.author.mention} Please say `MCDONALDS!` to end commercial.",
-                                delete_after=30
+                                f"{message.author.mention} Please say `MCDONALDS!` to end commercial.", delete_after=30
                             )
                             await db.set_break(author.id, message.created_at.timestamp())
                     elif message.author.bot is False:
                         self.log.info("%r skipped the ad break.", author)
                         await db.remove_break(author.id)
-                        await message.reply(
-                            "Thank you. You may now resume your activity.",
-                            delete_after=120
-                        )
+                        await message.reply("Thank you. You may now resume your activity.", delete_after=120)
 
     @commands.user_command(name="Commercial Break")
     @commands.cooldown(2, 60, commands.BucketType.member)
@@ -184,7 +175,7 @@ class McDonaldsCog(commands.Cog):
                 f"{member.mention} Commercial break! Please say `MCDONALDS!` to end commercial.\n"
                 f"*This commercial break is sponsored by {ctx.user.mention}.*",
                 delete_after=300,
-                allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
+                allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False),
             )
             await ctx.respond("Commercial break started.", ephemeral=True)
             await ctx.delete(delay=120)
@@ -199,7 +190,7 @@ class McDonaldsCog(commands.Cog):
                 f"{member.mention} Commercial break! Please say `MCDONALDS!` to end commercial.\n"
                 f"*This commercial break is sponsored by {ctx.author.mention}.*",
                 delete_after=300,
-                allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
+                allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False),
             )
             await ctx.message.delete(delay=120)
 

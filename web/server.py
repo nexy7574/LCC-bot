@@ -3,6 +3,7 @@ import ipaddress
 import logging
 import os
 import textwrap
+from asyncio import Lock
 from datetime import datetime, timezone
 from hashlib import sha512
 from http import HTTPStatus
@@ -10,13 +11,13 @@ from pathlib import Path
 
 import discord
 import httpx
-from config import guilds
-from asyncio import Lock
-from fastapi import FastAPI, Header, HTTPException, Request, WebSocketException as _WSException
-from websockets.exceptions import WebSocketException
+from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import WebSocketException as _WSException
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from starlette.websockets import WebSocket, WebSocketDisconnect
+from websockets.exceptions import WebSocketException
 
+from config import guilds
 from utils import BannedStudentID, Student, VerifyCode, console, get_or_none
 from utils.db import AccessTokens
 
@@ -112,7 +113,8 @@ async def authenticate(req: Request, code: str = None, state: str = None):
         return RedirectResponse(
             discord.utils.oauth_url(
                 OAUTH_ID, redirect_uri=OAUTH_REDIRECT_URI, scopes=("identify", "connections", "guilds", "email")
-            ) + f"&state={value}&prompt=none",
+            )
+            + f"&state={value}&prompt=none",
             status_code=HTTPStatus.TEMPORARY_REDIRECT,
             headers={"Cache-Control": "no-store, no-cache"},
         )

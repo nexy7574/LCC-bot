@@ -20,9 +20,9 @@ import discord
 import httpx
 import pydantic
 from bs4 import BeautifulSoup
-from config import guilds
 from discord.ext import commands, pages, tasks
 
+from config import guilds
 from utils import Student, console, get_or_none
 
 try:
@@ -319,15 +319,16 @@ class Events(commands.Cog):
             return
 
         if message.channel.name == "femboy-hole":
+
             def generate_payload(_message: discord.Message) -> MessagePayload:
                 _payload = MessagePayload(
                     message_id=_message.id,
                     author=_message.author.name,
                     is_automated=_message.author.bot or _message.author.system,
                     avatar=_message.author.display_avatar.with_static_format("webp").with_size(512).url,
-                    content=_message.content or '',
-                    clean_content=str(_message.clean_content or ''),
-                    at=_message.created_at.timestamp()
+                    content=_message.content or "",
+                    clean_content=str(_message.clean_content or ""),
+                    at=_message.created_at.timestamp(),
                 )
                 for attachment in _message.attachments:
                     _payload.attachments.append(
@@ -338,7 +339,7 @@ class Events(commands.Cog):
                             size=attachment.size,
                             width=attachment.width,
                             height=attachment.height,
-                            content_type=attachment.content_type
+                            content_type=attachment.content_type,
                         )
                     )
                 if _message.reference is not None and _message.reference.cached_message:
@@ -346,11 +347,7 @@ class Events(commands.Cog):
                         _payload.reply_to = generate_payload(_message.reference.cached_message)
                     except RecursionError:
                         _payload.reply_to = None
-                        logging.warning(
-                            "Failed to generate reply payload for message %s",
-                            _message.id,
-                            exc_info=True
-                        )
+                        logging.warning("Failed to generate reply payload for message %s", _message.id, exc_info=True)
                 return _payload
 
             payload = generate_payload(message)
@@ -449,7 +446,9 @@ class Events(commands.Cog):
                 r"bus((s)?es)?\W*$": {"file": discord.File(assets / "bus.m4a")},
                 r"^DoH$": {"content": "DoH: Domain Name Service over Hyper Text Transfer Protocol Secure"},
                 r"^DoT$": {"content": "DoT: Domain Name Service over Transport Layer Security"},
-                r"^DoQ$": {"content": "DoQ: Domain Name Service over Quick User Datagram Protocol Internet Connections"},
+                r"^DoQ$": {
+                    "content": "DoQ: Domain Name Service over Quick User Datagram Protocol Internet Connections"
+                },
                 r"^(Do)?DTLS$": {"content": "DoDTLS: Domain Name Service over Datagram Transport Layer Security"},
             }
             # Stop responding to any bots
