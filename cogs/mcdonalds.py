@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import pathlib
 import re
 import typing
@@ -107,12 +108,14 @@ class McDonaldsCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.lock = asyncio.Lock()
+        self.log = logging.getLogger("jimmy.cogs.mcdonalds")
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         author = message.author
         me = message.guild.me if message.guild else self.bot.user
         if not message.channel.permissions_for(me).manage_messages:
+            self.log.debug("McDonalds disabled in %s, no manage messages permissions.", message.channel)
             return
 
         async with self.lock:
@@ -122,11 +125,19 @@ class McDonaldsCog(commands.Cog):
                 member = discord.utils.get(message.guild.members, name=username)
                 if member:
                     author = member
+                self.log.info(
+                    "Nightmare bypass, matched message content to username %s, which resolved to %r.",
+                    username,
+                    member
+                )
 
             async with McDataBase() as db:
                 if (last_info := await db.get_break(author.id)) is not None:
                     if message.content.upper() != "MCDONALDS!":
                         if (message.created_at.timestamp() - last_info[1]) > 300:
+                            self.log.debug(
+                                "Ad break expired for %s (%s).", author.name, author.id
+                            )
                             await db.remove_break(author.id)
                             await message.reply(
                                 f"Thank you for your patience during this commercial break. You may now resume your"
@@ -135,6 +146,11 @@ class McDonaldsCog(commands.Cog):
                             )
 
                         elif (message.created_at.timestamp() - last_info[0]) > 10:
+                            self.log.info(
+                                "Deleting message %r by %r as they need to skip the ad first.",
+                                message,
+                                author
+                            )
                             await message.delete(delay=0)
                             await message.channel.send(
                                 f"{message.author.mention} Please say `MCDONALDS!` to end commercial.",
@@ -142,6 +158,7 @@ class McDonaldsCog(commands.Cog):
                             )
                             await db.set_break(author.id, message.created_at.timestamp())
                     elif message.author.bot is False:
+                        self.log.info("%r skipped the ad break.", author)
                         await db.remove_break(author.id)
                         await message.reply(
                             "Thank you. You may now resume your activity.",
