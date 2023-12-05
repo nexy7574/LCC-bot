@@ -3,6 +3,7 @@ import fnmatch
 import functools
 import glob
 import io
+import logging
 import pathlib
 
 import openai
@@ -69,29 +70,9 @@ try:
     VOICES = [x.id for x in _engine.getProperty("voices")]
     del _engine
 except Exception as _pyttsx3_err:
-    print("Failed to load pyttsx3: %s" % _pyttsx3_err, file=sys.stderr)
+    logging.error("Failed to load pyttsx3: %r", _pyttsx3_err, exc_info=True)
     pyttsx3 = None
     VOICES = []
-
-
-# class OllamaStreamReader:
-#     def __init__(self, response: httpx.Response):
-#         self.response = response
-#         self.stream = response.aiter_bytes(1)
-#         self._buffer = b""
-#
-#     async def __aiter__(self):
-#         return self
-#
-#     async def __anext__(self) -> dict[str, str | int | bool]:
-#         if self.response.is_stream_consumed:
-#             raise StopAsyncIteration
-#         self._buffer = b""
-#         while not self._buffer.endswith(b"}\n"):
-#             async for char in self.stream:
-#                 self._buffer += char
-#
-#         return json.loads(self._buffer.decode("utf-8", "replace"))
 
 
 async def ollama_stream_reader(response: httpx.Response) -> typing.AsyncGenerator[
@@ -103,7 +84,7 @@ async def ollama_stream_reader(response: httpx.Response) -> typing.AsyncGenerato
             loaded = json.loads(chunk)
             yield loaded
         except json.JSONDecodeError as e:
-            print("Failed to decode chunk %r: %r" % (chunk, e), file=sys.stderr)
+            logging.warning("Failed to decode chunk %r: %r", chunk, e)
             pass
 
 
@@ -141,6 +122,7 @@ class OtherCog(commands.Cog):
 
         self.ollama_locks: dict[discord.Message, asyncio.Event] = {}
         self.context_cache: dict[str, list[int]] = {}
+        self.log = logging.getLogger("jimmy.cogs.other")
 
     def cog_unload(self):
         self._worker_task.cancel()
@@ -257,7 +239,7 @@ class OtherCog(commands.Cog):
             return driver, driver_path
 
         driver, driver_path = find_driver()
-        console.log(
+        self.log.info(
             "Using driver '{}' with binary '{}' to screenshot '{}', as requested by {}.".format(
                 driver, driver_path, website, ctx.user
             )
@@ -295,7 +277,7 @@ class OtherCog(commands.Cog):
         start_init = time()
         driver, friendly_url = await asyncio.to_thread(_setup)
         end_init = time()
-        console.log("Driver '{}' initialised in {} seconds.".format(driver_name, round(end_init - start_init, 2)))
+        self.log.info("Driver '{}' initialised in {} seconds.".format(driver_name, round(end_init - start_init, 2)))
 
         def _edit(content: str):
             self.bot.loop.create_task(ctx.interaction.edit_original_response(content=content))
@@ -1844,10 +1826,10 @@ class OtherCog(commands.Cog):
         try:
             model, tag = model.split(":", 1)
             model = model + ":" + tag
-            print("Model %r already has a tag")
+            self.log.debug("Model %r already has a tag")
         except ValueError:
             model = model + ":latest"
-            print("Resolved model to %r" % model)
+            self.log.debug("Resolved model to %r" % model)
 
         servers: dict[str, dict[str, str, list[str] | int]] = {
             "100.106.34.86:11434": {
@@ -1893,7 +1875,7 @@ class OtherCog(commands.Cog):
                 return True
             for pat in _srv.get("allow", ['*']):
                 if not fnmatch.fnmatch(model_name.lower(), pat.lower()):
-                    print(
+                    self.log.debug(
                         "Server %r does not support %r (only %r.)" % (
                             _srv['name'],
                             model_name,
