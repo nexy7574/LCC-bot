@@ -11,7 +11,7 @@ from discord.ext import commands
 
 class McDataBase:
     def __init__(self):
-        self.db = pathlib.Path.home() / ".cache" / "McDataBase.db"
+        self.db = pathlib.Path.home() / ".cache" / "lcc-bot" / "McDataBase.db"
         self._conn: typing.Optional[aiosqlite.Connection] = None
 
     async def init_db(self):
@@ -21,8 +21,7 @@ class McDataBase:
                 """
                 CREATE TABLE IF NOT EXISTS breaks (
                     user_id INTEGER PRIMARY KEY,
-                    since FLOAT NOT NULL,
-                    author INTEGER NOT NULL
+                    since FLOAT NOT NULL
                 );
                 """
             )
