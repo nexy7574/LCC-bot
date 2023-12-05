@@ -34,7 +34,7 @@ class McDataBase:
                 """
             )
 
-    async def get_break(self, user_id: int) -> typing.Optional[float]:
+    async def get_break(self, user_id: int) -> typing.Optional[tuple[float]]:
         async with self._conn.execute(
             """
             SELECT since FROM breaks WHERE user_id = ?;
@@ -43,7 +43,7 @@ class McDataBase:
         ) as cursor:
             return await cursor.fetchone()
 
-    async def set_break(self, user_id: int, since: float):
+    async def set_break(self, user_id: int, since: float) -> None:
         await self._conn.execute(
             """
             INSERT INTO breaks (user_id, since) VALUES (?, ?)
@@ -52,7 +52,7 @@ class McDataBase:
             (user_id, since)
         )
 
-    async def remove_break(self, user_id: int):
+    async def remove_break(self, user_id: int) -> None:
         now = discord.utils.utcnow().timestamp()
         await self._conn.execute(
             """
@@ -62,7 +62,7 @@ class McDataBase:
         )
         await self.set_cooldown(user_id, now)
 
-    async def get_cooldown(self, user_id: int) -> typing.Optional[float]:
+    async def get_cooldown(self, user_id: int) -> typing.Optional[tuple[float]]:
         async with self._conn.execute(
             """
             SELECT expires FROM cooldowns WHERE user_id = ?;
@@ -71,7 +71,7 @@ class McDataBase:
         ) as cursor:
             return await cursor.fetchone()
 
-    async def set_cooldown(self, user_id: int, expires: float):
+    async def set_cooldown(self, user_id: int, expires: float) -> None:
         await self._conn.execute(
             """
             INSERT INTO cooldowns (user_id, expires) VALUES (?, ?)
@@ -80,7 +80,7 @@ class McDataBase:
             (user_id, expires)
         )
 
-    async def remove_cooldown(self, user_id: int):
+    async def remove_cooldown(self, user_id: int) -> None:
         await self._conn.execute(
             """
             DELETE FROM cooldowns WHERE user_id = ?;
@@ -123,7 +123,7 @@ class McDonaldsCog(commands.Cog):
                 if (last_info := await db.get_break(author.id)) is not None:
                     if message.content.upper() != "MCDONALDS!":
                         await message.delete()
-                        if (message.created_at.timestamp() - last_info) > 10:
+                        if (message.created_at.timestamp() - last_info[0]) > 10:
                             await message.channel.send(
                                 f"{message.author.mention} Please say `MCDONALDS!` to end commercial.",
                                 delete_after=30
@@ -151,7 +151,7 @@ class McDonaldsCog(commands.Cog):
                 await ctx.respond(f"{member.mention} is already in a commercial break.")
                 return
             elif (cooldown := await db.get_cooldown(member.id)) is not None:
-                expires = cooldown + 300
+                expires = cooldown[0] + 300
                 if expires > discord.utils.utcnow().timestamp():
                     await ctx.respond(
                         f"{member.mention} is not due another ad break yet. Their next commercial break will start "
