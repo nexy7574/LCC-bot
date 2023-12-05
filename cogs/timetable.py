@@ -1,4 +1,5 @@
 import json
+import logging
 import random
 from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
@@ -22,6 +23,7 @@ def schedule_times():
 class TimeTableCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.log = logging.getLogger("jimmy.cogs.timetable")
         with (Path.cwd() / "utils" / "timetable.json").open() as file:
             self.timetable = json.load(file)
         self.update_status.start()
@@ -159,7 +161,7 @@ class TimeTableCog(commands.Cog):
                     try:
                         next_lesson = self.absolute_next_lesson(date + timedelta(days=1))
                     except RuntimeError:
-                        print("Failed to fetch absolute next lesson. Is this the end?")
+                        self.log.critical("Failed to fetch absolute next lesson. Is this the end?")
                         return
                     next_lesson.setdefault("name", "unknown")
                     next_lesson.setdefault("tutor", "unknown")
