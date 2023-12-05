@@ -2341,10 +2341,12 @@ class OtherCog(commands.Cog):
             return await ctx.respond("Invalid domain.")
 
         process = await asyncio.create_subprocess_exec(
-            "whois", "-H", url.hostname, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, text=True
+            "whois", "-H", url.hostname, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
         )
         stdout, stderr = await process.communicate()
         await process.wait()
+        stdout = stdout.decode("utf-8", "replace")
+        stderr = stderr.decode("utf-8", "replace")
         if process.returncode != 0:
             return await ctx.respond(f"Error:\n```{stderr[:3900]}```")
 
