@@ -39,6 +39,8 @@ class McDonaldsCog(commands.Cog):
     @commands.user_command(name="Commercial Break")
     async def commercial_break(self, ctx: discord.ApplicationContext, member: discord.Member):
         await ctx.defer(ephemeral=True)
+        if not ctx.channel.permissions_for(ctx.me).manage_messages:
+            return await ctx.respond("I don't have permission to manage messages in this channel.", ephemeral=True)
         if member.bot or member == ctx.user:
             return await ctx.respond("No.", ephemeral=True)
         if member in self.targets.keys():
