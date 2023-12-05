@@ -1,4 +1,6 @@
 import asyncio
+import re
+
 import aiosqlite
 
 import discord
@@ -14,23 +16,31 @@ class McDonaldsCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
+        author = message.author
         me = message.guild.me if message.guild else self.bot.user
         if not message.channel.permissions_for(me).manage_messages:
             return
 
         async with self.lock:
-            if message.author in self.targets:
+            NIGHTMARE_REGEX = re.compile(r"\|\| \|\|([^|]+)#0\|\| \|\|: bypassed.*")
+            if m := NIGHTMARE_REGEX.match(message.content):
+                username = m.group(1)
+                member = discord.utils.get(message.guild.members, name=username)
+                if member:
+                    author = member
+
+            if author in self.targets:
                 if message.content.upper() != "MCDONALDS!":
                     await message.delete()
-                    if (message.created_at.timestamp() - self.targets[message.author]) > 10:
+                    if (message.created_at.timestamp() - self.targets[author]) > 10:
                         await message.channel.send(
                             f"{message.author.mention} Please say `MCDONALDS!` to end commercial.",
                             delete_after=30
                         )
-                        self.targets[message.author] = message.created_at.timestamp()
+                        self.targets[author] = message.created_at.timestamp()
                 else:
-                    self.targets.pop(message.author, None)
-                    self.cooldown[message.author] = message.created_at.timestamp()
+                    self.targets.pop(author, None)
+                    self.cooldown[author] = message.created_at.timestamp()
                     await message.reply(
                         "Thank you. You may now resume your activity.",
                         delete_after=120
