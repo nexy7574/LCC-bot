@@ -9,14 +9,13 @@ import orm
 from discord.ui import View
 
 from utils import (
-    TOKEN_LENGTH,
     BannedStudentID,
     Student,
     VerifyCode,
     console,
     get_or_none,
-    send_verification_code,
 )
+TOKEN_LENGTH = 16
 
 if typing.TYPE_CHECKING:
     from cogs.timetable import TimeTableCog
@@ -133,7 +132,8 @@ class VerifyView(View):
                     )
 
                 try:
-                    _code = await send_verification_code(interaction.user, st)
+                    # _code = await send_verification_code(interaction.user, st)
+                    raise RuntimeError("Disabled.")
                 except Exception as e:
                     return await interaction.followup.send(f"\N{cross mark} Failed to send email - {e}. Try again?")
                 console.log(f"Sending verification email to {interaction.user} ({interaction.user.id}/{st})...")

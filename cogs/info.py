@@ -1,3 +1,5 @@
+import logging
+
 import discord
 import httpx
 from discord.ext import commands
@@ -129,4 +131,4 @@ def setup(bot):
     if OAUTH_REDIRECT_URI and OAUTH_ID:
         bot.add_cog(InfoCog(bot))
     else:
-        print("OAUTH_REDIRECT_URI not set, not loading info cog")
+        logging.getLogger("jimmy.cogs.info").warning("OAUTH_REDIRECT_URI not set, not loading info cog")

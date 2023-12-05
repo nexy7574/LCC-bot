@@ -1,9 +1,8 @@
 import asyncio
 import ipaddress
+import logging
 import os
-import sys
 import textwrap
-from rich import print
 from datetime import datetime, timezone
 from hashlib import sha512
 from http import HTTPStatus
@@ -37,7 +36,9 @@ try:
 except ImportError:
     WEB_ROOT_PATH = ""
 
-GENERAL = "https://ptb.discord.com/channels/994710566612500550/1018915342317277215/"
+log = logging.getLogger("jimmy.api")
+
+GENERAL = "https://discord.com/channels/994710566612500550/"
 
 OAUTH_ENABLED = OAUTH_ID and OAUTH_SECRET and OAUTH_REDIRECT_URI
 
@@ -87,7 +88,7 @@ async def authenticate(req: Request, code: str = None, state: str = None):
     if not (code and state) or state not in app.state.states:
         value = os.urandom(4).hex()
         if value in app.state.states:
-            print("Generated a state that already exists. Cleaning up", file=sys.stderr)
+            log.warning("Generated a state that already exists. Cleaning up")
             # remove any states older than 5 minutes
             removed = 0
             for _value in list(app.state.states):
@@ -95,24 +96,23 @@ async def authenticate(req: Request, code: str = None, state: str = None):
                     del app.state.states[_value]
                     removed += 1
             value = os.urandom(4).hex()
-            print(f"Removed {removed} states.", file=sys.stderr)
+            log.warning(f"Removed {removed} old states.")
 
         if value in app.state.states:
-            print("Critical: Generated a state that already exists and could not free any slots.", file=sys.stderr)
+            log.critical("Generated a state that already exists and could not free any slots.")
             raise HTTPException(
                 HTTPStatus.SERVICE_UNAVAILABLE,
                 "Could not generate a state token (state container full, potential (D)DOS attack?). "
                 "Please try again later.",
                 # Saying a suspected DDOS makes sense, there are 4,294,967,296 possible states, the likelyhood of a
                 # collision is 1 in 4,294,967,296.
-                headers={"Retry-After": "300"},
+                headers={"Retry-After": "60"},
             )
         app.state.states[value] = datetime.now()
         return RedirectResponse(
             discord.utils.oauth_url(
                 OAUTH_ID, redirect_uri=OAUTH_REDIRECT_URI, scopes=("identify", "connections", "guilds", "email")
-            )
-            + f"&state={value}&prompt=none",
+            ) + f"&state={value}&prompt=none",
             status_code=HTTPStatus.TEMPORARY_REDIRECT,
             headers={"Cache-Control": "no-store, no-cache"},
         )
@@ -239,7 +239,7 @@ async def verify(code: str):
     # And delete the code
     await verify_code.delete()
 
-    console.log(f"[green]{verify_code.bind} verified ({verify_code.bind}/{verify_code.student_id})")
+    log.info(f"[green]{verify_code.bind} verified ({verify_code.bind}/{verify_code.student_id})")
 
     return RedirectResponse(GENERAL, status_code=308)
 
@@ -293,12 +293,12 @@ async def bridge(req: Request):
 @app.websocket("/bridge/recv")
 async def bridge_recv(ws: WebSocket, secret: str = Header(None)):
     await ws.accept()
-    print("Websocket %r accepted." % ws)
+    log.info("Websocket %s:%s accepted.", ws.client.host, ws.client.port)
     if secret != app.state.bot.http.token:
-        print("Closing websocket %r, invalid secret." % ws)
+        log.warning("Closing websocket %r, invalid secret.", ws.client.host)
         raise _WSException(code=1008, reason="Invalid Secret")
     if app.state.ws_connected.locked():
-        print("Closing websocket %r, already connected." % ws)
+        log.warning("Closing websocket %r, already connected." % ws)
         raise _WSException(code=1008, reason="Already connected.")
     queue: asyncio.Queue = app.state.bot.bridge_queue
 
@@ -307,7 +307,7 @@ async def bridge_recv(ws: WebSocket, secret: str = Header(None)):
             try:
                 await ws.send_json({"status": "ping"})
             except (WebSocketDisconnect, WebSocketException):
-                print("Websocket %r disconnected." % ws)
+                log.info("Websocket %r disconnected.", ws)
                 break
 
             try:
@@ -316,10 +316,10 @@ async def bridge_recv(ws: WebSocket, secret: str = Header(None)):
                 continue
 
             try:
-                print("Sent data %r to websocket %r." % (data, ws))
                 await ws.send_json(data)
+                log.debug("Sent data %r to websocket %r.", data, ws)
             except (WebSocketDisconnect, WebSocketException):
-                print("Websocket %r disconnected." % ws)
+                log.info("Websocket %r disconnected." % ws)
                 break
             finally:
                 queue.task_done()
