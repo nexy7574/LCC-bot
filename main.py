@@ -1,4 +1,5 @@
-import asyncio
+import os
+import signal
 import sys
 import logging
 import textwrap
@@ -13,15 +14,42 @@ from utils import JimmyBanException, JimmyBans, console, get_or_none
 from utils.client import bot
 
 logging.basicConfig(
-    filename=getattr(config, "LOG_FILE", "jimmy.log"),
-    filemode=getattr(config, "LOG_MODE", "a"),
-    format="%(asctime)s:%(level)s:%(name)s: %(message)s",
+    format="%(asctime)s:%(levelname)s:%(name)s: %(message)s",
     datefmt="%Y-%m-%d:%H:%M",
-    level=getattr(config, "LOG_LEVEL", logging.INFO)
+    level=logging.DEBUG,
+    force=True,
+    handlers=[
+        RichHandler(
+            getattr(config, "LOG_LEVEL", logging.INFO),
+            console=console,
+            markup=True,
+            rich_tracebacks=True,
+            show_path=False,
+            show_time=False
+        ),
+        logging.FileHandler(
+            "jimmy.log",
+            "a"
+        )
+    ]
 )
-# echo to stdout
-handler = RichHandler(getattr(config, "LOG_LEVEL", logging.INFO), console=console, markup=True)
-logging.getLogger().addHandler(handler)
+logging.getLogger("discord.gateway").setLevel(logging.WARNING)
+for _ln in [
+    "discord.client",
+    "httpcore.connection",
+    "httpcore.http2",
+    "hpack.hpack",
+    "discord.http",
+    "discord.bot",
+    "httpcore.http11",
+    "aiosqlite",
+    "httpx"
+]:
+    logging.getLogger(_ln).setLevel(logging.INFO)
+
+
+if os.name != "nt":
+    signal.signal(signal.SIGTERM, lambda: bot.loop.run_until_complete(bot.close()))
 
 
 @bot.listen()
@@ -78,7 +106,7 @@ async def on_application_command(ctx: discord.ApplicationContext):
 
 @bot.event
 async def on_ready():
-    bot.log.info("(READY) Logged in as", bot.user)
+    bot.log.info("(READY) Logged in as %r", bot.user)
     if getattr(config, "CONNECT_MODE", None) == 1:
         bot.log.critical("Bot is now ready and exit target 1 is set, shutting down.")
         await bot.close()
