@@ -2371,7 +2371,8 @@ class OtherCog(commands.Cog):
             if file:
                 await ctx.respond(file=file)
         else:
-            await ctx.respond(paginator.pages[0], file=file)
+            kwargs = {"file": file} if file else {}
+            await ctx.respond(paginator.pages[0], **kwargs)
 
 
 def setup(bot):
