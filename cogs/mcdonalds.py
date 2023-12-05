@@ -39,10 +39,12 @@ class McDonaldsCog(commands.Cog):
     @commands.user_command(name="Commercial Break")
     async def commercial_break(self, ctx: discord.ApplicationContext, member: discord.Member):
         await ctx.defer(ephemeral=True)
-        if member in self.targets:
+        if member.bot or member == ctx.user:
+            return await ctx.respond("No.", ephemeral=True)
+        if member in self.targets.keys():
             await ctx.respond(f"{member.mention} is already in a commercial break.")
             return
-        elif member in self.cooldown and self.cooldown[member] + 300 > discord.utils.utcnow().timestamp():
+        elif member in self.cooldown.keys() and self.cooldown[member] + 300 > discord.utils.utcnow().timestamp():
             await ctx.respond(
                 f"{member.mention} is not due another ad break yet. Their next commercial break will start "
                 f"<t:{int(self.cooldown[member] + 300)}:R> at the earliest."
