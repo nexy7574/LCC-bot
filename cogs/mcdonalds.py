@@ -119,18 +119,6 @@ class McDonaldsCog(commands.Cog):
             return
 
         async with self.lock:
-            NIGHTMARE_REGEX = re.compile(r"(\|\|.+\|\|)?(?P<username>[a-zA-Z0-9]{2,32}).*")
-            if m := NIGHTMARE_REGEX.match(message.content):
-                username = m.group("username")
-                member = discord.utils.get(message.guild.members, name=username)
-                if member:
-                    author = member
-                self.log.info(
-                    "Nightmare bypass, matched message content to username %s, which resolved to %r.",
-                    username,
-                    member
-                )
-
             async with McDataBase() as db:
                 if (last_info := await db.get_break(author.id)) is not None:
                     if message.content.upper() != "MCDONALDS!":
