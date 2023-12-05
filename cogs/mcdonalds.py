@@ -137,6 +137,7 @@ class McDonaldsCog(commands.Cog):
                         )
 
     @commands.user_command(name="Commercial Break")
+    @commands.cooldown(2, 60, commands.BucketType.member)
     async def commercial_break(self, ctx: discord.ApplicationContext, member: discord.Member):
         await ctx.defer(ephemeral=True)
 
