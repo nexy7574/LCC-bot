@@ -4,7 +4,6 @@ from urllib.parse import urlparse
 
 from discord.ext import commands
 
-from ._email import *
 from .console import *
 from .db import *
 from .views import *
