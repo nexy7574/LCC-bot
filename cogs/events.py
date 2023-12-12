@@ -433,7 +433,7 @@ class Events(commands.Cog):
                 r"china": {"file": discord.File(assets / "china.m4a")},
                 r"drones": {"file": discord.File(assets / "drones.m4a")},
                 r"pork($|\W+)|markets": {"file": discord.File(assets / "pork.m4a")},
-                r"common\ssense\W*$|(wo)?man\W*$|(trans(\s)?)?gender\W*$": {
+                r"(wo)?man\sis\sa\s(wo)?man|(trans(\s)?)?gender\W*$": {
                     "file": discord.File(assets / "common-sense.m4a")
                 },
                 r"scrapped(\sit)?|((7\s|seven\s)?different\s)?bins|(meat\s|flying\s)?tax": {
@@ -443,7 +443,7 @@ class Events(commands.Cog):
                 r"brush|hair": {"file": discord.File(assets / "hair.m4a")},
                 r"((cup\s)?of\s)?tea\W*$": {"file": discord.File(assets / "tea.m4a")},
                 r"wheat|fields": {"file": discord.File(assets / "wheat.m4a")},
-                r"bus((s)?es)?\W*$": {"file": discord.File(assets / "bus.m4a")},
+                r"(\W|^)bus((s)?es)?\W*$": {"file": discord.File(assets / "bus.m4a")},
                 r"^DoH$": {"content": "DoH: Domain Name Service over Hyper Text Transfer Protocol Secure"},
                 r"^DoT$": {"content": "DoT: Domain Name Service over Transport Layer Security"},
                 r"^DoQ$": {
