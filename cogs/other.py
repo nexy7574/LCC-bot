@@ -776,7 +776,7 @@ class OtherCog(commands.Cog):
                 f"* URL: <{friendly_url}>\n"
                 f"* Load time: {fetch_time:.2f}ms\n"
                 f"* Screenshot render time: {screenshot_time:.2f}ms\n"
-                f"* Total time: {(fetch_time + screenshot_time):.2f}ms"
+                f"* Total time: {(fetch_time + screenshot_time):.2f}ms",
                 file=screenshot,
             )
 
