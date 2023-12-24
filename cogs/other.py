@@ -229,7 +229,7 @@ class OtherCog(commands.Cog):
                     "/usr/bin/firefox-esr",
                     "/usr/bin/firefox",
                 ],
-                "chrome": ["/usr/bin/chromium", "/usr/bin/chrome", "/usr/bin/chrome-browser", "/usr/bin/google-chrome"],
+                "chrome": ["/usr/bin/chromium", "/usr/bin/google-chrome"],
             }
             selected_driver = driver
             arr = drivers.pop(selected_driver)
@@ -844,12 +844,7 @@ class OtherCog(commands.Cog):
                 f"* URL: <{friendly_url}>\n"
                 f"* Load time: {fetch_time:.2f}ms\n"
                 f"* Screenshot render time: {screenshot_time:.2f}ms\n"
-                f"* Total time: {(fetch_time + screenshot_time):.2f}ms\n"
-                + (
-                    "* Probability of being scat or something else horrifying: 100%"
-                    if ctx.user.id == 1019233057519177778
-                    else ""
-                ),
+                f"* Total time: {(fetch_time + screenshot_time):.2f}ms"
                 file=screenshot,
             )
 
