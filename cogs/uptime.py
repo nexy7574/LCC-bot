@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import hashlib
 import json
+import logging
 import random
 import time
 from datetime import timedelta
@@ -66,15 +67,17 @@ class UptimeCompetition(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.http = AsyncClient(verify=False)
+        self.log = logging.getLogger("jimmy.cogs.uptime")
+        self.http = AsyncClient(verify=False, http2=True)
         self._warning_posted = False
         self.test_uptimes.add_exception_type(Exception)
         self.test_uptimes.start()
         self.last_result: list[UptimeEntry] = []
         self.task_lock = asyncio.Lock()
         self.task_event = asyncio.Event()
-        if not (pth := Path("targets.json")).exists():
-            pth.write_text(BASE_JSON)
+        self.path = Path.home() / ".cache" / "lcc-bot" / "targets.json"
+        if not self.path.exists():
+            self.path.write_text(BASE_JSON)
         self._cached_targets = self.read_targets()
 
     @property
@@ -103,7 +106,7 @@ class UptimeCompetition(commands.Cog):
         return response
 
     def read_targets(self) -> List[Dict[str, str]]:
-        with open("targets.json") as f:
+        with self.path.open() as f:
             data: list = json.load(f)
             data.sort(key=lambda x: x["name"])
             self._cached_targets = data.copy()
@@ -111,7 +114,7 @@ class UptimeCompetition(commands.Cog):
 
     def write_targets(self, data: List[Dict[str, str]]):
         self._cached_targets = data
-        with open("targets.json", "w") as f:
+        with self.path.open("w") as f:
             json.dump(data, f, indent=4, default=str)
 
     def cog_unload(self):
@@ -214,7 +217,7 @@ class UptimeCompetition(commands.Cog):
                 okay_statuses = list(filter(None, okay_statuses))
                 guild: discord.Guild = self.bot.get_guild(guild_id)
                 if guild is None:
-                    console.log(
+                    self.log.warning(
                         f"[yellow]:warning: Unable to locate the guild for {target['name']!r}! Can't uptime check."
                     )
                 else:
@@ -224,7 +227,7 @@ class UptimeCompetition(commands.Cog):
                         try:
                             user = await guild.fetch_member(user_id)
                         except discord.HTTPException:
-                            console.log(f"[yellow]:warning: Unable to locate {target['name']!r}! Can't uptime check.")
+                            self.log.warning(f"[yellow]Unable to locate {target['name']!r}! Can't uptime check.")
                             user = None
                     if user:
                         create_tasks.append(
@@ -240,7 +243,7 @@ class UptimeCompetition(commands.Cog):
                         )
         else:
             if self._warning_posted is False:
-                console.log(
+                self.log.warning(
                     "[yellow]:warning: Jimmy does not have the presences intent enabled. Uptime monitoring of the"
                     " shronk bot is disabled."
                 )

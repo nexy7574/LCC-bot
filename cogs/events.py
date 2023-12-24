@@ -20,9 +20,9 @@ import discord
 import httpx
 import pydantic
 from bs4 import BeautifulSoup
-from config import guilds
 from discord.ext import commands, pages, tasks
 
+from config import guilds
 from utils import Student, console, get_or_none
 
 try:
@@ -90,24 +90,10 @@ class Events(commands.Cog):
             self.bot.bridge_queue = asyncio.Queue()
         self.fetch_discord_atom_feed.start()
         self.bridge_health = False
+        self.log = logging.getLogger("jimmy.cogs.events")
 
     def cog_unload(self):
         self.fetch_discord_atom_feed.cancel()
-
-    # noinspection DuplicatedCode
-    async def analyse_text(self, text: str) -> Optional[Tuple[float, float, float, float]]:
-        """Analyse text for positivity, negativity and neutrality."""
-
-        def inner():
-            try:
-                from utils.sentiment_analysis import intensity_analyser
-            except ImportError:
-                return None
-            scores = intensity_analyser.polarity_scores(text)
-            return scores["pos"], scores["neu"], scores["neg"], scores["compound"]
-
-        async with self.bot.training_lock:
-            return await self.bot.loop.run_in_executor(None, inner)
 
     @commands.Cog.listener("on_raw_reaction_add")
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
@@ -126,16 +112,17 @@ class Events(commands.Cog):
         if member.guild is None or member.guild.id not in guilds:
             return
 
-        student: Optional[Student] = await get_or_none(Student, user_id=member.id)
-        if student and student.id:
-            role = discord.utils.find(lambda r: r.name.lower() == "verified", member.guild.roles)
-            if role and role < member.guild.me.top_role:
-                await member.add_roles(role, reason="Verified")
+        # student: Optional[Student] = await get_or_none(Student, user_id=member.id)
+        # if student and student.id:
+        #     role = discord.utils.find(lambda r: r.name.lower() == "verified", member.guild.roles)
+        #     if role and role < member.guild.me.top_role:
+        #         await member.add_roles(role, reason="Verified")
 
         channel: discord.TextChannel = discord.utils.get(member.guild.text_channels, name="general")
         if channel and channel.can_send():
             await channel.send(
-                f"{LTR} {member.mention} (`{member}`, {f'{student.id}' if student else 'pending verification'})"
+                # f"{LTR} {member.mention} (`{member}`, {f'{student.id}' if student else 'pending verification'})"
+                f"{LTR} {member.mention}"
             )
 
     @commands.Cog.listener()
@@ -143,11 +130,12 @@ class Events(commands.Cog):
         if member.guild is None or member.guild.id not in guilds:
             return
 
-        student: Optional[Student] = await get_or_none(Student, user_id=member.id)
+        # student: Optional[Student] = await get_or_none(Student, user_id=member.id)
         channel: discord.TextChannel = discord.utils.get(member.guild.text_channels, name="general")
         if channel and channel.can_send():
             await channel.send(
-                f"{RTL} {member.mention} (`{member}`, {f'{student.id}' if student else 'pending verification'})"
+                # f"{RTL} {member.mention} (`{member}`, {f'{student.id}' if student else 'pending verification'})"
+                f"{RTL} {member.mention}"
             )
 
     async def process_message_for_github_links(self, message: discord.Message):
@@ -248,7 +236,7 @@ class Events(commands.Cog):
                         )
                         region = message.author.voice.channel.rtc_region
                         # noinspection PyUnresolvedReferences
-                        console.log(
+                        self.log.warning(
                             "Timed out connecting to voice channel: {0.name} in {0.guild.name} "
                             "(region {1})".format(
                                 message.author.voice.channel, region.name if region else "auto (unknown)"
@@ -269,7 +257,7 @@ class Events(commands.Cog):
                                 _dc(voice),
                             )
                             if err is not None:
-                                console.log(f"Error playing audio: {err}")
+                                self.log.error(f"Error playing audio: {err}", exc_info=err)
                                 self.bot.loop.create_task(message.add_reaction("\N{speaker with cancellation stroke}"))
                             else:
                                 self.bot.loop.create_task(
@@ -331,15 +319,16 @@ class Events(commands.Cog):
             return
 
         if message.channel.name == "femboy-hole":
+
             def generate_payload(_message: discord.Message) -> MessagePayload:
                 _payload = MessagePayload(
                     message_id=_message.id,
                     author=_message.author.name,
                     is_automated=_message.author.bot or _message.author.system,
                     avatar=_message.author.display_avatar.with_static_format("webp").with_size(512).url,
-                    content=_message.content or '',
-                    clean_content=str(_message.clean_content or ''),
-                    at=_message.created_at.timestamp()
+                    content=_message.content or "",
+                    clean_content=str(_message.clean_content or ""),
+                    at=_message.created_at.timestamp(),
                 )
                 for attachment in _message.attachments:
                     _payload.attachments.append(
@@ -350,7 +339,7 @@ class Events(commands.Cog):
                             size=attachment.size,
                             width=attachment.width,
                             height=attachment.height,
-                            content_type=attachment.content_type
+                            content_type=attachment.content_type,
                         )
                     )
                 if _message.reference is not None and _message.reference.cached_message:
@@ -358,11 +347,7 @@ class Events(commands.Cog):
                         _payload.reply_to = generate_payload(_message.reference.cached_message)
                     except RecursionError:
                         _payload.reply_to = None
-                        logging.warning(
-                            "Failed to generate reply payload for message %s",
-                            _message.id,
-                            exc_info=True
-                        )
+                        logging.warning("Failed to generate reply payload for message %s", _message.id, exc_info=True)
                 return _payload
 
             payload = generate_payload(message)
@@ -448,7 +433,7 @@ class Events(commands.Cog):
                 r"china": {"file": discord.File(assets / "china.m4a")},
                 r"drones": {"file": discord.File(assets / "drones.m4a")},
                 r"pork($|\W+)|markets": {"file": discord.File(assets / "pork.m4a")},
-                r"common\ssense\W*$|(wo)?man\W*$|(trans(\s)?)?gender\W*$": {
+                r"(wo)?man\sis\sa\s(wo)?man|(trans(\s)?)?gender\W*$": {
                     "file": discord.File(assets / "common-sense.m4a")
                 },
                 r"scrapped(\sit)?|((7\s|seven\s)?different\s)?bins|(meat\s|flying\s)?tax": {
@@ -458,10 +443,12 @@ class Events(commands.Cog):
                 r"brush|hair": {"file": discord.File(assets / "hair.m4a")},
                 r"((cup\s)?of\s)?tea\W*$": {"file": discord.File(assets / "tea.m4a")},
                 r"wheat|fields": {"file": discord.File(assets / "wheat.m4a")},
-                r"bus((s)?es)?\W*$": {"file": discord.File(assets / "bus.m4a")},
+                r"(\W|^)bus((s)?es)?\W*$": {"file": discord.File(assets / "bus.m4a")},
                 r"^DoH$": {"content": "DoH: Domain Name Service over Hyper Text Transfer Protocol Secure"},
                 r"^DoT$": {"content": "DoT: Domain Name Service over Transport Layer Security"},
-                r"^DoQ$": {"content": "DoQ: Domain Name Service over Quick User Datagram Protocol Internet Connections"},
+                r"^DoQ$": {
+                    "content": "DoQ: Domain Name Service over Quick User Datagram Protocol Internet Connections"
+                },
                 r"^(Do)?DTLS$": {"content": "DoDTLS: Domain Name Service over Datagram Transport Layer Security"},
             }
             # Stop responding to any bots
@@ -590,14 +577,14 @@ class Events(commands.Cog):
         try:
             response = await self.http.get("https://discordstatus.com/history.atom", headers=headers)
         except httpx.HTTPError as e:
-            console.log("Failed to fetch discord atom feed:", e)
+            self.log.error("Failed to fetch discord atom feed: %r", e, exc_info=e)
             return
 
         if response.status_code == 304:
             return
 
         if response.status_code != 200:
-            console.log("Failed to fetch discord atom feed:", response.status_code)
+            self.log.error("Failed to fetch discord atom feed: HTTP/%s", response.status_code)
             return
 
         with file.open("wb") as f:

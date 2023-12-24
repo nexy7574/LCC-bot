@@ -8,4 +8,4 @@ if _col == 80:
 
 __all__ = ("console",)
 
-console = Console(width=_col, soft_wrap=True, tab_size=4)
+console = Console(width=_col, soft_wrap=False, tab_size=4)

@@ -1,3 +1,6 @@
+import logging
+import typing
+
 import discord
 import httpx
 from discord.ext import commands
@@ -124,9 +127,27 @@ class InfoCog(commands.Cog):
 
         await ctx.respond(embed=embed)
 
+    @commands.command(name="set-log-level")
+    @commands.is_owner()
+    async def set_log_level(self, ctx: commands.Context, logger_name: str, logger_level: typing.Union[str, int]):
+        """Sets a module's log level."""
+        logger_level = logger_level.upper()
+        if getattr(logging, logger_level, None) is None or logging.getLevelNamesMapping().get(logger_level) is None:
+            return await ctx.reply(":x: Invalid log level.")
+        logger = logging.getLogger(logger_name)
+        old_level = logger.getEffectiveLevel()
+
+        def name(level):
+            return logging.getLevelName(level)
+
+        logger.setLevel(logger_level)
+        return await ctx.reply(
+            f"\N{white heavy check mark} {logger_name}: {name(old_level)} -> {name(logger.getEffectiveLevel())}"
+        )
+
 
 def setup(bot):
     if OAUTH_REDIRECT_URI and OAUTH_ID:
         bot.add_cog(InfoCog(bot))
     else:
-        print("OAUTH_REDIRECT_URI not set, not loading info cog")
+        logging.getLogger("jimmy.cogs.info").warning("OAUTH_REDIRECT_URI not set, not loading info cog")

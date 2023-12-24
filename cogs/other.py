@@ -2,18 +2,16 @@ import asyncio
 import fnmatch
 import functools
 import glob
+import hashlib
 import io
-import pathlib
-
-import openai
-import pydub
 import json
+import logging
 import math
 import os
+import pathlib
 import random
 import re
 import shutil
-import hashlib
 import subprocess
 import sys
 import tempfile
@@ -32,7 +30,9 @@ import aiohttp
 import discord
 import dns.resolver
 import httpx
+import openai
 import psutil
+import pydub
 import pytesseract
 import pyttsx3
 from discord import Interaction
@@ -69,41 +69,19 @@ try:
     VOICES = [x.id for x in _engine.getProperty("voices")]
     del _engine
 except Exception as _pyttsx3_err:
-    print("Failed to load pyttsx3: %s" % _pyttsx3_err, file=sys.stderr)
+    logging.error("Failed to load pyttsx3: %r", _pyttsx3_err, exc_info=True)
     pyttsx3 = None
     VOICES = []
 
 
-# class OllamaStreamReader:
-#     def __init__(self, response: httpx.Response):
-#         self.response = response
-#         self.stream = response.aiter_bytes(1)
-#         self._buffer = b""
-#
-#     async def __aiter__(self):
-#         return self
-#
-#     async def __anext__(self) -> dict[str, str | int | bool]:
-#         if self.response.is_stream_consumed:
-#             raise StopAsyncIteration
-#         self._buffer = b""
-#         while not self._buffer.endswith(b"}\n"):
-#             async for char in self.stream:
-#                 self._buffer += char
-#
-#         return json.loads(self._buffer.decode("utf-8", "replace"))
-
-
-async def ollama_stream_reader(response: httpx.Response) -> typing.AsyncGenerator[
-    dict[str, str | int | bool], None
-]:
+async def ollama_stream_reader(response: httpx.Response) -> typing.AsyncGenerator[dict[str, str | int | bool], None]:
     async for chunk in response.aiter_lines():
         # Each line is a JSON string
         try:
             loaded = json.loads(chunk)
             yield loaded
         except json.JSONDecodeError as e:
-            print("Failed to decode chunk %r: %r" % (chunk, e), file=sys.stderr)
+            logging.warning("Failed to decode chunk %r: %r", chunk, e)
             pass
 
 
@@ -134,6 +112,7 @@ class OtherCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.lock = asyncio.Lock()
+        self.transcribe_lock = asyncio.Lock()
         self.http = httpx.AsyncClient()
         self._fmt_cache = {}
         self._fmt_queue = asyncio.Queue()
@@ -141,6 +120,7 @@ class OtherCog(commands.Cog):
 
         self.ollama_locks: dict[discord.Message, asyncio.Event] = {}
         self.context_cache: dict[str, list[int]] = {}
+        self.log = logging.getLogger("jimmy.cogs.other")
 
     def cog_unload(self):
         self._worker_task.cancel()
@@ -257,7 +237,7 @@ class OtherCog(commands.Cog):
             return driver, driver_path
 
         driver, driver_path = find_driver()
-        console.log(
+        self.log.info(
             "Using driver '{}' with binary '{}' to screenshot '{}', as requested by {}.".format(
                 driver, driver_path, website, ctx.user
             )
@@ -295,7 +275,7 @@ class OtherCog(commands.Cog):
         start_init = time()
         driver, friendly_url = await asyncio.to_thread(_setup)
         end_init = time()
-        console.log("Driver '{}' initialised in {} seconds.".format(driver_name, round(end_init - start_init, 2)))
+        self.log.info("Driver '{}' initialised in {} seconds.".format(driver_name, round(end_init - start_init, 2)))
 
         def _edit(content: str):
             self.bot.loop.create_task(ctx.interaction.edit_original_response(content=content))
@@ -348,20 +328,6 @@ class OtherCog(commands.Cog):
                         }
                     )
         return result
-
-    async def analyse_text(self, text: str) -> Optional[Tuple[float, float, float, float]]:
-        """Analyse text for positivity, negativity and neutrality."""
-
-        def inner():
-            try:
-                from utils.sentiment_analysis import intensity_analyser
-            except ImportError:
-                return None
-            scores = intensity_analyser.polarity_scores(text)
-            return scores["pos"], scores["neu"], scores["neg"], scores["compound"]
-
-        async with self.bot.training_lock:
-            return await self.bot.loop.run_in_executor(None, inner)
 
     @staticmethod
     async def get_xkcd(session: aiohttp.ClientSession, n: int) -> dict | None:
@@ -444,40 +410,6 @@ class OtherCog(commands.Cog):
         embed = await self.generate_xkcd(number)
         view = self.XKCDGalleryView(number)
         return await ctx.respond(embed=embed, view=view)
-
-    @commands.slash_command()
-    async def sentiment(self, ctx: discord.ApplicationContext, *, text: str):
-        """Attempts to detect a text's tone"""
-        await ctx.defer()
-        if not text:
-            return await ctx.respond("You need to provide some text to analyse.")
-        result = await self.analyse_text(text)
-        if result is None:
-            return await ctx.edit(content="Failed to load sentiment analysis module.")
-        embed = discord.Embed(title="Sentiment Analysis", color=discord.Colour.embed_background())
-        embed.add_field(name="Positive", value="{:.2%}".format(result[0]))
-        embed.add_field(name="Neutral", value="{:.2%}".format(result[2]))
-        embed.add_field(name="Negative", value="{:.2%}".format(result[1]))
-        embed.add_field(name="Compound", value="{:.2%}".format(result[3]))
-        return await ctx.edit(content=None, embed=embed)
-
-    @commands.message_command(name="Detect Sentiment")
-    async def message_sentiment(self, ctx: discord.ApplicationContext, message: discord.Message):
-        await ctx.defer()
-        text = str(message.clean_content)
-        if not text:
-            return await ctx.respond("You need to provide some text to analyse.")
-        await ctx.respond("Analyzing (this may take some time)...")
-        result = await self.analyse_text(text)
-        if result is None:
-            return await ctx.edit(content="Failed to load sentiment analysis module.")
-        embed = discord.Embed(title="Sentiment Analysis", color=discord.Colour.embed_background())
-        embed.add_field(name="Positive", value="{:.2%}".format(result[0]))
-        embed.add_field(name="Neutral", value="{:.2%}".format(result[2]))
-        embed.add_field(name="Negative", value="{:.2%}".format(result[1]))
-        embed.add_field(name="Compound", value="{:.2%}".format(result[3]))
-        embed.url = message.jump_url
-        return await ctx.edit(content=None, embed=embed)
 
     corrupt_file = discord.SlashCommandGroup(
         name="corrupt-file",
@@ -997,15 +929,12 @@ class OtherCog(commands.Cog):
                 "merge_output_format": "webm/mp4/mov/flv/avi/ogg/m4a/wav/mp3/opus/mka/mkv",
                 "source_address": "0.0.0.0",
                 "cookiefile": str(real_cookies_txt.resolve().absolute()),
-                "concurrent_fragment_downloads": 4
+                "concurrent_fragment_downloads": 4,
             }
             description = ""
             proxy_url = "socks5://localhost:1090"
             try:
-                proxy_down = await asyncio.wait_for(
-                    self.check_proxy("socks5://localhost:1090"),
-                    timeout=10
-                )
+                proxy_down = await asyncio.wait_for(self.check_proxy("socks5://localhost:1090"), timeout=10)
                 if proxy_down > 0:
                     if proxy_down == 1:
                         description += ":warning: (SHRoNK) Proxy check leaked IP - trying backup proxy.\n"
@@ -1014,10 +943,7 @@ class OtherCog(commands.Cog):
                     else:
                         description += ":warning: (SHRoNK) Unknown proxy error - trying backup proxy.\n"
 
-                    proxy_down = await asyncio.wait_for(
-                        self.check_proxy("socks5://localhost:1080"),
-                        timeout=10
-                    )
+                    proxy_down = await asyncio.wait_for(self.check_proxy("socks5://localhost:1080"), timeout=10)
                     if proxy_down > 0:
                         if proxy_down == 1:
                             description += ":warning: (NexBox) Proxy check leaked IP..\n"
@@ -1072,20 +998,14 @@ class OtherCog(commands.Cog):
                             "* Chosen format: `%s` (`%s`)" % (chosen_format, chosen_format_id),
                         )
                     if format_note:
-                        lines.append(
-                            "* Format note: %r" % format_note
-                        )
+                        lines.append("* Format note: %r" % format_note)
                     if final_extension:
-                        lines.append(
-                            "* File extension: " + final_extension
-                        )
+                        lines.append("* File extension: " + final_extension)
                     if resolution:
                         _s = resolution
                         if fps:
                             _s += " @ %s FPS" % fps
-                        lines.append(
-                            "* Resolution: " + _s
-                        )
+                        lines.append("* Resolution: " + _s)
                     if vcodec or acodec:
                         lines.append("%s+%s" % (vcodec or "N/A", acodec or "N/A"))
 
@@ -1822,17 +1742,18 @@ class OtherCog(commands.Cog):
     @commands.slash_command()
     @commands.max_concurrency(3, commands.BucketType.user, wait=False)
     async def ollama(
-            self,
-            ctx: discord.ApplicationContext,
-            model: str = "orca-mini",
-            query: str = None,
-            context: str = None,
-            server: str = "auto"
+        self,
+        ctx: discord.ApplicationContext,
+        model: str = "orca-mini",
+        query: str = None,
+        context: str = None,
+        server: str = "auto",
     ):
         """:3"""
         with open("./assets/ollama-prompt.txt") as file:
             system_prompt = file.read().replace("\n", " ").strip()
         if query is None:
+
             class InputPrompt(discord.ui.Modal):
                 def __init__(self, is_owner: bool):
                     super().__init__(
@@ -1844,7 +1765,7 @@ class OtherCog(commands.Cog):
                             style=discord.InputTextStyle.long,
                         ),
                         title="Enter prompt",
-                        timeout=120
+                        timeout=120,
                     )
                     if is_owner:
                         self.add_item(
@@ -1887,10 +1808,10 @@ class OtherCog(commands.Cog):
         try:
             model, tag = model.split(":", 1)
             model = model + ":" + tag
-            print("Model %r already has a tag")
+            self.log.debug("Model %r already has a tag")
         except ValueError:
             model = model + ":latest"
-            print("Resolved model to %r" % model)
+            self.log.debug("Resolved model to %r" % model)
 
         servers: dict[str, dict[str, str, list[str] | int]] = {
             "100.106.34.86:11434": {
@@ -1907,7 +1828,7 @@ class OtherCog(commands.Cog):
                     "codellama:python",
                     "codellama:instruct",
                 ],
-                "owner": 421698654189912064
+                "owner": 421698654189912064,
             },
             "ollama.shronk.net:11434": {
                 "name": "Alibaba Cloud",
@@ -1922,26 +1843,19 @@ class OtherCog(commands.Cog):
                     "orca-mini:3b",
                     "orca-mini:7b",
                 ],
-                "owner": 421698654189912064
+                "owner": 421698654189912064,
             },
         }
-        H_DEFAULT = {
-            "name": "Other",
-            "allow": ["*"],
-            "owner": 1019217990111199243
-        }
+        H_DEFAULT = {"name": "Other", "allow": ["*"], "owner": 1019217990111199243}
 
         def model_is_allowed(model_name: str, _srv: dict[str, str | list[str] | int]) -> bool:
             if _srv["owner"] == ctx.user.id:
                 return True
-            for pat in _srv.get("allow", ['*']):
+            for pat in _srv.get("allow", ["*"]):
                 if not fnmatch.fnmatch(model_name.lower(), pat.lower()):
-                    print(
-                        "Server %r does not support %r (only %r.)" % (
-                            _srv['name'],
-                            model_name,
-                            ', '.join(_srv['allow'])
-                        )
+                    self.log.debug(
+                        "Server %r does not support %r (only %r.)"
+                        % (_srv["name"], model_name, ", ".join(_srv["allow"]))
                     )
                 else:
                     break
@@ -1951,9 +1865,7 @@ class OtherCog(commands.Cog):
 
         class ServerSelector(discord.ui.View):
             def __init__(self):
-                super().__init__(
-                    disable_on_timeout=True
-                )
+                super().__init__(disable_on_timeout=True)
                 self.chosen_server = None
 
             async def interaction_check(self, interaction: Interaction) -> bool:
@@ -1963,21 +1875,15 @@ class OtherCog(commands.Cog):
                 placeholder="Choose a server.",
                 custom_id="select",
                 options=[
-                    discord.SelectOption(
-                        label="%s (%s)" % (y['name'], x),
-                        value=x
-                    )
+                    discord.SelectOption(label="%s (%s)" % (y["name"], x), value=x)
                     for x, y in servers.items()
                     if model_is_allowed(model, y)
-                ] + [
-                    discord.SelectOption(
-                        label="Custom",
-                        value="custom"
-                    )
                 ]
+                + [discord.SelectOption(label="Custom", value="custom")],
             )
             async def select_callback(self, item: discord.ui.Select, interaction: discord.Interaction):
                 if item.values[0] == "custom":
+
                     class ServerSelectionModal(discord.ui.Modal):
                         def __init__(self):
                             super().__init__(
@@ -1994,10 +1900,10 @@ class OtherCog(commands.Cog):
                                     min_length=2,
                                     max_length=5,
                                     style=discord.InputTextStyle.short,
-                                    value="11434"
+                                    value="11434",
                                 ),
                                 title="Enter server details",
-                                timeout=120
+                                timeout=120,
                             )
                             self.hostname = None
                             self.port = None
@@ -2016,8 +1922,7 @@ class OtherCog(commands.Cog):
                     self.chosen_server = item.values[0]
                     await interaction.response.defer(ephemeral=True)
                 await interaction.followup.send(
-                    f"\N{white heavy check mark} Selected server {self.chosen_server}/",
-                    ephemeral=True
+                    f"\N{white heavy check mark} Selected server {self.chosen_server}/", ephemeral=True
                 )
                 self.stop()
 
@@ -2035,29 +1940,18 @@ class OtherCog(commands.Cog):
             if not model_is_allowed(model, srv):
                 return await ctx.respond(
                     ":x: <@{!s}> does not allow you to run that model on the server {!r}. You can, however, use"
-                    " any of the following: {}".format(
-                        srv["owner"],
-                        srv["name"],
-                        ", ".join(srv.get("allow", ["*"]))
-                    )
+                    " any of the following: {}".format(srv["owner"], srv["name"], ", ".join(srv.get("allow", ["*"])))
                 )
 
         content = None
-        embed = discord.Embed(
-            colour=discord.Colour.greyple()
-        )
+        embed = discord.Embed(colour=discord.Colour.greyple())
         embed.set_author(
             name=f"Loading {model}",
             url=f"http://{host}",
-            icon_url="https://cdn.discordapp.com/emojis/1101463077586735174.gif"
+            icon_url="https://cdn.discordapp.com/emojis/1101463077586735174.gif",
         )
-        FOOTER_TEXT = "Powered by Ollama • Using server {} ({})".format(
-            host,
-            servers.get(host, H_DEFAULT)['name']
-        )
-        embed.set_footer(
-            text=FOOTER_TEXT
-        )
+        FOOTER_TEXT = "Powered by Ollama • Using server {} ({})".format(host, servers.get(host, H_DEFAULT)["name"])
+        embed.set_footer(text=FOOTER_TEXT)
 
         msg = await ctx.respond(embed=embed, ephemeral=False)
         async with httpx.AsyncClient(follow_redirects=True) as client:
@@ -2074,19 +1968,15 @@ class OtherCog(commands.Cog):
                 error = "GET {0.url} HTTP {0.status_code}: {0.text}".format(e.response)
                 return await msg.edit(
                     embed=discord.Embed(
-                        title="Failed to GET /tags. Offline?",
-                        description=error,
-                        colour=discord.Colour.red()
+                        title="Failed to GET /tags. Offline?", description=error, colour=discord.Colour.red()
                     ).set_footer(text=FOOTER_TEXT)
                 )
             except httpx.TransportError as e:
                 return await msg.edit(
                     embed=discord.Embed(
                         title=f"Failed to connect to {host!r}",
-                        description="Transport error sending request to {}: {}".format(
-                            host, str(e)
-                        ),
-                        colour=discord.Colour.red()
+                        description="Transport error sending request to {}: {}".format(host, str(e)),
+                        colour=discord.Colour.red(),
                     ).set_footer(text=FOOTER_TEXT)
                 )
             # get models
@@ -2094,9 +1984,7 @@ class OtherCog(commands.Cog):
                 response = await client.post("/show", json={"name": model})
             except httpx.TransportError as e:
                 embed = discord.Embed(
-                    title="Failed to connect to Ollama.",
-                    description=str(e),
-                    colour=discord.Colour.red()
+                    title="Failed to connect to Ollama.", description=str(e), colour=discord.Colour.red()
                 )
                 embed.set_footer(text=FOOTER_TEXT)
                 return await msg.edit(embed=embed)
@@ -2105,10 +1993,7 @@ class OtherCog(commands.Cog):
                 await msg.edit(embed=embed)
                 async with ctx.channel.typing():
                     async with client.stream(
-                        "POST",
-                        "/pull",
-                        json={"name": model, "stream": True},
-                        timeout=None
+                        "POST", "/pull", json={"name": model, "stream": True}, timeout=None
                     ) as response:
                         if response.status_code != 200:
                             error = await response.aread()
@@ -2116,7 +2001,7 @@ class OtherCog(commands.Cog):
                                 title=f"Failed to download model {model}:",
                                 description=f"HTTP {response.status_code}:\n```{error or '<no body>'}\n```",
                                 colour=discord.Colour.red(),
-                                url=str(response.url)
+                                url=str(response.url),
                             )
                             embed.set_footer(text=FOOTER_TEXT)
                             return await msg.edit(embed=embed)
@@ -2131,12 +2016,13 @@ class OtherCog(commands.Cog):
                                     percent = round(completed / total * 100, 2)
                                 total_gigabytes = total / 1024 / 1024 / 1024
                                 completed_gigabytes = completed / 1024 / 1024 / 1024
-                                lines[chunk["status"]] = (f"{percent}% "
-                                                          f"({completed_gigabytes:.2f}GB/{total_gigabytes:.2f}GB)")
+                                lines[chunk["status"]] = (
+                                    f"{percent}% " f"({completed_gigabytes:.2f}GB/{total_gigabytes:.2f}GB)"
+                                )
                             else:
                                 status = chunk.get("status", chunk.get("error", os.urandom(3).hex()))
                                 lines[status] = status
-                            
+
                             embed.description = "\n".join(f"`{k}`: {v}" for k, v in lines.items())
                             if (time() - last_edit) >= 5:
                                 await msg.edit(embed=embed)
@@ -2151,7 +2037,7 @@ class OtherCog(commands.Cog):
                     title=f"Failed to download model {model}:",
                     description=f"HTTP {response.status_code}:\n```{error or '<no body>'}\n```",
                     colour=discord.Colour.red(),
-                    url=str(response.url)
+                    url=str(response.url),
                 )
                 embed.set_footer(text=FOOTER_TEXT)
                 return await msg.edit(embed=embed)
@@ -2160,32 +2046,21 @@ class OtherCog(commands.Cog):
                 title=f"{model} says:",
                 description="",
                 colour=discord.Colour.blurple(),
-                timestamp=discord.utils.utcnow()
+                timestamp=discord.utils.utcnow(),
             )
             embed.set_footer(text=FOOTER_TEXT)
             await msg.edit(embed=embed)
             async with ctx.channel.typing():
-                payload = {
-                    "model": model,
-                    "prompt": query,
-                    "format": "json",
-                    "system": system_prompt,
-                    "stream": True
-                }
+                payload = {"model": model, "prompt": query, "format": "json", "system": system_prompt, "stream": True}
                 if context:
                     payload["context"] = context
-                async with client.stream(
-                    "POST",
-                    "/generate",
-                    json=payload,
-                    timeout=None
-                ) as response:
+                async with client.stream("POST", "/generate", json=payload, timeout=None) as response:
                     if response.status_code != 200:
                         error = await response.aread()
                         embed = discord.Embed(
                             title=f"Failed to generate response from {model}:",
                             description=f"HTTP {response.status_code}:\n```{error or '<no body>'}\n```",
-                            colour=discord.Colour.red()
+                            colour=discord.Colour.red(),
                         )
                         embed.set_footer(text=FOOTER_TEXT)
                         return await msg.edit(embed=embed)
@@ -2204,7 +2079,7 @@ class OtherCog(commands.Cog):
                                 embed.set_author(
                                     name=f"Generating response with {model}",
                                     url=f"http://{host}",
-                                    icon_url="https://cdn.discordapp.com/emojis/1101463077586735174.gif"
+                                    icon_url="https://cdn.discordapp.com/emojis/1101463077586735174.gif",
                                 )
                             embed.description += chunk["response"]
                             if (time() - last_edit) >= 5 or chunk["done"] is True:
@@ -2215,10 +2090,7 @@ class OtherCog(commands.Cog):
                                 embed.colour = discord.Colour.red()
                                 return await msg.edit(embed=embed, view=None)
                             if len(embed.description) >= 4000:
-                                embed.add_field(
-                                    name="Aborting early",
-                                    value="Output exceeded 4000 characters."
-                                )
+                                embed.add_field(name="Aborting early", value="Output exceeded 4000 characters.")
                                 embed.title = embed.title[:-1] + " (Aborted)"
                                 embed.colour = discord.Colour.red()
                                 embed.description = embed.description[:4096]
@@ -2268,28 +2140,22 @@ class OtherCog(commands.Cog):
                         self.context_cache[key] = context
                     else:
                         context = key = None
-                    value = ("* Total: {}\n"
-                             "* Model load: {}\n"
-                             "* Sample generation: {}\n"
-                             "* Prompt eval: {}\n"
-                             "* Response generation: {}\n").format(
+                    value = (
+                        "* Total: {}\n"
+                        "* Model load: {}\n"
+                        "* Sample generation: {}\n"
+                        "* Prompt eval: {}\n"
+                        "* Response generation: {}\n"
+                    ).format(
                         total_time_spent,
                         load_time_spent,
                         sample_time_sent,
                         prompt_eval_time_spent,
                         eval_time_spent,
                     )
-                    embed.add_field(
-                        name="Timings",
-                        value=value,
-                        inline=False
-                    )
+                    embed.add_field(name="Timings", value=value, inline=False)
                     if context:
-                        embed.add_field(
-                            name="Context Key",
-                            value=key,
-                            inline=True
-                        )
+                        embed.add_field(name="Context Key", value=key, inline=True)
                     embed.set_footer(text=FOOTER_TEXT)
                     await msg.edit(content=None, embed=embed, view=None)
                     self.ollama_locks.pop(msg, None)
@@ -2297,44 +2163,31 @@ class OtherCog(commands.Cog):
     @commands.slash_command(name="test-proxies")
     @commands.max_concurrency(1, commands.BucketType.user, wait=False)
     async def test_proxy(
-            self,
-            ctx: discord.ApplicationContext,
-            run_speed_test: bool = False,
-            proxy_name: discord.Option(
-                str,
-                choices=[
-                    "SHRoNK",
-                    "NexBox",
-                    "first-working"
-                ]
-            ) = "first-working",
-            test_time: float = 30
+        self,
+        ctx: discord.ApplicationContext,
+        run_speed_test: bool = False,
+        proxy_name: discord.Option(str, choices=["SHRoNK", "NexBox", "first-working"]) = "first-working",
+        test_time: float = 30,
     ):
         """Tests proxies."""
         test_time = max(5.0, test_time)
         await ctx.defer()
-        SPEED_REGIONS = [
-            "fsn1",
-            "nbg1",
-            "hel1",
-            "ash",
-            "hil"
-        ]
+        SPEED_REGIONS = ["fsn1", "nbg1", "hel1", "ash", "hil"]
         results = {
             "localhost:1090": {
                 "name": "SHRoNK",
                 "failure": None,
                 "download_speed": 0.0,
                 "tested": False,
-                "speedtest": "https://{hetzner_region}-speed.hetzner.com/100M.bin"
+                "speedtest": "https://{hetzner_region}-speed.hetzner.com/100M.bin",
             },
             "localhost:1080": {
                 "name": "NexBox",
                 "failure": None,
                 "download_speed": 0.0,
                 "tested": False,
-                "speedtest": "http://192.168.0.90:82/100M.bin"
-            }
+                "speedtest": "http://192.168.0.90:82/100M.bin",
+            },
         }
         if proxy_name != "first-working":
             for key, value in results.copy().items():
@@ -2342,18 +2195,13 @@ class OtherCog(commands.Cog):
                     continue
                 else:
                     results.pop(key)
-        embed = discord.Embed(
-            title="\N{white heavy check mark} Proxy available."
-        )
+        embed = discord.Embed(title="\N{white heavy check mark} Proxy available.")
         FAILED = False
         proxy_uri = None
         for proxy_uri in results.keys():
             name = results[proxy_uri]["name"]
             try:
-                proxy_down = await asyncio.wait_for(
-                    self.check_proxy("socks5://" + proxy_uri),
-                    timeout=10
-                )
+                proxy_down = await asyncio.wait_for(self.check_proxy("socks5://" + proxy_uri), timeout=10)
                 results[proxy_uri]["tested"] = True
                 if proxy_down > 0:
                     embed.colour = discord.Colour.red()
@@ -2375,19 +2223,12 @@ class OtherCog(commands.Cog):
                 results[proxy_uri]["failure"] = f"Failed to check {name} proxy (`{e}`)."
                 results[proxy_uri]["tested"] = True
         else:
-            embed = discord.Embed(
-                title="\N{cross mark} All proxies failed.",
-                colour=discord.Colour.red()
-            )
+            embed = discord.Embed(title="\N{cross mark} All proxies failed.", colour=discord.Colour.red())
             FAILED = True
 
         for uri, value in results.items():
             if value["tested"]:
-                embed.add_field(
-                    name=value["name"],
-                    value=value["failure"] or "Proxy is working.",
-                    inline=True
-                )
+                embed.add_field(name=value["name"], value=value["failure"] or "Proxy is working.", inline=True)
         embed.set_footer(text="No speed test will be run.")
         await ctx.respond(embed=embed)
         if run_speed_test and FAILED is False:
@@ -2396,11 +2237,9 @@ class OtherCog(commands.Cog):
             await ctx.edit(embed=embed)
             chosen_proxy = ("socks5://" + proxy_uri) if proxy_uri else None
             async with httpx.AsyncClient(
-                    http2=True,
-                    proxies=chosen_proxy,
-                    headers={
-                        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0"
-                    }
+                http2=True,
+                proxies=chosen_proxy,
+                headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0"},
             ) as client:
                 bytes_received = 0
                 for region in SPEED_REGIONS:
@@ -2418,9 +2257,7 @@ class OtherCog(commands.Cog):
                         response.raise_for_status()
                         end = time()
                         now = discord.utils.utcnow()
-                        embed.set_footer(
-                            text=embed.footer.text + " | Finished at: " + now.strftime("%X")
-                        )
+                        embed.set_footer(text=embed.footer.text + " | Finished at: " + now.strftime("%X"))
                         break
                     except Exception as e:
                         results[proxy_uri]["failure"] = f"Failed to test {region} speed (`{e}`)."
@@ -2433,8 +2270,8 @@ class OtherCog(commands.Cog):
                 embed2 = discord.Embed(
                     title=f"\U000023f2\U0000fe0f Speed test results (for {proxy_uri})",
                     description=f"Downloaded {megabytes:,.1f}MB in {elapsed:,.0f} seconds "
-                                f"({megabits_per_second:,.0f}Mbps).\n`{latency:,.0f}ms` latency.",
-                    colour=discord.Colour.green() if megabits_per_second >= 50 else discord.Colour.red()
+                    f"({megabits_per_second:,.0f}Mbps).\n`{latency:,.0f}ms` latency.",
+                    colour=discord.Colour.green() if megabits_per_second >= 50 else discord.Colour.red(),
                 )
                 embed2.add_field(name="Source", value=used)
                 await ctx.edit(embeds=[embed, embed2])
@@ -2442,61 +2279,97 @@ class OtherCog(commands.Cog):
     @commands.message_command(name="Transcribe")
     async def transcribe_message(self, ctx: discord.ApplicationContext, message: discord.Message):
         await ctx.defer()
-        if not message.attachments:
-            return await ctx.respond("No attachments found.")
+        async with self.transcribe_lock:
+            if not message.attachments:
+                return await ctx.respond("No attachments found.")
 
-        _ft = "wav"
-        for attachment in message.attachments:
-            if attachment.content_type.startswith("audio/"):
-                _ft = attachment.filename.split(".")[-1]
-                break
-        else:
-            return await ctx.respond("No voice messages.")
-        if getattr(config, "OPENAI_KEY", None) is None:
-            return await ctx.respond("Service unavailable.")
-        file_hash = hashlib.sha1(usedforsecurity=False)
-        file_hash.update(await attachment.read())
-        file_hash = file_hash.hexdigest()
+            _ft = "wav"
+            for attachment in message.attachments:
+                if attachment.content_type.startswith("audio/"):
+                    _ft = attachment.filename.split(".")[-1]
+                    break
+            else:
+                return await ctx.respond("No voice messages.")
+            if getattr(config, "OPENAI_KEY", None) is None:
+                return await ctx.respond("Service unavailable.")
+            file_hash = hashlib.sha1(usedforsecurity=False)
+            file_hash.update(await attachment.read())
+            file_hash = file_hash.hexdigest()
 
-        cache = Path.home() / ".cache" / "lcc-bot" / ("%s-transcript.txt" % file_hash)
-        cached = False
-        if not cache.exists():
-            client = openai.OpenAI(api_key=config.OPENAI_KEY)
-            with tempfile.NamedTemporaryFile("wb+", suffix=".mp4") as f:
-                with tempfile.NamedTemporaryFile("wb+", suffix="-" + attachment.filename) as f2:
-                    await attachment.save(f2.name)
-                    f2.seek(0)
-                    seg: pydub.AudioSegment = await asyncio.to_thread(pydub.AudioSegment.from_file, file=f2, format=_ft)
-                    seg = seg.set_channels(1)
-                    await asyncio.to_thread(
-                        seg.export, f.name, format="mp4"
+            cache = Path.home() / ".cache" / "lcc-bot" / ("%s-transcript.txt" % file_hash)
+            cached = False
+            if not cache.exists():
+                client = openai.OpenAI(api_key=config.OPENAI_KEY)
+                with tempfile.NamedTemporaryFile("wb+", suffix=".mp4") as f:
+                    with tempfile.NamedTemporaryFile("wb+", suffix="-" + attachment.filename) as f2:
+                        await attachment.save(f2.name)
+                        f2.seek(0)
+                        seg: pydub.AudioSegment = await asyncio.to_thread(pydub.AudioSegment.from_file, file=f2, format=_ft)
+                        seg = seg.set_channels(1)
+                        await asyncio.to_thread(seg.export, f.name, format="mp4")
+                    f.seek(0)
+
+                    transcript = await asyncio.to_thread(
+                        client.audio.transcriptions.create, file=pathlib.Path(f.name), model="whisper-1"
                     )
-                f.seek(0)
+                    text = transcript.text
+                    cache.write_text(text)
+            else:
+                text = cache.read_text()
+                cached = True
 
-                transcript = await asyncio.to_thread(
-                    client.audio.transcriptions.create,
-                    file=pathlib.Path(f.name),
-                    model="whisper-1"
+            paginator = commands.Paginator("", "", 4096)
+            for line in text.splitlines():
+                paginator.add_line(textwrap.shorten(line, 4096))
+            embeds = list(map(lambda p: discord.Embed(description=p), paginator.pages))
+            await ctx.respond(embeds=embeds or [discord.Embed(description="No text found.")])
+
+            if await self.bot.is_owner(ctx.user):
+                await ctx.respond(
+                    ("Cached response ({})" if cached else "Uncached response ({})").format(file_hash), ephemeral=True
                 )
-                text = transcript.text
-                cache.write_text(text)
-        else:
-            text = cache.read_text()
-            cached = True
 
-        paginator = commands.Paginator("", "", 4096)
-        for line in text.splitlines():
-            paginator.add_line(textwrap.shorten(line, 4096))
-        embeds = list(map(lambda p: discord.Embed(description=p), paginator.pages))
-        await ctx.respond(embeds=embeds or [discord.Embed(description="No text found.")])
-        
-        if await self.bot.is_owner(ctx.user):
-            await ctx.respond(
-                ("Cached response ({})" if cached else "Uncached response ({})").format(
-                    file_hash
-                ),
-                ephemeral=True
-            )
+    @commands.slash_command()
+    async def whois(self, ctx: discord.ApplicationContext, domain: str):
+        """Runs a WHOIS."""
+        await ctx.defer()
+        url = urlparse("http://" + domain)
+        if not url.hostname:
+            return await ctx.respond("Invalid domain.")
+
+        process = await asyncio.create_subprocess_exec(
+            "whois", "-H", url.hostname, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await process.communicate()
+        await process.wait()
+        stdout = stdout.decode("utf-8", "replace")
+        stderr = stderr.decode("utf-8", "replace")
+        if process.returncode != 0:
+            return await ctx.respond(f"Error:\n```{stderr[:3900]}```")
+
+        paginator = commands.Paginator()
+        redacted = io.BytesIO()
+        for line in stdout.splitlines():
+            if line.startswith(">>> Last update"):
+                break
+            if "REDACTED" in line or "Please query the WHOIS server of the owning registrar" in line:
+                redacted.write(line.encode() + b"\n")
+            else:
+                paginator.add_line(line)
+
+        if redacted.tell() > 0:
+            redacted.seek(0)
+            file = discord.File(redacted, "redacted-fields.txt", description="Any discovered redacted fields.")
+        else:
+            file = None
+        if len(paginator.pages) > 1:
+            for page in paginator.pages:
+                await ctx.respond(page)
+            if file:
+                await ctx.respond(file=file)
+        else:
+            kwargs = {"file": file} if file else {}
+            await ctx.respond(paginator.pages[0], **kwargs)
 
 
 def setup(bot):

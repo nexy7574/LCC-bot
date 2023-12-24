@@ -138,11 +138,11 @@ class Extremism(commands.Cog):
 
     @commands.slash_command(name="decorate")
     async def decorate(
-            self,
-            ctx: discord.ApplicationContext,
-            decoration_url: str,
-            user: discord.User = None,
-            # animated: bool = True
+        self,
+        ctx: discord.ApplicationContext,
+        decoration_url: str,
+        user: discord.User = None,
+        # animated: bool = True
     ):
         """Decorates an avatar with a decoration."""
         if user is None:
@@ -162,9 +162,7 @@ class Extremism(commands.Cog):
             size = 640
         size = min(640, max(160, size))
 
-        decoration_url = urlparse(decoration_url)._replace(
-            query="?size={!s}&passthrough=true".format(size)
-        ).geturl()
+        decoration_url = urlparse(decoration_url)._replace(query="?size={!s}&passthrough=true".format(size)).geturl()
 
         # Download the decoration
         try:
@@ -199,9 +197,7 @@ class Extremism(commands.Cog):
             # discord.File(decoration_bio, "decoration.png"),
             discord.File(img_bytes, filename="decorated." + ext)
         ]
-        await ctx.respond(
-            files=files
-        )
+        await ctx.respond(files=files)
 
 
 def setup(bot):
