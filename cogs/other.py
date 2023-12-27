@@ -2178,14 +2178,20 @@ class OtherCog(commands.Cog):
                 "failure": None,
                 "download_speed": 0.0,
                 "tested": False,
-                "speedtest": "http://archive.ubuntu.com/ubuntu/dists/focal-updates/Contents-amd64.gz",
+                "speedtest": [
+                    "https://geo.mirror.pkgbuild.com/iso/latest/archlinux-x86_64.iso",
+                    "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.4.0-amd64-netinst.iso",
+                    "https://mirrors.layeronline.com/linuxmint/stable/21.2/linuxmint-21.2-cinnamon-64bit.iso",
+                    "https://cdimage.ubuntu.com/kubuntu/releases/jammy/release/kubuntu-22.04.3-desktop-amd64.iso",
+                    "https://releases.ubuntu.com/22.04.3/ubuntu-22.04.3-desktop-amd64.iso"
+                ],
             },
             "localhost:1080": {
                 "name": "NexBox",
                 "failure": None,
                 "download_speed": 0.0,
                 "tested": False,
-                "speedtest": "http://192.168.0.90:82/100M.bin",
+                "speedtest": ["http://192.168.0.90:82/100M.bin"],
             },
         }
         if proxy_name != "first-working":
@@ -2244,7 +2250,7 @@ class OtherCog(commands.Cog):
                 try:
                     start = time()
                     # used = results[proxy_uri]["speedtest"].format(hetzner_region=region)
-                    used = results[proxy_uri]["speedtest"].format()
+                    used = random.choice(results[proxy_uri]["speedtest"])
                     latency_start = time()
                     async with client.stream("GET", used) as response:
                         latency_end = time()
