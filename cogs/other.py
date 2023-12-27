@@ -2172,14 +2172,13 @@ class OtherCog(commands.Cog):
         """Tests proxies."""
         test_time = max(5.0, test_time)
         await ctx.defer()
-        SPEED_REGIONS = ["fsn1", "nbg1", "hel1", "ash", "hil"]
         results = {
             "localhost:1090": {
                 "name": "SHRoNK",
                 "failure": None,
                 "download_speed": 0.0,
                 "tested": False,
-                "speedtest": "https://{hetzner_region}-speed.hetzner.com/100M.bin",
+                "speedtest": "http://archive.ubuntu.com/ubuntu/dists/focal-updates/Contents-amd64.gz",
             },
             "localhost:1080": {
                 "name": "NexBox",
@@ -2196,7 +2195,7 @@ class OtherCog(commands.Cog):
                 else:
                     results.pop(key)
         embed = discord.Embed(title="\N{white heavy check mark} Proxy available.")
-        FAILED = False
+        failed = False
         proxy_uri = None
         for proxy_uri in results.keys():
             name = results[proxy_uri]["name"]
@@ -2224,14 +2223,14 @@ class OtherCog(commands.Cog):
                 results[proxy_uri]["tested"] = True
         else:
             embed = discord.Embed(title="\N{cross mark} All proxies failed.", colour=discord.Colour.red())
-            FAILED = True
+            failed = True
 
         for uri, value in results.items():
             if value["tested"]:
                 embed.add_field(name=value["name"], value=value["failure"] or "Proxy is working.", inline=True)
         embed.set_footer(text="No speed test will be run.")
         await ctx.respond(embed=embed)
-        if run_speed_test and FAILED is False:
+        if run_speed_test and failed is False:
             now = discord.utils.utcnow()
             embed.set_footer(text="Started speedtest at " + now.strftime("%X"))
             await ctx.edit(embed=embed)
@@ -2242,27 +2241,24 @@ class OtherCog(commands.Cog):
                 headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0"},
             ) as client:
                 bytes_received = 0
-                for region in SPEED_REGIONS:
-                    try:
-                        start = time()
-                        used = results[proxy_uri]["speedtest"].format(hetzner_region=region)
-                        latency_start = time()
-                        async with client.stream("GET", used) as response:
-                            latency_end = time()
-                            async for chunk in response.aiter_bytes():
-                                bytes_received += len(chunk)
-                                if (time() - start) > test_time:
-                                    break
-                        latency = (latency_end - latency_start) * 1000
-                        response.raise_for_status()
-                        end = time()
-                        now = discord.utils.utcnow()
-                        embed.set_footer(text=embed.footer.text + " | Finished at: " + now.strftime("%X"))
-                        break
-                    except Exception as e:
-                        results[proxy_uri]["failure"] = f"Failed to test {region} speed (`{e}`)."
-                else:
-                    return
+                try:
+                    start = time()
+                    # used = results[proxy_uri]["speedtest"].format(hetzner_region=region)
+                    used = results[proxy_uri]["speedtest"].format()
+                    latency_start = time()
+                    async with client.stream("GET", used) as response:
+                        latency_end = time()
+                        async for chunk in response.aiter_bytes():
+                            bytes_received += len(chunk)
+                            if (time() - start) > test_time:
+                                break
+                    latency = (latency_end - latency_start) * 1000
+                    response.raise_for_status()
+                    end = time()
+                    now = discord.utils.utcnow()
+                    embed.set_footer(text=embed.footer.text + " | Finished at: " + now.strftime("%X"))
+                except Exception as e:
+                    results[proxy_uri]["failure"] = f"Failed to test speed (`{e}`)."
                 megabytes = bytes_received / 1024 / 1024
                 elapsed = end - start
                 bits_per_second = (bytes_received * 8) / elapsed
