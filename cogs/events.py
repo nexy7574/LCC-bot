@@ -448,7 +448,7 @@ class Events(commands.Cog):
                     "content": "DoQ: Domain Name Service over Quick User Datagram Protocol Internet Connections"
                 },
                 r"^(Do)?DTLS$": {"content": "DoDTLS: Domain Name Service over Datagram Transport Layer Security"},
-                r"(arch|nix(os)?)": {
+                r"^(arch|nix(os)?)$": {
                     "content": "https://kvinneby.vendicated.dev/@vee/statuses/01HJPVWA7CPFP14YAQ9DTGX1HK",
                     "file": discord.File(assets / "fedora.webp")
                 }
