@@ -1,5 +1,4 @@
 import asyncio
-import glob
 import hashlib
 import inspect
 import io
@@ -23,7 +22,6 @@ from bs4 import BeautifulSoup
 from discord.ext import commands, pages, tasks
 
 from config import guilds
-from utils import Student, console, get_or_none
 
 try:
     from config import dev
@@ -450,6 +448,10 @@ class Events(commands.Cog):
                     "content": "DoQ: Domain Name Service over Quick User Datagram Protocol Internet Connections"
                 },
                 r"^(Do)?DTLS$": {"content": "DoDTLS: Domain Name Service over Datagram Transport Layer Security"},
+                r"(arch|nix(os)?)": {
+                    "content": "https://kvinneby.vendicated.dev/@vee/statuses/01HJPVWA7CPFP14YAQ9DTGX1HK",
+                    "file": discord.File(assets / "fedora.webp")
+                }
             }
             # Stop responding to any bots
             if message.author.bot is True:
