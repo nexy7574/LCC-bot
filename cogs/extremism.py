@@ -27,10 +27,10 @@ def resize_gif(img: PIL.Image.Image, width: int, height: int) -> PIL.Image.Image
 def _overlay_images(
     background: PIL.Image.Image, foreground: PIL.Image.Image, mode=blend_modes.overlay, opacity: float = 1.0
 ) -> PIL.Image.Image:
-    # background = background.convert("RGBA")
-    # foreground = foreground.convert("RGBA")
     background.load()
     foreground.load()
+    background = background.convert("RGBA")
+    foreground = foreground.convert("RGBA")
     background_img = numpy.array(background)
     background_img_float = background_img.astype(float)
     foreground_img = numpy.array(foreground)
