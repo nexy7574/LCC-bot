@@ -350,7 +350,7 @@ async def bridge_bind_new(mx_id: str):
     app.state.binds[token] = mx_id
     url = discord.utils.oauth_url(
         OAUTH_ID, redirect_uri=OAUTH_REDIRECT_URI, scopes=("identify")
-    ) + f"&state={value}&prompt=none"
+    ) + f"&state={toke}&prompt=none"
     return {
         "status": "pending",
         "url": url,
@@ -384,7 +384,7 @@ async def bridge_bind_delete(mx_id: str, code: str = None, state: str = None):
         app.state.binds[token] = mx_id
         url = discord.utils.oauth_url(
             OAUTH_ID, redirect_uri=OAUTH_REDIRECT_URI, scopes=("identify")
-        ) + f"&state={value}&prompt=none"
+        ) + f"&state={token}&prompt=none"
         return JSONResponse({"status": "pending", "url": url})
     else:
         real_mx_id = app.state.binds.pop(state, None)
