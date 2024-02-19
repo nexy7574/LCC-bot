@@ -31,8 +31,9 @@ else:
 
 try:
     from config import OAUTH_ID, OAUTH_REDIRECT_URI, OAUTH_SECRET
+    BIND_REDIRECT_URI = OAUTH_REDIRECT_URI[:-4] + "bridge/bind/callback"
 except ImportError:
-    OAUTH_ID = OAUTH_SECRET = OAUTH_REDIRECT_URI = None
+    OAUTH_ID = OAUTH_SECRET = OAUTH_REDIRECT_URI = BIND_REDIRECT_URI = None
 
 try:
     from config import WEB_ROOT_PATH
@@ -65,13 +66,13 @@ app.state.last_sender_ts = datetime.utcnow()
 app.state.ws_connected = Lock()
 
 
-async def get_access_token(code: str):
+async def get_access_token(code: str, redirect_uri: str = OAUTH_REDIRECT_URI):
     response = app.state.http.post(
         "https://discord.com/api/oauth2/token",
         data={
             "grant_type": "authorization_code",
             "code": code,
-            "redirect_uri": OAUTH_REDIRECT_URI,
+            "redirect_uri": redirect_uri,
         },
         headers={"Content-Type": "application/x-www-form-urlencoded"},
         auth=(OAUTH_ID, OAUTH_SECRET)
@@ -350,7 +351,7 @@ async def bridge_bind_new(mx_id: str):
     app.state.binds[token] = mx_id
     url = discord.utils.oauth_url(
         OAUTH_ID, 
-        redirect_uri=OAUTH_REDIRECT_URI[:-4] + "bridge/bind/callback", 
+        redirect_uri=BIND_REDIRECT_URI, 
         scopes=("identify",)
     ) + f"&state={token}&prompt=none"
     return {
@@ -366,9 +367,9 @@ async def bridge_bind_callback(code: str, state: str):
     mx_id = app.state.binds.pop(state, None)
     if not mx_id:
         raise HTTPException(status_code=400, detail="Invalid state")
-    data = await get_access_token(code)
+    data = await get_access_token(code, redirect_uri=BIND_REDIRECT_URI)
     access_token = data["access_token"]
-    user = await get_authorised_user(access_token)
+    user = await get_authorised_user(access_token,)
     user_id = int(user["id"])
     await BridgeBind.objects.create(matrix_id=mx_id, user_id=user_id)
     return JSONResponse({"matrix": mx_id, "discord": user_id}, 201)
@@ -386,11 +387,15 @@ async def bridge_bind_delete(mx_id: str, code: str = None, state: str = None):
         app.state.binds[token] = mx_id
         url = discord.utils.oauth_url(
             OAUTH_ID, 
-            redirect_uri=OAUTH_REDIRECT_URI[:-4] + "bridge/bind/callback", 
+            redirect_uri=BIND_REDIRECT_URI, 
             scopes=("identify",)
         ) + f"&state={token}&prompt=none"
         return JSONResponse({"status": "pending", "url": url})
     else:
+        access_token = await get_access_token(code, redirect_uri=BIND_REDIRECT_URI)
+        user = await get_authorised_user(access_token)
+        if existing.discord_id != int(user["id"]):
+            raise HTTPException(403, "Invalid user")
         real_mx_id = app.state.binds.pop(state, None)
         if real_mx_id != mx_id:
             raise HTTPException(400, "Invalid state")
