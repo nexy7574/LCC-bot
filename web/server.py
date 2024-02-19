@@ -73,8 +73,8 @@ async def get_access_token(code: str):
             "code": code,
             "redirect_uri": OAUTH_REDIRECT_URI,
         },
-        headers={"Content-Type": "application/x-www-form-urlencoded"}
-        auth=(CLIENT_ID, CLIENT_SECRET)
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        auth=(OAUTH_ID, OAUTH_SECRET)
     )
     response.raise_for_status()
     return response.json()
