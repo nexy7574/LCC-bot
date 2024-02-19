@@ -33,6 +33,7 @@ __all__ = [
     "Tutors",
     "UptimeEntry",
     "JimmyBans",
+    "BridgeBind"
 ]
 
 T = TypeVar("T")
@@ -222,3 +223,18 @@ class AccessTokens(orm.Model):
         user_id: int
         access_token: str
         ip_info: dict | None
+
+
+class BridgeBinds(orm.Model):
+    tablename = "bridge_binds"
+    registry = registry
+    fields = {
+        "entry_id": orm.UUID(primary_key=True, default=uuid.uuid4),
+        "matrix_id": orm.Text(unique=True),
+        "discord_id": orm.BigInteger()
+    }
+
+    if TYPE_CHECKING:
+        entry_id: uuid.UUID
+        matrix_id: str
+        discord_id: int

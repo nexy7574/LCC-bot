@@ -3,6 +3,7 @@ import ipaddress
 import logging
 import os
 import textwrap
+import secrets
 from asyncio import Lock
 from datetime import datetime, timezone
 from hashlib import sha512
@@ -18,7 +19,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from websockets.exceptions import WebSocketException
 
 from config import guilds
-from utils import BannedStudentID, Student, VerifyCode, console, get_or_none
+from utils import BannedStudentID, Student, VerifyCode, console, get_or_none, BridgeBind
 from utils.db import AccessTokens
 
 SF_ROOT = Path(__file__).parent / "static"
@@ -46,6 +47,7 @@ OAUTH_ENABLED = OAUTH_ID and OAUTH_SECRET and OAUTH_REDIRECT_URI
 app = FastAPI(root_path=WEB_ROOT_PATH)
 app.state.bot = None
 app.state.states = {}
+app.state.binds = {}
 app.state.http = httpx.Client()
 
 if StaticFiles:
@@ -325,3 +327,21 @@ async def bridge_recv(ws: WebSocket, secret: str = Header(None)):
                 break
             finally:
                 queue.task_done()
+
+
+@app.get("/bridge/bind/new")
+async def bridge_new_bind(mx_id: str):
+    """Begins a new bind session."""
+    existing: Optional[BridgeBind] = await get_or_none(BridgeBind, matrix_id=mx_id)
+    if existing:
+        raise HTTPException(409, "Account already bound")
+
+    if not OAUTH_ENABLED:
+        raise HTTPException(503)
+
+    token = secrets.token_urlsafe()
+    app.state.binds[token] = mx_id
+    url = discord.utils.oauth_url(
+        OAUTH_ID, redirect_uri=OAUTH_REDIRECT_URI, scopes=("identify", "connections", "guilds", "email")
+    )
+    + f"&state={value}&prompt=none"
