@@ -371,7 +371,7 @@ async def bridge_bind_callback(code: str, state: str):
     access_token = data["access_token"]
     user = await get_authorised_user(access_token,)
     user_id = int(user["id"])
-    await BridgeBind.objects.create(matrix_id=mx_id, user_id=user_id)
+    await BridgeBind.objects.create(matrix_id=mx_id, discord_id=user_id)
     return JSONResponse({"matrix": mx_id, "discord": user_id}, 201)
 
 
