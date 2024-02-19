@@ -344,12 +344,12 @@ async def bridge_bind_new(mx_id: str):
         raise HTTPException(409, "Account already bound")
 
     if not OAUTH_ENABLED:
-        raise HTTPException(503)
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
     token = secrets.token_urlsafe()
     app.state.binds[token] = mx_id
     url = discord.utils.oauth_url(
-        OAUTH_ID, redirect_uri=OAUTH_REDIRECT_URI, scopes=("identify")
+        OAUTH_ID, redirect_uri=OAUTH_REDIRECT_URI, scopes=("identify",)
     ) + f"&state={token}&prompt=none"
     return {
         "status": "pending",
@@ -383,7 +383,7 @@ async def bridge_bind_delete(mx_id: str, code: str = None, state: str = None):
         token = secrets.token_urlsafe()
         app.state.binds[token] = mx_id
         url = discord.utils.oauth_url(
-            OAUTH_ID, redirect_uri=OAUTH_REDIRECT_URI, scopes=("identify")
+            OAUTH_ID, redirect_uri=OAUTH_REDIRECT_URI, scopes=("identify",)
         ) + f"&state={token}&prompt=none"
         return JSONResponse({"status": "pending", "url": url})
     else:
