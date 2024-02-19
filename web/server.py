@@ -363,7 +363,7 @@ async def bridge_bind_callback(code: str, state: str):
     # Getting an entire access token seems like a waste, but oh well. Only need to do this once.
     mx_id = app.state.binds.pop(state, None)
     if not mx_id:
-        raise HTTPException(status_code=400, "Invalid state")
+        raise HTTPException(status_code=400, detail="Invalid state")
     data = await get_access_token(code)
     access_token = data["access_token"]
     user = await get_authorised_user(access_token)
