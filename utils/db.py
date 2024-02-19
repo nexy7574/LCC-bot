@@ -225,7 +225,7 @@ class AccessTokens(orm.Model):
         ip_info: dict | None
 
 
-class BridgeBinds(orm.Model):
+class BridgeBind(orm.Model):
     tablename = "bridge_binds"
     registry = registry
     fields = {

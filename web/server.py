@@ -20,7 +20,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from websockets.exceptions import WebSocketException
 
 from config import guilds
-from utils import BannedStudentID, Student, VerifyCode, console, get_or_none, BridgeBinds as BridgeBind
+from utils import BannedStudentID, Student, VerifyCode, console, get_or_none, BridgeBind
 from utils.db import AccessTokens
 
 SF_ROOT = Path(__file__).parent / "static"
