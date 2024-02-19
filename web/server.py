@@ -392,3 +392,11 @@ async def bridge_bind_delete(mx_id: str, code: str = None, state: str = None):
             raise HTTPException(400, "Invalid state")
         await existing.delete()
         return JSONResponse({"status": "ok"}, 200)
+
+@app.get("/bridge/bind/{mx_id}")
+async def bridge_bind_fetch(mx_id: str):
+    """Fetch the discord account associated with a matrix account."""
+    existing: Optional[BridgeBind] = await get_or_none(BridgeBind, matrix_id=mx_id)
+    if not existing:
+        raise HTTPException(404, "Not found")
+    return JSONResponse({"discord": existing.user_id}, 200)
