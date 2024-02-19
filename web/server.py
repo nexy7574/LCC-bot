@@ -408,4 +408,4 @@ async def bridge_bind_fetch(mx_id: str):
     existing: Optional[BridgeBind] = await get_or_none(BridgeBind, matrix_id=mx_id)
     if not existing:
         raise HTTPException(404, "Not found")
-    return JSONResponse({"discord": existing.user_id}, 200)
+    return JSONResponse({"discord": existing.discord_id}, 200)
