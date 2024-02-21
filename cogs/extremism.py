@@ -193,8 +193,6 @@ class Extremism(commands.Cog):
         img_bio.seek(0)
         decoration_bio.seek(0)
         files = [
-            # discord.File(img_bio, "avatar.png"),
-            # discord.File(decoration_bio, "decoration.png"),
             discord.File(img_bytes, filename="decorated." + ext)
         ]
         await ctx.respond(files=files)

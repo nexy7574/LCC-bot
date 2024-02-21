@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import signal
@@ -76,7 +77,11 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
             return
 
     if ctx.user.id == 1019233057519177778:
-        await ctx.respond("Uh oh! I did a fucky wucky >.< I'll make sure to let important peoplez know straight away!!")
+        await ctx.respond("Something happened!")
+        await asyncio.sleep(5)
+        await ctx.edit(
+            content="Command Error: `%s`" % repr(error)[:1950],
+        )
     else:
         text = "Application Command Error: `%r`" % error
         await ctx.respond(textwrap.shorten(text, 2000))
@@ -117,20 +122,19 @@ async def ping(ctx: discord.ApplicationContext):
     gateway = round(ctx.bot.latency * 1000, 2)
     return await ctx.respond(f"\N{white heavy check mark} Pong! `{gateway}ms`.")
 
-
-@bot.check_once
-async def check_not_banned(ctx: discord.ApplicationContext | commands.Context):
-    if await bot.is_owner(ctx.author) or ctx.command.name in ("block", "unblock", "timetable", "verify", "kys"):
-        return True
-    user = ctx.author
-    ban: JimmyBans = await get_or_none(JimmyBans, user_id=user.id)
-    if ban:
-        dt = datetime.fromtimestamp(ban.until, timezone.utc)
-        if dt < discord.utils.utcnow():
-            await ban.delete()
-        else:
-            raise JimmyBanException(dt, ban.reason)
-    return True
+# @bot.check_once
+# async def check_not_banned(ctx: discord.ApplicationContext | commands.Context):
+#     if await bot.is_owner(ctx.author) or ctx.command.name in ("block", "unblock", "timetable", "verify", "kys"):
+#         return True
+#     user = ctx.author
+#     ban: JimmyBans = await get_or_none(JimmyBans, user_id=user.id)
+#     if ban:
+#         dt = datetime.fromtimestamp(ban.until, timezone.utc)
+#         if dt < discord.utils.utcnow():
+#             await ban.delete()
+#         else:
+#             raise JimmyBanException(dt, ban.reason)
+#     return True
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ except ImportError:
 class InfoCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.client = httpx.AsyncClient(base_url="https://discord.com/api")
+        self.client = httpx.AsyncClient(base_url="https://discord.com/api/v10")
 
     async def get_user_info(self, token: str):
         try:
@@ -45,7 +45,7 @@ class InfoCog(commands.Cog):
 
     @commands.slash_command()
     @commands.cooldown(1, 10, commands.BucketType.user)
-    async def me(self, ctx: discord.ApplicationCommand):
+    async def me(self, ctx: discord.ApplicationContext):
         """Displays oauth info about you"""
         await ctx.defer()
 
