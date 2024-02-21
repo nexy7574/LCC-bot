@@ -145,7 +145,6 @@ class Events(commands.Cog):
             return
 
         if message.channel.name == "femboy-hole":
-
             def generate_payload(_message: discord.Message) -> MessagePayload:
                 _payload = MessagePayload(
                     message_id=_message.id,
@@ -183,6 +182,19 @@ class Events(commands.Cog):
         if message.channel.name in ("verify", "timetable") and message.author != self.bot.user:
             if message.channel.permissions_for(message.guild.me).manage_messages:
                 await message.delete(delay=1)
+
+        if message.content:
+            assets = Path.cwd() / "assets"
+            words = re.split(r"\s+", message.content)
+            words = set(map(str.lower, words))
+            if "lupupa" in words and (file := assets / "lupupa.jpg").exists():
+                await message.reply(file=discord.File(file), delete_after=60)
+            elif any(word in words for word in ("fedora", "nix", "nixos")) and (file := assets / "fedora.jpg").exists():
+                await message.reply(file=discord.File(file), delete_after=60)
+            elif "carat" in words and (file := assets / "carat.jpg").exists():
+                await message.reply(file=discord.File(file), delete_after=60)
+            elif "boris" in words and (file := assets / "boris.jpg").exists():
+                await message.reply(file=discord.File(file), delete_after=60)
 
     @tasks.loop(minutes=10)
     async def fetch_discord_atom_feed(self):
