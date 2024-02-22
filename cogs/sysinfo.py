@@ -13,7 +13,7 @@ from discord.ext import commands
 from pathlib import Path
 
 
-class InfoCog(commands.Cog):
+class SysInfoCog(commands.Cog):
     EMOJIS = {
         "CPU": "\N{brain}",
         "RAM": "\N{ram}",
