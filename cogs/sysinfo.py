@@ -206,4 +206,4 @@ class SysInfoCog(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(InfoCog(bot))
+    bot.add_cog(SysInfoCog(bot))
