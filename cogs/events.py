@@ -57,6 +57,7 @@ class MessagePayload(pydantic.BaseModel):
         height: Optional[int] = None
         content_type: str
 
+    event_type: str = "create"
     message_id: int
     author: str
     is_automated: bool = False
@@ -148,7 +149,7 @@ class Events(commands.Cog):
             def generate_payload(_message: discord.Message) -> MessagePayload:
                 _payload = MessagePayload(
                     message_id=_message.id,
-                    author=_message.author.name,
+                    author=_message.author.display_name,
                     is_automated=_message.author.bot or _message.author.system,
                     avatar=_message.author.display_avatar.with_static_format("webp").with_size(512).url,
                     content=_message.content or "",
@@ -195,6 +196,41 @@ class Events(commands.Cog):
                 await message.reply(file=discord.File(file), delete_after=60)
             elif "boris" in words and (file := assets / "boris.jpg").exists():
                 await message.reply(file=discord.File(file), delete_after=60)
+
+    @commands.Cog.listener("on_message_edit")
+    async def on_message_edit(self, before: discord.Message, after: discord.Message):
+        if before.author.bot or before.author.system:
+            return
+        if before.channel.name == "femboy-hole":
+            if before.content != after.content:
+                _payload = MessagePayload(
+                    message_id=before.id,
+                    author=after.author.display_name,
+                    is_automated=after.author.bot or after.author.system,
+                    avatar=after.author.display_avatar.with_static_format("webp").with_size(512).url,
+                    content=after.content or "",
+                    clean_content=str(after.clean_content or ""),
+                    at=(after.edited_at or after.created_at).timestamp(),
+                    event_type="edit"
+                )
+                await self.bot.bridge_queue.put(_payload.model_dump())
+
+    @commands.Cog.listener("on_message_delete")
+    async def on_message_delete(self, message: discord.Message):
+        if message.author.bot or message.author.system:
+            return
+        if message.channel.name == "femboy-hole":
+            _payload = MessagePayload(
+                message_id=message.id,
+                author=message.author.display_name,
+                is_automated=message.author.bot or message.author.system,
+                avatar=message.author.display_avatar.with_static_format("webp").with_size(512).url,
+                content=message.content or "",
+                clean_content=str(message.clean_content or ""),
+                at=message.created_at.timestamp(),
+                event_type="redact"
+            )
+            await self.bot.bridge_queue.put(_payload.model_dump())
 
     @tasks.loop(minutes=10)
     async def fetch_discord_atom_feed(self):
