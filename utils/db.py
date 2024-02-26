@@ -231,10 +231,12 @@ class BridgeBind(orm.Model):
     fields = {
         "entry_id": orm.UUID(primary_key=True, default=uuid.uuid4),
         "matrix_id": orm.Text(unique=True),
-        "discord_id": orm.BigInteger()
+        "discord_id": orm.BigInteger(),
+        "webhook": orm.Text(nullable=True, default=None),
     }
 
     if TYPE_CHECKING:
         entry_id: uuid.UUID
         matrix_id: str
         discord_id: int
+        webhook: str | None
