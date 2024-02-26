@@ -232,7 +232,7 @@ class BridgeBind(orm.Model):
         "entry_id": orm.UUID(primary_key=True, default=uuid.uuid4),
         "matrix_id": orm.Text(unique=True),
         "discord_id": orm.BigInteger(),
-        "webhook": orm.Text(nullable=True, default=None),
+        "webhook": orm.Text(default=None),
     }
 
     if TYPE_CHECKING:
