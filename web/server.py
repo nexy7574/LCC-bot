@@ -14,15 +14,14 @@ from discord.ext.commands import Paginator
 
 import discord
 import httpx
-from fastapi import FastAPI, Header, HTTPException, Request, dependencies, status, Depends
+from fastapi import FastAPI, HTTPException, Request, status, Depends, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials as HTTPAuthCreds
 from fastapi import WebSocketException as _WSException
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from starlette.websockets import WebSocket, WebSocketDisconnect
 from websockets.exceptions import WebSocketException
 
-from config import guilds
-from utils import BannedStudentID, Student, VerifyCode, console, get_or_none, BridgeBind
+from utils import get_or_none, BridgeBind
 from utils.db import AccessTokens
 
 SF_ROOT = Path(__file__).parent / "static"
@@ -323,8 +322,8 @@ async def bridge_bind_new(mx_id: str):
     token = secrets.token_urlsafe()
     app.state.binds[token] = mx_id
     url = discord.utils.oauth_url(
-        OAUTH_ID, 
-        redirect_uri=BIND_REDIRECT_URI, 
+        OAUTH_ID,
+        redirect_uri=BIND_REDIRECT_URI,
         scopes=("identify",)
     ) + f"&state={token}&prompt=none"
     return {
@@ -371,13 +370,13 @@ async def bridge_bind_delete(mx_id: str, code: str = None, state: str = None):
     existing: Optional[BridgeBind] = await get_or_none(BridgeBind, matrix_id=mx_id)
     if not existing:
         raise HTTPException(404, "Not found")
-    
+
     if not (code and state) or state not in app.state.binds:
         token = secrets.token_urlsafe()
         app.state.binds[token] = mx_id
         url = discord.utils.oauth_url(
-            OAUTH_ID, 
-            redirect_uri=BIND_REDIRECT_URI, 
+            OAUTH_ID,
+            redirect_uri=BIND_REDIRECT_URI,
             scopes=("identify",)
         ) + f"&state={token}&prompt=none"
         return JSONResponse({"status": "pending", "url": url})
@@ -391,6 +390,7 @@ async def bridge_bind_delete(mx_id: str, code: str = None, state: str = None):
             raise HTTPException(400, "Invalid state")
         await existing.delete()
         return JSONResponse({"status": "ok"}, 200)
+
 
 @app.get("/bridge/bind/{mx_id}", dependencies=[Depends(is_authenticated)])
 async def bridge_bind_fetch(mx_id: str):
