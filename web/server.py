@@ -223,7 +223,7 @@ async def authenticate(req: Request, code: str = None, state: str = None):
         return response
 
 
-@app.post("/bridge", status_code=201, dependencies=[Depends(is_authenticated)]
+@app.post("/bridge", status_code=201, dependencies=[Depends(is_authenticated)])
 async def bridge(req: Request):
     now = datetime.utcnow()
     ts_diff = (now - app.state.last_sender_ts).total_seconds()
