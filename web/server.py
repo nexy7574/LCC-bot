@@ -69,7 +69,7 @@ app.state.last_sender_ts = datetime.utcnow()
 app.state.ws_connected = Lock()
 
 
-async def is_authenticated(credentials: Annotated[HTTPAuthCreds, security]):
+async def is_authenticated(credentials: Annotated[HTTPAuthCreds, Depends(security)]):
     if credentials.credentials != app.state.bot.http.token:
         raise HTTPException(status_code=401, detail="Invalid secret.")
 
