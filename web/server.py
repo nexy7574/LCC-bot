@@ -110,7 +110,7 @@ def ping():
     return {
         "ping": "pong",
         "online": app.state.bot.is_ready(),
-        "latency": max(round(app.state.bot.latency, 2), 0.01),
+        "latency": max(round(app.state.bot.latency), 1),
         "uptime": max(round(bot_started.total_seconds(), 2), 1),
     }
 
