@@ -196,6 +196,23 @@ class Events(commands.Cog):
                 await message.reply(file=discord.File(file), delete_after=60)
             elif "boris" in words and (file := assets / "boris.jpg").exists():
                 await message.reply(file=discord.File(file), delete_after=60)
+            elif "twitter" in words:
+                new_words = []
+                for word in words:
+                    if word.lower() == "twitter":
+                        new_words.append("~~%s~~ **X**" % word)
+                    else:
+                        new_words.append(word)
+                new_content = " ".join(new_words)
+                if len(new_content) > 2000:
+                    new_words = []
+                    for word in words:
+                        if word.lower() == "twitter":
+                            new_words.append("**X**")
+                        else:
+                            new_words.append(word)
+                    new_content = " ".join(new_words)
+                await message.reply(new_content, delete_after=300)
 
     @commands.Cog.listener("on_message_edit")
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
