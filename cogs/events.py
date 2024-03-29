@@ -187,7 +187,7 @@ class Events(commands.Cog):
         if message.content:
             assets = Path.cwd() / "assets"
             words = re.split(r"\s+", message.content)
-            words = set(map(str.lower, words))
+            words = tuple(map(str.lower, words))
             if "lupupa" in words and (file := assets / "lupupa.jpg").exists():
                 await message.reply(file=discord.File(file), delete_after=60)
             elif any(word in words for word in ("fedora", "nix", "nixos")) and (file := assets / "fedora.jpg").exists():
