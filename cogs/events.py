@@ -196,7 +196,7 @@ class Events(commands.Cog):
                 await message.reply(file=discord.File(file), delete_after=60)
             elif "boris" in words and (file := assets / "boris.jpg").exists():
                 await message.reply(file=discord.File(file), delete_after=60)
-            elif "twitter" in words:
+            elif "twitter" in words or "vxtwitter" in words:
                 new_words = []
                 for word in words:
                     if word.lower() == "twitter":
@@ -212,6 +212,7 @@ class Events(commands.Cog):
                         else:
                             new_words.append(word)
                     new_content = " ".join(new_words)
+                new_content = new_content.replace("vxtwitter", "fixupx")
                 await message.reply(new_content, delete_after=300)
 
     @commands.Cog.listener("on_message_edit")
