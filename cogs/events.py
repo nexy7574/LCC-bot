@@ -184,7 +184,7 @@ class Events(commands.Cog):
             if message.channel.permissions_for(message.guild.me).manage_messages:
                 await message.delete(delay=1)
 
-        if message.content:
+        if message.content and message.author.bot is False:
             assets = Path.cwd() / "assets"
             words = re.split(r"\s+", message.content)
             words = tuple(map(str.lower, words))
