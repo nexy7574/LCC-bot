@@ -196,7 +196,7 @@ class Events(commands.Cog):
                 await message.reply(file=discord.File(file), delete_after=60)
             elif "boris" in words and (file := assets / "boris.jpg").exists():
                 await message.reply(file=discord.File(file), delete_after=60)
-            elif "twitter" in words or "vxtwitter" in words:
+            elif "twitter" in message.content.lower():
                 new_content = re.sub(
                     r"(^|\W+)twitter",
                     lambda m: f'~~{m.group()}~~ \U0001D54F',
