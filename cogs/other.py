@@ -595,24 +595,26 @@ class OtherCog(commands.Cog):
     @commands.message_command(name="Run OCR")
     async def message_ocr(self, ctx: discord.ApplicationContext, message: discord.Message):
         await ctx.defer()
-        attachment: discord.Attachment | None
+
+        embeds = []
         for attachment in message.attachments:
             if attachment.content_type.startswith("image/"):
-                break
-        else:
-            return await ctx.respond(":x: No images found in message.", delete_after=30)
+                timings, text = await self._ocr_core(attachment)
+                embed = discord.Embed(
+                    title="OCR for " + attachment.filename,
+                    description=text,
+                    colour=discord.Colour.blurple(),
+                    url=message.jump_url
+                )
+                embed.set_image(url=attachment.url)
+                embeds.append(embed)
+                if len(embeds) == 25:
+                    break
 
-        timings, text = await self._ocr_core(attachment)
-        embed = discord.Embed(
-            title="OCR for " + attachment.filename,
-            description=text,
-            colour=discord.Colour.blurple(),
-            url=message.jump_url
-        )
-        embed.set_image(url=attachment.url)
-        await ctx.respond(
-            embed=embed
-        )
+        if not embeds:
+            return await ctx.respond(":x: No images found in message.", delete_after=30)
+        else:
+            return await ctx.respond(embeds)
 
     @commands.message_command(name="Convert Image to GIF")
     async def convert_image_to_gif(self, ctx: discord.ApplicationContext, message: discord.Message):
