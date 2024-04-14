@@ -545,6 +545,7 @@ class OtherCog(commands.Cog):
                             "burn_after": "0",
                             "syntax_highlight": "none",
                             "privacy": "unlisted",
+                            "content": text
                         },
                         files={
                             "file": (attachment.filename, file, attachment.content_type)
