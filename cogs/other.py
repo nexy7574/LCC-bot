@@ -551,7 +551,8 @@ class OtherCog(commands.Cog):
                         },
                         follow_redirects=False
                     )
-                    response.raise_for_status()
+                    if response.status_code not in range(200, 400):
+                        response.raise_for_status()
                 except httpx.HTTPError as e:
                     raise RuntimeError(f"Failed to upload OCR content: `{e}`")
                 else:
