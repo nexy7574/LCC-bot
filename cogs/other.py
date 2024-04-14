@@ -614,7 +614,7 @@ class OtherCog(commands.Cog):
         if not embeds:
             return await ctx.respond(":x: No images found in message.", delete_after=30)
         else:
-            return await ctx.respond(embeds)
+            return await ctx.respond(embeds=embeds)
 
     @commands.message_command(name="Convert Image to GIF")
     async def convert_image_to_gif(self, ctx: discord.ApplicationContext, message: discord.Message):
