@@ -539,25 +539,16 @@ class OtherCog(commands.Cog):
                 try:
                     file.seek(0)
                     response = await self.http.post(
-                        "https://paste.nexy7574.co.uk/upload",
-                        data={
-                            "expiration": "1week",
-                            "burn_after": "0",
-                            "syntax_highlight": "none",
-                            "privacy": "unlisted",
-                            "content": text
-                        },
+                        "https://0x0.st",
                         files={
-                            "file": (attachment.filename, file, attachment.content_type)
+                            "file": ("ocr.txt", io.StringIO(text), "text/plain")
                         },
-                        follow_redirects=False
                     )
-                    if response.status_code not in range(200, 400):
-                        response.raise_for_status()
+                    response.raise_for_status()
                 except httpx.HTTPError as e:
                     raise RuntimeError(f"Failed to upload OCR content: `{e}`")
                 else:
-                    text = "View on [paste.nexy7574.co.uk](%s)" % response.next_request.url
+                    text = "View on [0x0.st](%s)" % response.text.strip()
             timings["Upload text to pastebin"] = _t.total
         return timings, text
 
