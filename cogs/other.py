@@ -1,55 +1,42 @@
 import asyncio
-import fnmatch
-import functools
 import glob
 import hashlib
 import io
 import json
 import logging
-import math
 import os
 import pathlib
 import random
 import re
 import shutil
-import subprocess
-import sys
 import tempfile
 import textwrap
-import traceback
 import typing
 from functools import partial
-from io import BytesIO
 from pathlib import Path
-from time import sleep, time, time_ns
-from typing import Dict, Literal, Optional, Tuple
+from time import time
+from typing import Dict, Literal, Tuple
 from urllib.parse import urlparse
 
-import aiofiles
 import aiohttp
+import config
 import discord
-import dns.resolver
 import httpx
 import openai
 import psutil
 import pydub
 import pytesseract
 import pyttsx3
-from discord import Interaction
-from discord.ext import commands
-from dns import asyncresolver
 from PIL import Image
-from rich import print
-from rich.tree import Tree
+from discord.ext import commands
 from selenium import webdriver
-from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
 
-import config
-from utils import Timer, console
+from utils import Timer
+
 
 try:
     from config import proxy
@@ -530,21 +517,8 @@ class OtherCog(commands.Cog):
         else:
             return await ctx.respond(result, view=GenerateNewView())
 
-    @commands.slash_command()
-    @commands.cooldown(1, 30, commands.BucketType.user)
-    @commands.max_concurrency(1, commands.BucketType.user)
-    async def ocr(
-        self,
-        ctx: discord.ApplicationContext,
-        attachment: discord.Option(
-            discord.SlashCommandOptionType.attachment,
-            description="Image to perform OCR on",
-        ),
-    ):
-        """OCRs an image"""
-        await ctx.defer()
-        timings: Dict[str, float] = {}
-        attachment: discord.Attachment
+    async def _ocr_core(self, attachment: discord.Attachment) -> tuple[dict[str, float], str]:
+        timings: dict[str, float] = {}
         with Timer() as _t:
             data = await attachment.read()
             file = io.BytesIO(data)
@@ -558,44 +532,91 @@ class OtherCog(commands.Cog):
                 text = await self.bot.loop.run_in_executor(None, pytesseract.image_to_string, img)
                 timings["Perform OCR"] = _t.total
         except pytesseract.TesseractError as e:
-            return await ctx.respond(f"Failed to perform OCR: `{e}`")
+            raise RuntimeError(f"Failed to perform OCR: `{e}`")
 
-        if len(text) > 4096:
+        if len(text) >= 1744:
             with Timer() as _t:
                 try:
-                    response = await self.http.put(
-                        "https://api.mystb.in/paste",
-                        json={
-                            "files": [{"filename": "ocr.txt", "content": text}],
+                    file.seek(0)
+                    response = await self.http.post(
+                        "https://paste.nexy7574.co.uk/upload",
+                        data={
+                            "expiration": "1week",
+                            "burn_after": "0",
+                            "syntax_highlight": "none",
+                            "privacy": "unlisted",
+                            "content": text
                         },
+                        files={
+                            "file": (attachment.filename, file, attachment.content_type)
+                        },
+                        follow_redirects=False
                     )
-                    response.raise_for_status()
-                except httpx.HTTPError:
-                    return await ctx.respond("OCR content too large to post.")
+                    if response.status_code not in range(200, 400):
+                        response.raise_for_status()
+                except httpx.HTTPError as e:
+                    raise RuntimeError(f"Failed to upload OCR content: `{e}`")
                 else:
-                    data = response.json()
-                    with Timer(timings, "Respond (URL)"):
-                        embed = discord.Embed(
-                            description="View on [mystb.in](%s)" % ("https://mystb.in/" + data["id"]),
-                            colour=discord.Colour.dark_theme(),
-                        )
-                        await ctx.respond(embed=embed)
-            timings["Upload text to mystbin"] = _t.total
-        elif len(text) <= 1500:
-            with Timer() as _t:
-                await ctx.respond(embed=discord.Embed(description=text))
-            timings["Respond (Text)"] = _t.total
-        else:
-            with Timer() as _t:
-                out_file = io.BytesIO(text.encode("utf-8", "replace"))
-                await ctx.respond(file=discord.File(out_file, filename="ocr.txt"))
-            timings["Respond (File)"] = _t.total
+                    text = "View on [paste.nexy7574.co.uk](%s)" % response.next_request.url
+            timings["Upload text to pastebin"] = _t.total
+        return timings, text
+
+    @commands.slash_command()
+    @commands.cooldown(1, 30, commands.BucketType.user)
+    @commands.max_concurrency(1, commands.BucketType.user)
+    async def ocr(
+        self,
+        ctx: discord.ApplicationContext,
+        attachment: discord.Option(
+            discord.SlashCommandOptionType.attachment,
+            description="Image to perform OCR on",
+        ),
+    ):
+        """OCRs an image"""
+        await ctx.defer()
+        attachment: discord.Attachment
+
+        timings, text = await self._ocr_core(attachment)
+        embed = discord.Embed(
+            description=text,
+            colour=discord.Colour.blurple()
+        )
+        embed.set_image(url=attachment.url)
+        with Timer() as _t:
+            await ctx.respond(
+                embed=embed
+            )
+        timings["Respond (Text)"] = _t.total
 
         if timings:
             text = "Timings:\n" + "\n".join("{}: {:.2f}s".format(k.title(), v) for k, v in timings.items())
             await ctx.edit(
-                content=text,
+                content=text
             )
+
+    @commands.message_command(name="Run OCR")
+    async def message_ocr(self, ctx: discord.ApplicationContext, message: discord.Message):
+        await ctx.defer()
+
+        embeds = []
+        for attachment in message.attachments:
+            if attachment.content_type.startswith("image/"):
+                timings, text = await self._ocr_core(attachment)
+                embed = discord.Embed(
+                    title="OCR for " + attachment.filename,
+                    description=text,
+                    colour=discord.Colour.blurple(),
+                    url=message.jump_url
+                )
+                embed.set_image(url=attachment.url)
+                embeds.append(embed)
+                if len(embeds) == 25:
+                    break
+
+        if not embeds:
+            return await ctx.respond(":x: No images found in message.", delete_after=30)
+        else:
+            return await ctx.respond(embeds=embeds)
 
     @commands.message_command(name="Convert Image to GIF")
     async def convert_image_to_gif(self, ctx: discord.ApplicationContext, message: discord.Message):
