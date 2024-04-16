@@ -10,3 +10,4 @@ targets.json
 *.pyc
 web/static
 *.log
+.idea
