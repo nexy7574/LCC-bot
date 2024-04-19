@@ -745,6 +745,28 @@ class OtherCog(commands.Cog):
 
     @commands.message_command(name="Transcribe")
     async def transcribe_message(self, ctx: discord.ApplicationContext, message: discord.Message):
+        class FakeAttachment:
+            def __init__(self, *urls: str):
+                self.urls = iter(urls)
+            
+            async def save(self, f):
+                async with httpx.AsyncClient() as client:
+                    response = None
+                    for url in urls:
+                        try:
+                            response = await client.get(url)
+                            response.raise_for_status()
+                        except (httpx.HTTPError, ConnectionError) as e:
+                            continue
+                        f.write(await response.read())
+                    else:
+                        raise discord.HTTPException(response, "failed to download any of %s" % ", ".join(urls))
+            
+            async def read(self) -> bytes:
+                b = io.BytesIO()
+                await self.save(b)
+                return b.getvalue()
+
         await ctx.defer()
         async with self.transcribe_lock:
             if not message.attachments:
@@ -756,7 +778,13 @@ class OtherCog(commands.Cog):
                     _ft = attachment.filename.split(".")[-1]
                     break
             else:
-                return await ctx.respond("No voice messages.")
+                for embed in message.embeds:
+                    if embed.type == "video" and embed.video.url.split(".")[-1] in ("mp4", "webm"):
+                        _ft = embed.video.split(".")[-1]
+                        attachment = FakeAttachment(embed.video.proxy_url, embed.video.url)
+                        break
+                else:
+                    return await ctx.respond("No video/audio attachments.")
             if getattr(config, "OPENAI_KEY", None) is None:
                 return await ctx.respond("Service unavailable.")
             file_hash = hashlib.sha1(usedforsecurity=False)
