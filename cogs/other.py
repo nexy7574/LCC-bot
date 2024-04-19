@@ -750,7 +750,13 @@ class OtherCog(commands.Cog):
                 self.urls = iter(urls)
                 self.filename = urls[0].split("/")[-1]
             
-            async def save(self, f):
+            async def save(self, f: str | typing.IO[bytes]):
+                if isinstance(f, str):
+                    f = open(f, "wb+")
+                    v = await self.save(f)
+                    f.close()
+                    return v
+
                 async with httpx.AsyncClient() as client:
                     response = None
                     for url in self.urls:
