@@ -769,7 +769,7 @@ class OtherCog(commands.Cog):
 
         await ctx.defer()
         async with self.transcribe_lock:
-            if not message.attachments:
+            if not message.attachments and not message.embeds:
                 return await ctx.respond("No attachments found.")
 
             _ft = "wav"
@@ -779,7 +779,7 @@ class OtherCog(commands.Cog):
                     break
             else:
                 for embed in message.embeds:
-                    if embed.type == "video" and embed.video.url.split(".")[-1] in ("mp4", "webm"):
+                    if embed.type == "video" and embed.video.url.endswith(("mp4", "webm")):
                         _ft = embed.video.split(".")[-1]
                         attachment = FakeAttachment(embed.video.proxy_url, embed.video.url)
                         break
