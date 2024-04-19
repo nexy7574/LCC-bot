@@ -752,7 +752,7 @@ class OtherCog(commands.Cog):
             async def save(self, f):
                 async with httpx.AsyncClient() as client:
                     response = None
-                    for url in urls:
+                    for url in self.urls:
                         try:
                             response = await client.get(url)
                             response.raise_for_status()
@@ -760,7 +760,7 @@ class OtherCog(commands.Cog):
                             continue
                         f.write(await response.read())
                     else:
-                        raise discord.HTTPException(response, "failed to download any of %s" % ", ".join(urls))
+                        raise discord.HTTPException(response, "failed to download any of %s" % ", ".join(self.urls))
             
             async def read(self) -> bytes:
                 b = io.BytesIO()
