@@ -748,6 +748,7 @@ class OtherCog(commands.Cog):
         class FakeAttachment:
             def __init__(self, *urls: str):
                 self.urls = iter(urls)
+                self.filename = urls[0].split("/")[-1]
             
             async def save(self, f):
                 async with httpx.AsyncClient() as client:
