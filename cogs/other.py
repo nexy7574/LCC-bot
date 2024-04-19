@@ -760,6 +760,7 @@ class OtherCog(commands.Cog):
                             continue
                         async for chunk in response.aiter_bytes():
                             f.write(chunk)
+                        break
                     else:
                         raise discord.HTTPException(response, "failed to download any of %s" % ", ".join(self.urls))
             
