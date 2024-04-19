@@ -754,11 +754,12 @@ class OtherCog(commands.Cog):
                     response = None
                     for url in self.urls:
                         try:
-                            response = await client.get(url)
+                            response: httpx.Response = await client.get(url)
                             response.raise_for_status()
                         except (httpx.HTTPError, ConnectionError) as e:
                             continue
-                        f.write(await response.read())
+                        async for chunk in response.aiter_bytes():
+                            f.write(chunk)
                     else:
                         raise discord.HTTPException(response, "failed to download any of %s" % ", ".join(self.urls))
             
