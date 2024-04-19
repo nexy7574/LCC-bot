@@ -780,7 +780,7 @@ class OtherCog(commands.Cog):
             else:
                 for embed in message.embeds:
                     if embed.type == "video" and embed.video.url.endswith(("mp4", "webm")):
-                        _ft = embed.video.split(".")[-1]
+                        _ft = embed.video.url.split(".")[-1]
                         attachment = FakeAttachment(embed.video.proxy_url, embed.video.url)
                         break
                 else:
