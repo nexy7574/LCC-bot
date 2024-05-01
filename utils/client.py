@@ -2,7 +2,7 @@ import asyncio
 import logging
 import sys
 from asyncio import Lock
-from datetime import datetime, timezone
+from orm import __version__ as orm_version
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional, Union
 
@@ -37,7 +37,10 @@ class Bot(commands.Bot):
             max_messages=5000,
             case_insensitive=True,
         )
-        self.loop.run_until_complete(registry.create_all())
+        if map(int, orm_version.split(".")) >= (0, 3, 1):
+            self.loop.run_until_complete(registry.create_all())
+        else:
+            registry.create_all()
         self.training_lock = Lock()
         self.started_at = discord.utils.utcnow()
         self.console = console
