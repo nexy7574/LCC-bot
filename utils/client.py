@@ -37,7 +37,7 @@ class Bot(commands.Bot):
             max_messages=5000,
             case_insensitive=True,
         )
-        if map(int, orm_version.split(".")) >= (0, 3, 1):
+        if tuple(map(int, orm_version.split("."))) >= (0, 3, 1):
             self.loop.run_until_complete(registry.create_all())
         else:
             registry.create_all()
