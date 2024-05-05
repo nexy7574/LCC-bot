@@ -1,5 +1,6 @@
 import asyncio
 import io
+import logging
 import textwrap
 import redis
 import json
@@ -13,6 +14,7 @@ from discord.ext import commands
 class StarBoardCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.log = logging.getLogger("jimmy.starboard")
         self.lock = asyncio.Lock()
         self.redis = redis.asyncio.Redis(decode_responses=True)
 
@@ -47,6 +49,9 @@ class StarBoardCog(commands.Cog):
                     embed.set_image(url="attachment://" + filename)
                     embeds = [embed, *starboard_message.embeds[1:]]
                     await starboard_message.edit(embeds=embeds, file=discord.File(file, filename=filename))
+
+    async def _ping_check(self):
+        return await self.redis.ping()
 
     async def generate_starboard_embed(self, message: discord.Message) -> discord.Embed:
         star_count = [x for x in message.reactions if str(x.emoji) == "\N{white medium star}"]
@@ -125,6 +130,9 @@ class StarBoardCog(commands.Cog):
     @commands.Cog.listener("on_raw_reaction_remove")
     async def on_star_add(self, payload: discord.RawReactionActionEvent):
         if not payload.guild_id:
+            return
+        if not await self._ping_check():
+            self.log.warning("Redis ping check failed - redis offline?")
             return
         async with self.lock:
             if str(payload.emoji) != "\N{white medium star}":
@@ -219,7 +227,11 @@ class StarBoardCog(commands.Cog):
     @commands.message_command(name="Starboard Info")
     @discord.guild_only()
     async def get_starboard_info(self, ctx: discord.ApplicationContext, message: discord.Message):
-        data = await self.redis.get(str(message.id))
+        if not await self._ping_check():
+            self.log.warning("Redis ping check failed - redis offline?")
+            data = {"warning": "redis offline - ping failed."}
+        else:
+            data = await self.redis.get(str(message.id))
         return await ctx.respond(
             '```json\n%s\n```' % json.dumps(data, indent=4),
             embed=await self.generate_starboard_embed(message)
