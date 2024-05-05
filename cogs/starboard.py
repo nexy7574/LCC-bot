@@ -1,21 +1,20 @@
 import asyncio
 import io
 import textwrap
-from typing import Tuple
+import redis
+import json
 from urllib.parse import urlparse
 
 import discord
 import httpx
-import orm
 from discord.ext import commands
-
-from utils.db import StarBoardMessage
 
 
 class StarBoardCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.lock = asyncio.Lock()
+        self.redis = redis.asyncio.Redis(decode_responses=True)
 
     @staticmethod
     async def archive_image(starboard_message: discord.Message):
@@ -115,7 +114,7 @@ class StarBoardCog(commands.Cog):
                 embed.add_field(name=name, value=f"||[{file.filename}]({file.url})||", inline=False)
             else:
                 if file.content_type.startswith("image"):
-                    if embed.image.url is discord.Embed.Empty:
+                    if embed.image is not None:
                         embed.set_image(url=file.url)
                 embed.add_field(name=name, value=f"[{file.filename}]({file.url})", inline=False)
 
@@ -130,41 +129,56 @@ class StarBoardCog(commands.Cog):
         async with self.lock:
             if str(payload.emoji) != "\N{white medium star}":
                 return
-            message: discord.Message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
+            _channel: discord.TextChannel = self.bot.get_channel(payload.channel_id)
+            message: discord.Message = await _channel.fetch_message(payload.message_id)
             if message.author.id == payload.user_id and payload.event_type == "REACTION_ADD":
                 if message.channel.permissions_for(message.guild.me).manage_messages:
                     await message.remove_reaction(payload.emoji, message.author)
                 return await message.reply(
                     f"You can't star your own messages you pretentious dick, {message.author.mention}."
                 )
+
             star_count = [x for x in message.reactions if str(x.emoji) == "\N{white medium star}"]
             if not star_count:
                 star_count = 0
             else:
                 star_count = star_count[0].count
 
+            entry = await self.redis.get(str(message.id))
+            if entry:
+                entry = json.loads(entry)
+            channel = discord.utils.get(message.guild.text_channels, name="starboard")
+
+            if not channel:
+                return
             if star_count == 0:
-                try:
-                    database: StarBoardMessage = await StarBoardMessage.objects.get(id=payload.message_id)
-                except orm.NoMatch:
+                if not entry:
                     return
                 else:
-                    channel = discord.utils.get(message.guild.text_channels, name="starboard")
+                    entry = json.loads(entry)
                     if channel:
                         try:
-                            message = await channel.fetch_message(database.id)
+                            message = await channel.fetch_message(entry["starboard_msg_id"])
                             await message.delete(delay=0.1, reason="Starboard message lost all stars.")
                         except discord.HTTPException:
                             pass
                         finally:
-                            await database.delete()
+                            return await self.redis.delete(str(message.id))
                     else:
-                        await database.delete()
+                        return await self.redis.delete(str(message.id))
 
-            database: Tuple[StarBoardMessage, bool] = await StarBoardMessage.objects.get_or_create(
-                {"channel": payload.channel_id}, id=payload.message_id
-            )
-            entry, created = database
+            if not entry:
+                created = True
+                entry = {
+                    "message_id": payload.message_id,
+                    "channel_id": payload.channel_id,
+                    "guild_id": payload.guild_id,
+                    "starboard_channel_id": channel.id,
+                    "starboard_message_id": None
+                }
+            else:
+                created = False
+
             if created:
                 # noinspection PyUnresolvedReferences
                 cap = message.channel
@@ -173,15 +187,15 @@ class StarBoardCog(commands.Cog):
                 else:
                     cap = cap.member_count * 0.1
                 if star_count >= cap:
-                    channel = discord.utils.get(message.guild.text_channels, name="starboard")
-                    if channel and channel.can_send():
+                    if channel and channel.can_send(discord.Embed()):
                         embed = await self.generate_starboard_embed(message)
                         embeds = [embed, *tuple(filter(lambda x: x.type == "rich", message.embeds))][:10]
                         msg = await channel.send(embeds=embeds)
-                        await entry.update(starboard_message=msg.id)
+                        entry["starboard_message_id"] = msg.id
+                        await self.redis.set(str(payload.message_id), json.dumps(entry))
                         self.bot.loop.create_task(self.archive_image(msg))
                 else:
-                    await entry.delete()
+                    await self.redis.delete(str(payload.message_id))
                     return
             else:
                 channel = discord.utils.get(message.guild.text_channels, name="starboard")
@@ -192,7 +206,9 @@ class StarBoardCog(commands.Cog):
                         msg = await channel.fetch_message(entry.starboard_message)
                     except discord.NotFound:
                         msg = await channel.send(embeds=embeds)
-                        await entry.update(starboard_message=msg.id)
+                        # await entry.update(starboard_message=msg.id)
+                        entry["starboard_message_id"] = msg.id
+                        await self.redis.set(str(payload.message_id), json.dumps(entry))
                         self.bot.loop.create_task(self.archive_image(msg))
                     except discord.HTTPException:
                         pass
@@ -203,7 +219,11 @@ class StarBoardCog(commands.Cog):
     @commands.message_command(name="Starboard Info")
     @discord.guild_only()
     async def get_starboard_info(self, ctx: discord.ApplicationContext, message: discord.Message):
-        return await ctx.respond(embed=await self.generate_starboard_embed(message))
+        data = await self.redis.get(str(message.id))
+        return await ctx.respond(
+            '```json\n%s\n```' % json.dumps(data, indent=4),
+            embed=await self.generate_starboard_embed(message)
+        )
 
 
 def setup(bot):
